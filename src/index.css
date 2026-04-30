@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+@theme {
+  --font-playfair: 'Playfair Display', serif;
+  --font-poppins: 'Poppins', sans-serif;
+  --color-gold: #C9A94E;
+  --color-gold-light: #E8D48B;
+  --color-gold-dark: #A07D2E;
+  --color-luxury-black: #0A0A0A;
+  --color-luxury-dark: #141414;
+  --color-luxury-gray: #1E1E1E;
+  --color-luxury-light: #2A2A2A;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #C9A94E #0A0A0A;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #0A0A0A;
+  color: #f5f5f5;
+  overflow-x: hidden; /* Évite les décalages sur mobile */
+}
+
+/* --- ANIMATIONS EXISTANTES --- */
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.gold-shimmer {
+  background: linear-gradient(90deg, #C9A94E 0%, #E8D48B 25%, #C9A94E 50%, #E8D48B 75%, #C9A94E 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+/* --- OPTIMISATION 3D POUR L'APK --- */
+
+@keyframes slow-rotate {
+  from { transform: perspective(1200px) rotateY(0deg); }
+  to { transform: perspective(1200px) rotateY(360deg); }
+}
+
+/* Cette classe sera utilisée quand tu cliques sur le bouton "3D" */
+.animate-slow-rotate {
+  animation: slow-rotate 12s linear infinite;
+}
+
+/* Effet au survol des cartes produits sur Desktop */
+.product-3d-container {
+  perspective: 1000px;
+}
+
+.product-3d-card {
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 1024px) {
+  .product-3d-card:hover {
+    transform: rotateY(10deg) rotateX(5deg);
+  }
+}
+
+/* --- LOUPE DE ZOOM (Indispensable pour ProductViewer3D) --- */
+.zoom-lens {
+  position: absolute;
+  border: 2px solid #C9A94E;
+  border-radius: 50%;
+  width: 150px;
+  height: 150px;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 0 4000px rgba(0, 0, 0, 0.3); /* Effet focus */
+  z-index: 50;
+}
+
+/* --- AJUSTEMENTS POUR MOBILE (APK) --- */
+@media (max-width: 768px) {
+  .zoom-lens {
+    width: 120px;
+    height: 120px; /* Plus petit sur mobile */
+  }
+
+  /* Désactiver les animations lourdes si nécessaire pour la batterie */
+  .gold-shimmer {
+    animation-duration: 6s;
+  }
+}
+
+/* --- STYLES D'IMPRESSION FACTURE --- */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
