@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, Printer, Download, CheckCircle, Smartphone, Bitcoin, CreditCard, ArrowLeft } from 'lucide-react';
+import { X, Printer, Download, CheckCircle, Smartphone, Bitcoin, CreditCard, ArrowLeft, Shield } from 'lucide-react';
 import { CartItem } from '../types';
+import { createTransaction } from '../services/database';
+import { useAuth } from '../contexts/AuthContext';
+import PaymentConfirmation from './PaymentConfirmation';
 
 interface InvoiceProps {
   items: CartItem[];
@@ -19,6 +22,10 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
     address: '',
   });
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
+  const [txnRecorded, setTxnRecorded] = useState(false);
+  const [txnId, setTxnId] = useState<string | null>(null);
+  const [showPaymentConfirm, setShowPaymentConfirm] = useState(false);
+  const { user } = useAuth();
 
   // --- GESTION DU BOUTON RETOUR ANDROID ---
   useEffect(() => {
@@ -139,7 +146,7 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                 </div>
 
                 <div>
-                  <label className="text-xs text-gold/60 uppercase tracking-widest mb-2 block font-semibold">Lieu de livraison à Kinshasa</label>
+                  <label className="text-xs text-gold/60 uppercase tracking-widest mb-2 block font-semibold">Lieu de livraison à Goma</label>
                   <textarea
                     value={customerInfo.address}
                     onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
@@ -276,9 +283,10 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 p-4 border border-dashed border-gray-300 text-[10px]">
-                  <p className="font-bold mb-1">REFERENCE DE PAIEMENT : {invoiceNumber}</p>
+                <div className="bg-gray-50 p-4 border border-dashed border-gray-300 text-[10px] space-y-1">
+                  <p className="font-bold">REFERENCE DE PAIEMENT : {invoiceNumber}</p>
                   <p>Veuillez envoyer une capture d'écran du transfert sur notre WhatsApp après le règlement pour validation.</p>
+                  <p className="text-red-600 font-bold mt-2">⚠ Toute transaction hors plateforme est frauduleuse. LDBusiness n'est pas responsable des paiements effectués en dehors du système officiel.</p>
                 </div>
               </div>
 
@@ -296,6 +304,55 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                   <Download size={16} className="inline mr-2" /> PDF
                 </button>
               </div>
+
+              {!txnRecorded ? (
+                <button
+                  onClick={async () => {
+                    if (user) {
+                      const txn = await createTransaction({
+                        buyerId: user.id,
+                        customerName: customerInfo.name,
+                        customerPhone: customerInfo.phone,
+                        customerEmail: customerInfo.email,
+                        customerAddress: customerInfo.address,
+                        paymentMethod: paymentMethod || 'airtel_money',
+                        items: items,
+                        subtotal,
+                        tax,
+                        total,
+                      });
+                      if (txn) setTxnId(txn.id);
+                    }
+                    setTxnRecorded(true);
+                  }}
+                  className="w-full mt-4 py-4 bg-green-600 text-white font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-green-500 transition-all flex items-center justify-center gap-2"
+                >
+                  <Shield size={16} /> Confirmer la Vente
+                </button>
+              ) : (
+                <div className="space-y-3 mt-4">
+                  <div className="w-full py-4 bg-green-600/20 border border-green-500/30 text-green-400 font-bold text-xs uppercase tracking-widest rounded-sm flex items-center justify-center gap-2">
+                    <CheckCircle size={16} /> Vente enregistrée
+                  </div>
+                  {txnId && !showPaymentConfirm && (
+                    <button
+                      onClick={() => setShowPaymentConfirm(true)}
+                      className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all flex items-center justify-center gap-2"
+                    >
+                      <Shield size={16} /> J'ai effectué le paiement
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {showPaymentConfirm && txnId && (
+                <PaymentConfirmation
+                  transactionId={txnId}
+                  invoiceNumber={invoiceNumber}
+                  total={total}
+                  onClose={() => { setShowPaymentConfirm(false); onClose(); }}
+                />
+              )}
             </div>
           )}
         </div>

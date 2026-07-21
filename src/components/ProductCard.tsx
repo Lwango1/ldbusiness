@@ -1,6 +1,8 @@
-import { Eye, ShoppingBag } from 'lucide-react';
-import { Product } from '../types';
-import { Link } from 'react-router-dom'; // Importation nécessaire
+import { useState, useEffect } from 'react';
+import { Eye, ShoppingBag, Store } from 'lucide-react';
+import { Product, Seller } from '../types';
+import { getSeller } from '../services/database';
+import { Link } from 'react-router-dom';
 
 interface ProductCardProps {
   product: Product;
@@ -9,6 +11,13 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onView3D, onAddToCart }: ProductCardProps) {
+  const [seller, setSeller] = useState<Seller | null>(null);
+
+  useEffect(() => {
+    if (product.sellerId) {
+      getSeller(product.sellerId).then(setSeller);
+    }
+  }, [product.sellerId]);
   return (
     <div className="product-3d-container group">
       <div className="product-3d-card bg-luxury-dark border border-gold/10 rounded-lg overflow-hidden hover:border-gold/30 transition-all duration-500">
@@ -55,6 +64,12 @@ export default function ProductCard({ product, onView3D, onAddToCart }: ProductC
               {product.name}
             </h3>
           </Link>
+          {seller && (
+            <div className="flex items-center gap-1 text-[11px] text-gold/60 mb-1">
+              <Store size={10} /> {seller.storeName}
+              <span className="text-[8px] text-red-500/30 ml-auto">🔒 Plateforme</span>
+            </div>
+          )}
           <p className="text-gray-500 text-sm mb-3 line-clamp-2">{product.description}</p>
           <div className="flex items-center justify-between">
             <span className="text-gold font-bold text-lg">{product.price.toLocaleString()} CDF</span>

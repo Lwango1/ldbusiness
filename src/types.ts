@@ -1,3 +1,13 @@
+export interface Seller {
+  id: string;
+  storeName: string;
+  ownerName: string;
+  phone: string;
+  email?: string;
+  description?: string;
+  createdAt: string;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -8,6 +18,7 @@ export interface Product {
   category: string;
   sizes?: string[];
   colors?: string[];
+  sellerId?: string;
 }
 
 export interface CartItem extends Product {
@@ -16,16 +27,84 @@ export interface CartItem extends Product {
   selectedColor?: string;
 }
 
-export interface InvoiceData {
+export interface TransactionItem {
+  productId: number;
+  productName: string;
+  quantity: number;
+  price: number;
+  sellerId?: string;
+  sellerStoreName?: string;
+}
+
+export interface Transaction {
+  id: string;
   invoiceNumber: string;
   date: string;
   customerName: string;
-  customerEmail: string;
   customerPhone: string;
+  customerEmail?: string;
   customerAddress: string;
-  items: CartItem[];
-  paymentMethod: 'airtel_money' | 'mpesa' | 'crypto';
+  paymentMethod: string;
+  items: TransactionItem[];
   subtotal: number;
   tax: number;
   total: number;
+  commissionRate: number;
+  commissions: { sellerId?: string; sellerStoreName?: string; amount: number }[];
+  platformCommission: number;
+  status: 'pending' | 'pending_verification' | 'completed' | 'cancelled';
+  transactionId?: string;
+  screenshotUrl?: string;
+}
+
+export const COMMISSION_RATE = 0.10; // 10%
+
+export interface LiveStream {
+  id: string;
+  hostName: string;
+  title: string;
+  description: string;
+  viewerCount: number;
+  isLive: boolean;
+  createdAt: string;
+  category: string;
+  hostAvatar?: string;
+}
+
+export type AdZone = 'hero' | 'between_products' | 'popup' | 'sidebar';
+export type AdFrequency = 'hourly' | 'daily_5' | 'daily_10' | 'daily_20';
+export type AdStatus = 'pending' | 'approved' | 'rejected' | 'expired';
+
+export interface Ad {
+  id: string;
+  brandName: string;
+  brandLogo?: string;
+  brandWebsite?: string;
+  imageUrl: string;
+  description?: string;
+  zone: AdZone;
+  frequency: AdFrequency;
+  status: AdStatus;
+  startDate?: string;
+  endDate?: string;
+  impressions: number;
+  clicks: number;
+  createdAt: string;
+}
+
+export interface Message {
+  id: string;
+  productId: number;
+  productName: string;
+  sellerId?: string;
+  sellerStoreName?: string;
+  buyerName: string;
+  buyerPhone: string;
+  buyerEmail?: string;
+  content: string;
+  date: string;
+  read: boolean;
+  replied: boolean;
+  reply?: string;
+  replyDate?: string;
 }

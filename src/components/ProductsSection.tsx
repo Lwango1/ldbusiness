@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { Product } from '../types';
-import { products, categories } from '../data/products';
+import { getProducts, getAllCategories } from '../services/database';
 import ProductCard from './ProductCard';
 
 interface ProductsSectionProps {
@@ -13,9 +13,16 @@ export default function ProductsSection({ onView3D, onAddToCart }: ProductsSecti
   const [selectedCategory, setSelectedCategory] = useState('Tous');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('default');
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+
+  const categories = getAllCategories();
+
+  useEffect(() => {
+    getProducts().then(setAllProducts);
+  }, []);
 
   // Filtrage intelligent
-  let filteredProducts = products.filter(p => {
+  let filteredProducts = allProducts.filter(p => {
     const matchesCategory = selectedCategory === 'Tous' || p.category === selectedCategory;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.description.toLowerCase().includes(searchQuery.toLowerCase());

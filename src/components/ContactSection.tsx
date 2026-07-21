@@ -12,7 +12,7 @@ export default function ContactSection() {
   };
 
   const openWhatsApp = () => {
-    window.open("https://wa.me/243991876082?text=Bonjour Levine Mande...", "_blank");
+    window.open("https://wa.me/243996710821?text=Bonjour LDBusiness...", "_blank");
   };
 
   return (
@@ -28,7 +28,7 @@ export default function ContactSection() {
           <div className="space-y-8">
             <div className="flex gap-4 items-center">
               <Lucide.MapPin className="text-[#C9A94E]" />
-              <span className="text-gray-400">Gombe, Kinshasa, RDC</span>
+              <span className="text-gray-400">Goma, Nord-Kivu, RDC</span>
             </div>
             <button onClick={openWhatsApp} className="flex items-center gap-2 text-green-500 border border-green-500/30 p-4 rounded">
               <Lucide.MessageCircle size={20} /> Discuter sur WhatsApp

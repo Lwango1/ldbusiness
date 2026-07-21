@@ -1,4 +1,4 @@
-package com.levinemande.app;
+package com.ldbusiness.app;
 
 import com.getcapacitor.BridgeActivity;
 

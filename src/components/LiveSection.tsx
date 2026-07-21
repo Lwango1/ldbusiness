@@ -1,183 +1,164 @@
-import { useState, useEffect, useRef } from 'react';
-import { Video, VideoOff, Mic, MicOff, Monitor, Users, MessageSquare, Send, Radio } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Radio, Users, Eye, Play, Plus, X, Clock, Tag } from 'lucide-react';
+import { LiveStream } from '../types';
+import { getActiveLives, startLive } from '../services/database';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function LiveSection() {
-  const [isLive, setIsLive] = useState(false);
-  const [isCameraOn, setIsCameraOn] = useState(true);
-  const [isMicOn, setIsMicOn] = useState(true);
-  const [message, setMessage] = useState('');
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [lives, setLives] = useState<LiveStream[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ title: '', description: '', category: 'Mode' });
 
-  const [messages, setMessages] = useState([
-    { user: 'Marie K.', text: 'Cette robe est magnifique! 😍', time: '14:32' },
-    { user: 'Jean-Paul M.', text: 'Quelles tailles sont disponibles?', time: '14:33' },
-    { user: 'Levine Mande', text: 'Bonjour à tous! Bienvenue au live. Toutes les tailles sont disponibles.', time: '14:34', isHost: true },
-    { user: 'Grace L.', text: 'Le prix pour la robe émeraude?', time: '14:35' },
-  ]);
+  useEffect(() => { getActiveLives().then(setLives); }, []);
 
-  // Scroll automatique vers le bas du chat
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const categories = ['Mode', 'Artisanat', 'Défilé', 'Questions/Réponses', 'Événement', 'Autre'];
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const sendMessage = () => {
-    if (message.trim()) {
-      const now = new Date();
-      setMessages([...messages, {
-        user: 'Vous',
-        text: message,
-        time: `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`,
-      }]);
-      setMessage('');
-    }
+  const handleStartLive = async () => {
+    if (!form.title || !user) return;
+    const hostName = user.user_metadata?.full_name || 'LDBusiness';
+    const live = await startLive({
+      hostId: user.id,
+      hostName,
+      title: form.title,
+      description: form.description,
+      category: form.category,
+    });
+    if (live) navigate(`/live/${live.id}`);
   };
 
   return (
-    <section id="live" className="py-20 px-4 bg-gradient-to-b from-luxury-black via-luxury-dark to-luxury-black">
+    <section id="live" className="py-20 px-4 bg-gradient-to-b from-luxury-black via-luxury-dark to-luxury-black min-h-screen">
       <div className="max-w-7xl mx-auto">
-
-        {/* En-tête */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Radio className={`${isLive ? 'text-red-500 animate-pulse' : 'text-gray-600'}`} size={16} />
-            <span className={`${isLive ? 'text-red-500' : 'text-gray-600'} text-xs uppercase tracking-[0.3em] font-bold`}>
-              {isLive ? 'En Direct' : 'Studio Live'}
-            </span>
+            <Radio className="text-red-500 animate-pulse" size={16} />
+            <span className="text-red-500 text-xs uppercase tracking-[0.3em] font-bold">En Direct</span>
           </div>
           <h2 className="font-playfair text-4xl md:text-5xl font-bold mt-2 mb-4">
             <span className="gold-shimmer">Showroom Live</span>
           </h2>
+          <p className="text-gray-500 text-sm">Regardez les lives en cours ou lancez le vôtre</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Lancez votre live */}
+        <div className="text-center mb-12">
+          <button
+            onClick={() => setShowForm(true)}
+            className="px-8 py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all inline-flex items-center gap-2"
+          >
+            <Radio size={18} /> Lancer mon Live
+          </button>
+        </div>
 
-          {/* ZONE VIDÉO (Prend plus de place sur desktop) */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="relative aspect-video bg-luxury-dark rounded-xl overflow-hidden border border-gold/20 shadow-2xl">
-              {isLive ? (
-                <>
-                  {/* Vue Simulation Live */}
-                  <div className="absolute inset-0 bg-black flex items-center justify-center">
-                    <div className="text-center p-6">
-                      <div className="w-24 h-24 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-4 pulse-glow">
-                        <Video size={40} className="text-gold" />
-                      </div>
-                      <p className="text-gold font-playfair text-xl">Diffusion en cours</p>
-                      <p className="text-gray-500 text-xs mt-2 italic">Kinshasa Showroom Principal</p>
+        {/* Liste des lives */}
+        {lives.length === 0 ? (
+          <div className="text-center py-20 border border-dashed border-gold/10 rounded-xl">
+            <Radio size={48} className="mx-auto text-gold/20 mb-4" />
+            <p className="text-gray-500 font-playfair italic text-lg mb-2">Aucun live en cours</p>
+            <p className="text-gray-600 text-sm">Soyez le premier à lancer un live !</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {lives.map(live => (
+              <div
+                key={live.id}
+                onClick={() => navigate(`/live/${live.id}`)}
+                className="group bg-luxury-dark border border-gold/10 rounded-xl overflow-hidden hover:border-gold/30 transition-all cursor-pointer"
+              >
+                <div className="relative aspect-video bg-black">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center">
+                      <Radio size={28} className="text-gold" />
                     </div>
                   </div>
-
-                  {/* Badge LIVE */}
-                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-600 px-3 py-1 rounded-sm shadow-lg">
-                    <span className="w-2 h-2 bg-white rounded-full animate-ping" />
+                  <div className="absolute top-3 left-3 flex items-center gap-2 bg-red-600 px-2.5 py-1 rounded-sm">
+                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
                     <span className="text-white text-[10px] font-black">LIVE</span>
                   </div>
-
-                  {/* Boutons de contrôle (Positionnés pour les pouces sur mobile) */}
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-4">
-                    <button onClick={() => setIsCameraOn(!isCameraOn)} className={`p-4 rounded-full backdrop-blur-md border ${isCameraOn ? 'bg-white/10 border-white/20' : 'bg-red-600 border-red-400'} text-white`}>
-                      {isCameraOn ? <Video size={20} /> : <VideoOff size={20} />}
-                    </button>
-                    <button onClick={() => setIsMicOn(!isMicOn)} className={`p-4 rounded-full backdrop-blur-md border ${isMicOn ? 'bg-white/10 border-white/20' : 'bg-red-600 border-red-400'} text-white`}>
-                      {isMicOn ? <Mic size={20} /> : <MicOff size={20} />}
-                    </button>
-                    <button onClick={() => setIsLive(false)} className="px-8 py-4 bg-white text-black font-bold text-xs rounded-full uppercase tracking-widest hover:bg-gold transition-colors">
-                      Quitter
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center p-8 text-center">
-                  <div>
-                    <h3 className="font-playfair text-2xl text-white mb-4">Prêt pour le direct ?</h3>
-                    <button
-                      onClick={() => setIsLive(true)}
-                      className="px-10 py-4 bg-gold text-black font-bold rounded-sm text-xs uppercase tracking-tighter flex items-center gap-3 mx-auto shadow-xl shadow-gold/10"
-                    >
-                      <Radio size={18} /> Lancer la session
-                    </button>
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full">
+                    <Eye size={12} className="text-white" />
+                    <span className="text-white text-[10px] font-bold">{live.viewerCount}</span>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Prochains rendez-vous */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div className="p-4 bg-luxury-dark/50 border border-gold/10 rounded-lg flex items-center gap-4">
-                  <div className="text-gold font-bold border-r border-gold/20 pr-4">20h</div>
-                  <div className="text-sm">
-                    <p className="text-white font-medium">Nocturne Luxe</p>
-                    <p className="text-gray-500 text-xs">Défilé privé</p>
+                <div className="p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-gold/20 border border-gold/30 flex items-center justify-center text-gold text-xs font-bold">
+                      {live.hostName.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-semibold">{live.hostName}</p>
+                      <span className="text-gold/60 text-[10px] uppercase tracking-wider">{live.category}</span>
+                    </div>
                   </div>
-               </div>
-               <div className="p-4 bg-luxury-dark/50 border border-gold/10 rounded-lg flex items-center gap-4">
-                  <div className="text-gold font-bold border-r border-gold/20 pr-4">Dem.</div>
-                  <div className="text-sm">
-                    <p className="text-white font-medium">Questions/Réponses</p>
-                    <p className="text-gray-500 text-xs">Avec Levine Mande</p>
+                  <h3 className="text-white font-playfair text-lg font-bold mt-2 group-hover:text-gold transition-colors">
+                    {live.title}
+                  </h3>
+                  {live.description && (
+                    <p className="text-gray-500 text-xs mt-1 line-clamp-2">{live.description}</p>
+                  )}
+                  <div className="flex items-center gap-1 text-gray-600 text-[10px] mt-3">
+                    <Clock size={10} />
+                    <span>Commencé {new Date(live.createdAt).toLocaleString('fr-FR')}</span>
                   </div>
-               </div>
-            </div>
-          </div>
-
-          {/* CHAT (Optimisé pour la lecture) */}
-          <div className="flex flex-col h-[500px] bg-luxury-dark border border-gold/20 rounded-xl overflow-hidden shadow-2xl">
-            <div className="p-4 bg-luxury-light border-b border-gold/10 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-gold rounded-full animate-pulse" />
-                <span className="text-white font-bold text-xs uppercase tracking-widest">Chat Direct</span>
+                </div>
               </div>
-              <Users size={14} className="text-gold/50" />
-            </div>
+            ))}
+          </div>
+        )}
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
-              {messages.map((msg, i) => (
-                <div key={i} className={`flex flex-col ${msg.user === 'Vous' ? 'items-end' : 'items-start'}`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-[10px] font-bold ${msg.isHost ? 'text-gold' : 'text-gray-500'}`}>
-                      {msg.user}
-                    </span>
-                    <span className="text-[9px] text-gray-700">{msg.time}</span>
-                  </div>
-                  <div className={`max-w-[85%] px-4 py-2 rounded-2xl text-sm ${
-                    msg.isHost
-                    ? 'bg-gold/10 border border-gold/20 text-gold'
-                    : msg.user === 'Vous' ? 'bg-gold text-black rounded-tr-none' : 'bg-luxury-light text-gray-300 rounded-tl-none'
-                  }`}>
-                    {msg.text}
+        {/* Form Lancement Live */}
+        {showForm && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/90 backdrop-blur-md" onClick={() => setShowForm(false)} />
+            <div className="relative bg-luxury-dark border border-gold/20 rounded-xl p-8 max-w-md w-full shadow-2xl">
+              <button onClick={() => setShowForm(false)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white">
+                <X size={20} />
+              </button>
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center">
+                  <Radio size={22} className="text-gold" />
+                </div>
+                <div>
+                  <h2 className="font-playfair text-lg text-white font-bold">Lancer un live</h2>
+                  <p className="text-gray-500 text-xs">{user?.user_metadata?.full_name || 'LDBusiness'}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Titre du live *</label>
+                  <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="Ex: Défilé Haute Couture" className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Description</label>
+                  <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={2} placeholder="Décrivez votre live..." className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Catégorie</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {categories.map(c => (
+                      <button key={c} onClick={() => setForm({...form, category: c})} className={`px-4 py-2 text-xs rounded-sm border transition-all ${form.category === c ? 'bg-gold text-black border-gold' : 'border-gold/20 text-gray-400 hover:border-gold/40'}`}>
+                        {c}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
 
-            {/* Input Chat */}
-            <div className="p-4 bg-luxury-light/50">
-              <div className="flex gap-2 bg-black/40 p-1 rounded-full border border-gold/10">
-                <input
-                  type="text"
-                  placeholder="Posez votre question..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                  className="flex-1 px-4 py-2 bg-transparent text-white text-sm outline-none"
-                />
-                <button
-                  onClick={sendMessage}
-                  className="p-3 bg-gold text-black rounded-full hover:scale-105 transition-transform"
-                >
-                  <Send size={16} />
+                <p className="text-gray-600 text-[10px]">
+                  En lançant un live, votre session apparaîtra dans la liste des directs. Les visiteurs pourront vous rejoindre et interagir via le chat.
+                </p>
+
+                <button onClick={handleStartLive} disabled={!form.title} className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-2">
+                  <Play size={16} /> Démarrer le live
                 </button>
               </div>
             </div>
           </div>
-
-        </div>
+        )}
       </div>
     </section>
   );

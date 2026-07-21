@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingBag, Menu, X, Phone, Mail } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { ShoppingBag, Menu, X, User, LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import AuthModal from './AuthModal';
 
 interface NavbarProps {
   cartCount: number;
@@ -9,10 +11,14 @@ interface NavbarProps {
 
 export default function Navbar({ cartCount, onCartClick }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const navigate = useNavigate();
+  const [showAuth, setShowAuth] = useState(false);
+  const { user, isAuthenticated, signOut } = useAuth();
   const location = useLocation();
 
-  // Fermer le menu avec le bouton retour du téléphone
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
+
   useEffect(() => {
     if (isMenuOpen) {
       window.history.pushState(null, '', window.location.pathname);
@@ -23,47 +29,47 @@ export default function Navbar({ cartCount, onCartClick }: NavbarProps) {
   }, [isMenuOpen]);
 
   const navItems = [
-    { label: 'Accueil', section: 'hero', path: '/' },
-    { label: 'Produits', section: 'products', path: '/' },
-    { label: 'À Propos', section: 'about', path: '/' },
-    { label: 'Contact', section: 'contact', path: '/' },
+    { label: 'Accueil', path: '/' },
+    { label: 'Produits', path: '/produits' },
+    { label: 'À Propos', path: '/a-propos' },
+    { label: 'Live', path: '/live' },
+    { label: 'Contact', path: '/contact' },
+    { label: 'Vendre', path: '/vendre' },
+    ...(isAuthenticated ? [{ label: 'Mes Commandes', path: '/mes-commandes' }] : []),
   ];
-
-  const handleNavClick = (path: string, section: string) => {
-    setIsMenuOpen(false);
-    if (location.pathname === '/' && path === '/') {
-      // Si on est déjà sur l'accueil, on scroll
-      const el = document.getElementById(section);
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      // Sinon on change de page
-      navigate(path);
-    }
-  };
 
   return (
     <>
       <nav className="sticky top-0 z-50 bg-luxury-black/95 backdrop-blur-md border-b border-gold/20">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          {/* LOGO */}
           <Link to="/" className="flex items-center gap-3">
-            <img src="/images/logo.png" alt="Levine Mande" className="h-10 md:h-14 object-contain" />
+            <img src="/images/logo.png" alt="LDBusiness" className="h-10 md:h-14 object-contain" />
           </Link>
 
-          {/* DESKTOP NAV */}
           <div className="hidden md:flex items-center gap-8">
             {navItems.map((item) => (
-              <button
-                key={item.section}
-                onClick={() => handleNavClick(item.path, item.section)}
-                className="text-sm text-gray-300 hover:text-gold uppercase tracking-wider"
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`text-sm uppercase tracking-wider transition-all ${
+                  location.pathname === item.path ? 'text-gold' : 'text-gray-300 hover:text-gold'
+                }`}
               >
                 {item.label}
-              </button>
+              </Link>
             ))}
           </div>
 
           <div className="flex items-center gap-2">
+            {isAuthenticated ? (
+              <button onClick={signOut} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-red-400 uppercase tracking-widest border border-gray-700/50 rounded-sm hover:border-red-500/30 transition-all">
+                <LogOut size={12} /> {user?.user_metadata?.full_name?.split(' ')[0] || 'Quitter'}
+              </button>
+            ) : (
+              <button onClick={() => setShowAuth(true)} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gold uppercase tracking-widest border border-gold/30 rounded-sm hover:bg-gold/10 transition-all">
+                <User size={12} /> Connexion
+              </button>
+            )}
             <button onClick={onCartClick} className="relative p-2 text-gold">
               <ShoppingBag size={22} />
               {cartCount > 0 && (
@@ -76,21 +82,41 @@ export default function Navbar({ cartCount, onCartClick }: NavbarProps) {
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
+
+          {showAuth && <AuthModal onClose={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} />}
         </div>
 
-        {/* MOBILE MENU FULL SCREEN */}
         {isMenuOpen && (
           <div className="fixed inset-0 top-[65px] z-40 bg-luxury-black flex flex-col p-6 animate-in slide-in-from-right">
             <div className="flex flex-col gap-6">
               {navItems.map((item) => (
-                <button
-                  key={item.section}
-                  onClick={() => handleNavClick(item.path, item.section)}
-                  className="text-left py-4 text-2xl font-playfair text-gray-200 border-b border-gold/10"
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`text-left py-4 text-2xl font-playfair border-b border-gold/10 transition-all ${
+                    location.pathname === item.path ? 'text-gold' : 'text-gray-200'
+                  }`}
                 >
                   {item.label}
-                </button>
+                </Link>
               ))}
+              <div className="pt-4 space-y-4">
+                {isAuthenticated && (
+                  <Link to="/mes-commandes" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2 text-gold text-sm">
+                    <ShoppingBag size={16} /> Mes Commandes
+                  </Link>
+                )}
+                {isAuthenticated ? (
+                  <button onClick={() => { signOut(); setIsMenuOpen(false); }} className="flex items-center gap-2 text-red-400 text-sm">
+                    <LogOut size={16} /> Déconnexion
+                  </button>
+                ) : (
+                  <button onClick={() => { setShowAuth(true); setIsMenuOpen(false); }} className="flex items-center gap-2 text-gold text-sm">
+                    <User size={16} /> Connexion / Inscription
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}

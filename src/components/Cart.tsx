@@ -127,6 +127,9 @@ export default function Cart({ items, isOpen, onClose, onUpdateQuantity, onRemov
             <p className="text-[9px] text-gray-600 text-center uppercase tracking-tighter">
               Paiement sécurisé via M-Pesa, Airtel Money & Crypto
             </p>
+            <p className="text-[7px] text-red-500/30 text-center uppercase tracking-widest">
+              ⚠ Toute transaction hors plateforme est frauduleuse
+            </p>
           </div>
         )}
       </div>

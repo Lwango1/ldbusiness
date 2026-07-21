@@ -233,7 +233,7 @@ export default function ProductViewer3D({ product, onClose, onAddToCart }: Produ
           </button>
 
           <p className="text-[10px] text-center text-gray-500 mt-6 uppercase tracking-widest">
-            ✨ Service Prestige Levine Mande • Kinshasa RD Congo
+            ✨ Service Prestige LDBusiness • Goma Nord-Kivu
           </p>
         </div>
       </div>

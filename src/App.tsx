@@ -8,10 +8,20 @@ import Footer from './components/Footer';
 import Cart from './components/Cart';
 import Invoice from './components/Invoice';
 import ProductViewer3D from './components/ProductViewer3D';
+import InstallBanner from './components/InstallBanner';
 
-// Tes nouvelles pages (on va créer les fichiers juste après)
+// Tes pages
 import Home from './pages/Home';
+import ProductsPage from './pages/ProductsPage';
+import AboutPage from './pages/AboutPage';
+import LivePage from './pages/LivePage';
+import ContactPage from './pages/ContactPage';
 import ProductDetail from './pages/ProductDetail';
+import SellerPage from './pages/SellerPage';
+import AdminPage from './pages/AdminPage';
+import OrdersPage from './pages/OrdersPage';
+import AdPage from './pages/AdPage';
+import LiveRoom from './components/LiveRoom';
 
 export default function App() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -70,9 +80,26 @@ export default function App() {
               }
             />
             <Route
+              path="/produits"
+              element={
+                <ProductsPage
+                  onView3D={(p) => setSelectedProduct(p)}
+                  onAddToCart={handleAddToCart}
+                />
+              }
+            />
+            <Route path="/a-propos" element={<AboutPage />} />
+            <Route path="/live" element={<LivePage />} />
+            <Route path="/live/:id" element={<LiveRoom />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route
               path="/produit/:id"
               element={<ProductDetail onAddToCart={handleAddToCart} />}
             />
+            <Route path="/vendre" element={<SellerPage />} />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/mes-commandes" element={<OrdersPage />} />
+            <Route path="/publicite" element={<AdPage />} />
           </Routes>
         </main>
 
@@ -104,6 +131,8 @@ export default function App() {
           isOpen={isInvoiceOpen}
           onClose={() => setIsInvoiceOpen(false)}
         />
+
+        <InstallBanner />
       </div>
     </Router>
   );
