@@ -54,17 +54,19 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     }
     sessionStorage.setItem(STORAGE_KEY, 'true');
 
-    try {
-      await supabase.auth.signInWithPassword({ email: 'admin@ldbusiness.app', password: 'Admin@151191' });
-    } catch {
-      try {
-        await supabase.auth.signUp({
-          email: 'admin@ldbusiness.app',
-          password: 'Admin@151191',
-          options: { data: { full_name: 'Administrateur', role: 'seller', phone: '+243996710821' } },
-        });
-        await supabase.auth.signInWithPassword({ email: 'admin@ldbusiness.app', password: 'Admin@151191' });
-      } catch {}
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email: 'admin@ldbusiness.app', password: 'Admin@151191' });
+    if (signInError) {
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: 'admin@ldbusiness.app',
+        password: 'Admin@151191',
+        options: { data: { full_name: 'Administrateur', role: 'seller', phone: '+243996710821' } },
+      });
+      if (!signUpError) {
+        const { error: signIn2Error } = await supabase.auth.signInWithPassword({ email: 'admin@ldbusiness.app', password: 'Admin@151191' });
+        if (signIn2Error) setError(signIn2Error.message);
+      } else {
+        setError(signUpError.message);
+      }
     }
 
     setLoading(false);
