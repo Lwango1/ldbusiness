@@ -1,19 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Store, Shield, ArrowLeft } from 'lucide-react';
+import { Store, Shield, RefreshCw } from 'lucide-react';
 import { getSeller } from '../services/database';
+import { signIn, signUp } from '../services/auth';
 import { useNavigate } from 'react-router-dom';
 import { isAdminAuthenticated } from '../components/AdminGuard';
 import SellerRegistration from '../components/SellerRegistration';
 import SellerDashboard from '../components/SellerDashboard';
 import AuthModal from '../components/AuthModal';
 
+const ADMIN_PHONE = '+243800000001';
+const ADMIN_PASSWORD = 'Admin@151191';
+
 export default function SellerPage() {
-  const { user, role } = useAuth();
+  const { user, role, refresh } = useAuth();
   const navigate = useNavigate();
   const [seller, setSeller] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const adminAuthed = isAdminAuthenticated();
 
   useEffect(() => {
@@ -24,22 +29,34 @@ export default function SellerPage() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (adminAuthed && !user && !connecting) {
+      setConnecting(true);
+      (async () => {
+        try {
+          await signIn(ADMIN_PHONE, ADMIN_PASSWORD);
+        } catch {
+          try {
+            await signUp(ADMIN_PHONE, ADMIN_PASSWORD, 'Administrateur', 'seller');
+            await signIn(ADMIN_PHONE, ADMIN_PASSWORD);
+          } catch {}
+        }
+        await refresh();
+        setConnecting(false);
+      })();
+    }
+  }, [adminAuthed, user]);
+
   const handleSellerRegistered = async () => {
     if (user) { const s = await getSeller(user.id); setSeller(s); }
   };
 
-  if (loading) return null;
-
-  if (adminAuthed && !user) {
+  if (loading || connecting) {
     return (
       <div className="min-h-screen pt-28 pb-20 px-6 bg-luxury-black flex items-start justify-center">
         <div className="max-w-sm w-full mt-20 text-center">
-          <Shield size={48} className="mx-auto text-gold/30 mb-4" />
-          <h1 className="font-playfair text-2xl font-bold text-white mb-2">Accès Admin</h1>
-          <p className="text-gray-500 text-sm mb-6">Connectez-vous avec un compte vendeur pour gérer les produits, ou utilisez le tableau de bord admin.</p>
-          <button onClick={() => navigate('/admin')} className="px-6 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm flex items-center gap-2 mx-auto">
-            <ArrowLeft size={14} /> Tableau de bord admin
-          </button>
+          <RefreshCw size={32} className="mx-auto text-gold/40 mb-4 animate-spin" />
+          <p className="text-gray-500 text-sm">Connexion en cours...</p>
         </div>
       </div>
     );
