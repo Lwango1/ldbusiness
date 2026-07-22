@@ -20,7 +20,7 @@ export async function uploadProductImage(file: File): Promise<string | null> {
   return urlData?.publicUrl || null;
 }
 
-export const CATEGORIES = ['Robes de Soirée', 'Costumes Homme', 'Mariage', 'Traditionnel', 'Événements', 'Accessoires', 'Autre'];
+export const CATEGORIES = ['Robes de Soirée', 'Costumes Homme', 'Mariage', 'Traditionnel', 'Événements', 'Accessoires', 'Cryptomonnaie', 'Autre'];
 
 export function getAllCategories(): string[] {
   return ['Tous', ...CATEGORIES];
