@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Store, User, Phone, Mail, FileText, LogIn } from 'lucide-react';
-import { registerSeller } from '../services/database';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 interface SellerRegistrationProps {
@@ -12,6 +12,7 @@ export default function SellerRegistration({ onRegistered }: SellerRegistrationP
   const { user } = useAuth();
   const [form, setForm] = useState({ storeName: '', ownerName: '', phone: '', email: '', description: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,8 +20,22 @@ export default function SellerRegistration({ onRegistered }: SellerRegistrationP
       setError('Veuillez remplir tous les champs obligatoires.');
       return;
     }
-    await registerSeller(user.id, { storeName: form.storeName, description: form.description, ownerName: form.ownerName, phone: form.phone });
-    onRegistered();
+    setLoading(true);
+    setError('');
+    try {
+      const { error: dbError } = await supabase.from('profiles').update({
+        role: 'seller',
+        store_name: form.storeName,
+        store_description: form.description || null,
+        full_name: form.ownerName || null,
+        phone: form.phone || null,
+      }).eq('id', user.id);
+      if (dbError) { setError(dbError.message); setLoading(false); return; }
+      onRegistered();
+    } catch (err: any) {
+      setError(err.message || 'Erreur inconnue');
+    }
+    setLoading(false);
   };
 
   return (
@@ -92,8 +107,8 @@ export default function SellerRegistration({ onRegistered }: SellerRegistrationP
 
           {error && <p className="text-red-500 text-xs">{error}</p>}
 
-          <button type="submit" className="w-full py-4 bg-gold text-black font-bold uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all">
-            Créer ma boutique
+          <button type="submit" disabled={loading} className="w-full py-4 bg-gold text-black font-bold uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30">
+            {loading ? 'Création...' : 'Créer ma boutique'}
           </button>
         </form>
       </div>
