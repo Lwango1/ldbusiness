@@ -16,6 +16,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
   const [product, setProduct] = useState<Product | null>(null);
   const [seller, setSeller] = useState<Seller | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
     if (id) {
@@ -54,13 +55,30 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Image du produit */}
-        <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-luxury-dark border border-gold/10">
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
+        {/* Images du produit */}
+        <div className="space-y-4">
+          <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-luxury-dark border border-gold/10">
+            <img
+              src={product.images?.[selectedImage] || product.image}
+              alt={product.name}
+              className="w-full h-full object-cover transition-opacity duration-300"
+            />
+          </div>
+          {(product.images?.length || 0) > 1 && (
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {product.images?.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSelectedImage(i)}
+                  className={`w-16 h-16 shrink-0 rounded-sm border-2 overflow-hidden transition-all ${
+                    selectedImage === i ? 'border-gold opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
+                  }`}
+                >
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Détails du produit */}

@@ -15,6 +15,7 @@ export interface Product {
   price: number;
   currency: string;
   image: string;
+  images?: string[];
   category: string;
   sizes?: string[];
   colors?: string[];

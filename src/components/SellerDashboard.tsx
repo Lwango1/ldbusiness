@@ -11,7 +11,7 @@ interface SellerDashboardProps {
 
 const emptyProduct = {
   name: '', description: '', price: 0, currency: 'CDF',
-  image: '', category: '', sizes: [], colors: [],
+  image: '', images: [], category: '', sizes: [], colors: [],
   stock: undefined, promoCode: '', discount: undefined,
 };
 
@@ -328,47 +328,45 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Image du produit *</label>
-                  <div className="flex gap-3 items-start">
-                    <label className="flex-1 flex flex-col items-center justify-center h-32 bg-black border-2 border-dashed border-gold/20 rounded-sm cursor-pointer hover:border-gold/50 transition-all">
-                      {editing.image ? (
-                        <div className="relative w-full h-full">
-                          <img src={editing.image} alt="Aperçu" className="w-full h-full object-cover rounded-sm" />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                            <Upload size={20} className="text-gold" />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2 text-gray-500">
-                          <ImageIcon size={24} />
-                          <span className="text-[10px]">Cliquez pour choisir</span>
-                        </div>
-                      )}
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp,image/gif"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setUploading(true);
-                            const url = await uploadProductImage(file);
-                            if (url) {
-                              setEditing({...editing, image: url});
-                            }
-                            setUploading(false);
-                          }
-                        }}
-                      />
-                    </label>
-                    {editing.image && !uploading && (
-                      <button
-                        onClick={() => setEditing({...editing, image: ''})}
-                        className="p-2 border border-red-500/30 text-red-400 rounded-sm hover:bg-red-500/10 text-xs"
-                      >
-                        <X size={14} />
-                      </button>
-                    )}
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Images du produit * (6 max)</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(editing.images || []).concat(Array(Math.max(0, 6 - (editing.images || []).length)).fill(null)).slice(0, 6).map((img, i) => (
+                      <div key={i} className="relative aspect-square bg-black border-2 border-dashed border-gold/20 rounded-sm hover:border-gold/50 transition-all">
+                        {img ? (
+                          <>
+                            <img src={img} alt="" className="w-full h-full object-cover rounded-sm" />
+                            <button
+                              onClick={() => {
+                                const newImages = (editing.images || []).filter((_, idx) => idx !== i);
+                                setEditing({...editing, images: newImages, image: newImages[0] || ''});
+                              }}
+                              className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center text-[10px]"
+                            >&times;</button>
+                          </>
+                        ) : (
+                          <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer text-gray-500">
+                            <Upload size={16} />
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp,image/gif"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setUploading(true);
+                                  const url = await uploadProductImage(file);
+                                  if (url) {
+                                    const newImages = [...(editing.images || []), url];
+                                    setEditing({...editing, images: newImages, image: newImages[0] || url});
+                                  }
+                                  setUploading(false);
+                                }
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+                    ))}
                   </div>
                   {uploading && (
                     <div className="flex items-center gap-2 mt-2 text-gold text-[10px]">
