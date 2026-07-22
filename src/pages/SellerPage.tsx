@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Store, Shield, RefreshCw } from 'lucide-react';
 import { getSeller } from '../services/database';
-import { signIn, signUp } from '../services/auth';
+import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { isAdminAuthenticated } from '../components/AdminGuard';
 import SellerRegistration from '../components/SellerRegistration';
 import SellerDashboard from '../components/SellerDashboard';
 import AuthModal from '../components/AuthModal';
 
-const ADMIN_PHONE = '+243996710821';
+const ADMIN_EMAIL = 'admin-151191@ldbusiness.app';
 const ADMIN_PASSWORD = 'Admin@151191';
+const ADMIN_AUTH_KEY = 'ldbusiness_admin_supabase_ready';
 
 export default function SellerPage() {
   const { user, role, refresh } = useAuth();
@@ -19,6 +20,7 @@ export default function SellerPage() {
   const [loading, setLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState('');
   const adminAuthed = isAdminAuthenticated();
 
   useEffect(() => {
@@ -30,18 +32,31 @@ export default function SellerPage() {
   }, [user]);
 
   useEffect(() => {
-    if (adminAuthed && !user && !connecting) {
+    if (adminAuthed && !user && !connecting && localStorage.getItem(ADMIN_AUTH_KEY) !== 'done') {
       setConnecting(true);
+      setConnectError('');
       (async () => {
         try {
-          await signIn(ADMIN_PHONE, ADMIN_PASSWORD);
+          await supabase.auth.signInWithPassword({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
         } catch {
           try {
-            await signUp(ADMIN_PHONE, ADMIN_PASSWORD, 'Administrateur', 'seller');
-            await signIn(ADMIN_PHONE, ADMIN_PASSWORD);
+            const { error } = await supabase.auth.signUp({
+              email: ADMIN_EMAIL,
+              password: ADMIN_PASSWORD,
+              options: { data: { full_name: 'Administrateur', role: 'seller', phone: '+243996710821' } },
+            });
+            if (!error) {
+              await supabase.auth.signInWithPassword({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+            }
           } catch {}
         }
-        await refresh();
+        const u = await supabase.auth.getUser();
+        if (u.data?.user) {
+          localStorage.setItem(ADMIN_AUTH_KEY, 'done');
+          await refresh();
+        } else {
+          setConnectError('Impossible de connecter le compte admin. Réessayez dans quelques minutes.');
+        }
         setConnecting(false);
       })();
     }
@@ -56,7 +71,22 @@ export default function SellerPage() {
       <div className="min-h-screen pt-28 pb-20 px-6 bg-luxury-black flex items-start justify-center">
         <div className="max-w-sm w-full mt-20 text-center">
           <RefreshCw size={32} className="mx-auto text-gold/40 mb-4 animate-spin" />
-          <p className="text-gray-500 text-sm">Connexion en cours...</p>
+          <p className="text-gray-500 text-sm">{connectError || 'Connexion en cours...'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (connectError && adminAuthed && !user) {
+    return (
+      <div className="min-h-screen pt-28 pb-20 px-6 bg-luxury-black flex items-start justify-center">
+        <div className="max-w-sm w-full mt-20 text-center">
+          <Shield size={48} className="mx-auto text-gold/30 mb-4" />
+          <h1 className="font-playfair text-2xl font-bold text-white mb-2">Erreur de connexion</h1>
+          <p className="text-gray-500 text-sm mb-6">{connectError}</p>
+          <button onClick={() => { localStorage.removeItem(ADMIN_AUTH_KEY); setConnectError(''); setConnecting(true); }} className="px-6 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm">
+            Réessayer
+          </button>
         </div>
       </div>
     );
