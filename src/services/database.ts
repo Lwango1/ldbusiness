@@ -91,6 +91,7 @@ export async function updateProduct(id: number, product: Partial<Product>, selle
     name: product.name,
     description: product.description,
     price: product.price,
+    currency: product.currency,
     image_url: product.image,
     images: product.images,
     category: product.category,
