@@ -125,7 +125,7 @@ function mapProduct(p: any): Product {
     name: p.name,
     description: p.description || '',
     price: p.price,
-    currency: p.currency,
+    currency: p.currency || 'CDF',
     image: p.image_url,
     images: p.images || [],
     category: p.category,
