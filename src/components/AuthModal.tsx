@@ -55,15 +55,15 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     sessionStorage.setItem(STORAGE_KEY, 'true');
 
     try {
-      await supabase.auth.signInWithPassword({ email: 'lwangodany@gmail.com', password: 'Admin@151191' });
+      await supabase.auth.signInWithPassword({ email: 'admin@ldbusiness.app', password: 'Admin@151191' });
     } catch {
       try {
         await supabase.auth.signUp({
-          email: 'lwangodany@gmail.com',
+          email: 'admin@ldbusiness.app',
           password: 'Admin@151191',
           options: { data: { full_name: 'Administrateur', role: 'seller', phone: '+243996710821' } },
         });
-        await supabase.auth.signInWithPassword({ email: 'lwangodany@gmail.com', password: 'Admin@151191' });
+        await supabase.auth.signInWithPassword({ email: 'admin@ldbusiness.app', password: 'Admin@151191' });
       } catch {}
     }
 
