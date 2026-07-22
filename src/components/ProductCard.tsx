@@ -12,12 +12,24 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, onView3D, onAddToCart }: ProductCardProps) {
   const [seller, setSeller] = useState<Seller | null>(null);
+  const [cardImage, setCardImage] = useState(0);
+
+  const cardImages = product.images?.length ? product.images : [product.image];
 
   useEffect(() => {
     if (product.sellerId) {
       getSeller(product.sellerId).then(setSeller);
     }
   }, [product.sellerId]);
+
+  useEffect(() => {
+    if (cardImages.length <= 1) return;
+    const timer = setInterval(() => {
+      setCardImage(prev => (prev + 1) % cardImages.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [cardImages.length]);
+
   return (
     <div className="product-3d-container group">
       <div className="product-3d-card bg-luxury-dark border border-gold/10 rounded-lg overflow-hidden hover:border-gold/30 transition-all duration-500">
@@ -25,9 +37,10 @@ export default function ProductCard({ product, onView3D, onAddToCart }: ProductC
         {/* L'image devient un lien vers la page produit */}
         <Link to={`/produit/${product.id}`} className="block relative aspect-[3/4] overflow-hidden">
           <img
-            src={product.image}
+            key={cardImage}
+            src={cardImages[cardImage]}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 animate-in fade-in duration-700"
           />
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-luxury-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

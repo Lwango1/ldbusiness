@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Store, ShieldAlert, MessageCircle, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product, Seller, formatDualPrice } from '../types';
@@ -17,13 +17,31 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
   const [seller, setSeller] = useState<Seller | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [autoRotate, setAutoRotate] = useState(true);
+  const autoTimerRef = useRef<ReturnType<typeof setInterval>>();
+
+  const images = product?.images?.length ? product.images : (product?.image ? [product.image] : []);
+
+  const nextImage = useCallback(() => {
+    if (images.length > 1) {
+      setSelectedImage(prev => (prev + 1) % images.length);
+    }
+  }, [images.length]);
+
+  useEffect(() => {
+    if (autoRotate && images.length > 1) {
+      autoTimerRef.current = setInterval(nextImage, 3500);
+    }
+    return () => { if (autoTimerRef.current) clearInterval(autoTimerRef.current); };
+  }, [autoRotate, images.length, nextImage]);
+
+  const pauseAutoRotate = () => setAutoRotate(false);
+  const resumeAutoRotate = () => setAutoRotate(true);
 
   const imageRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
-
-  const images = product?.images?.length ? product.images : (product?.image ? [product.image] : []);
 
   useEffect(() => {
     if (id) {
@@ -88,9 +106,9 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
         <div className="space-y-4">
           <div
             ref={imageRef}
-            onMouseMove={handleMouseMove}
-            onMouseEnter={() => setIsHovering(true)}
-            onMouseLeave={handleMouseLeave}
+            onMouseMove={(e) => { pauseAutoRotate(); handleMouseMove(e); }}
+            onMouseEnter={() => { pauseAutoRotate(); setIsHovering(true); }}
+            onMouseLeave={() => { resumeAutoRotate(); handleMouseLeave(); }}
             className="relative aspect-[3/4] overflow-hidden rounded-sm bg-luxury-dark border border-gold/10 group"
             style={{
               perspective: '1200px',
@@ -105,9 +123,10 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
               }}
             >
               <img
+                key={selectedImage}
                 src={images[selectedImage]}
                 alt={product.name}
-                className="w-full h-full object-cover transition-opacity duration-500"
+                className="w-full h-full object-cover animate-in fade-in duration-700"
               />
             </div>
             <div
@@ -140,7 +159,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
                 {images.map((img, i) => (
                   <button
                     key={i}
-                    onClick={() => setSelectedImage(i)}
+                    onClick={() => { pauseAutoRotate(); setSelectedImage(i); }}
                     className="group/thumb shrink-0"
                     style={{
                       perspective: '800px',
