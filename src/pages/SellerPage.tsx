@@ -9,7 +9,7 @@ import SellerRegistration from '../components/SellerRegistration';
 import SellerDashboard from '../components/SellerDashboard';
 import AuthModal from '../components/AuthModal';
 
-const ADMIN_EMAIL = 'admin-151191@ldbusiness.app';
+const ADMIN_EMAIL = 'lwangodany@gmail.com';
 const ADMIN_PASSWORD = 'Admin@151191';
 const ADMIN_AUTH_KEY = 'ldbusiness_admin_supabase_ready';
 
