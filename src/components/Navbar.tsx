@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingBag, Menu, X, User, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,8 +12,16 @@ interface NavbarProps {
 export default function Navbar({ cartCount, onCartClick }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [navHeight, setNavHeight] = useState(65);
+  const navRef = useRef<HTMLElement>(null);
   const { user, isAuthenticated, signOut } = useAuth();
   const location = useLocation();
+
+  useEffect(() => {
+    if (navRef.current) {
+      setNavHeight(navRef.current.offsetHeight);
+    }
+  }, []);
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -40,7 +48,7 @@ export default function Navbar({ cartCount, onCartClick }: NavbarProps) {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-luxury-black/95 backdrop-blur-md border-b border-gold/20">
+      <nav ref={navRef} className="sticky top-0 z-50 bg-luxury-black/95 backdrop-blur-md border-b border-gold/20">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
             <img src="/images/logo.png" alt="LDBusiness" className="h-10 md:h-14 object-contain" />
@@ -87,7 +95,9 @@ export default function Navbar({ cartCount, onCartClick }: NavbarProps) {
         </div>
 
         {isMenuOpen && (
-          <div className="fixed inset-0 top-[65px] z-40 bg-luxury-black flex flex-col p-6 animate-in slide-in-from-right">
+          <>
+            <div className="fixed inset-0 z-30 bg-black/20" style={{ top: navHeight }} onClick={() => setIsMenuOpen(false)} />
+            <div className="fixed inset-0 z-40 bg-luxury-black flex flex-col p-6" style={{ top: navHeight }}>
             <div className="flex flex-col gap-6">
               {navItems.map((item) => (
                 <Link
@@ -119,6 +129,7 @@ export default function Navbar({ cartCount, onCartClick }: NavbarProps) {
               </div>
             </div>
           </div>
+          </>
         )}
       </nav>
     </>

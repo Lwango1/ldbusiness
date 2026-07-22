@@ -29,7 +29,10 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
           setLoading(false);
           return;
         }
-        await signUp(phone, password, fullName, role);
+        const data = await signUp(phone, password, fullName, role);
+        if (!data.session) {
+          await signIn(phone, password);
+        }
       } else {
         if (!phone || !password) {
           setError('Téléphone et mot de passe requis');

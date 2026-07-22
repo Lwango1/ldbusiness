@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Store, User, Phone, Mail, FileText } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Store, User, Phone, Mail, FileText, LogIn } from 'lucide-react';
 import { registerSeller } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -35,7 +36,20 @@ export default function SellerRegistration({ onRegistered }: SellerRegistrationP
           <p className="text-gray-500 text-sm">Créez votre boutique sur LDBusiness</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 bg-luxury-dark border border-gold/10 rounded-xl p-8">
+        {!user && (
+          <div className="bg-luxury-dark border border-gold/10 rounded-xl p-8 mb-6 text-center">
+            <div className="w-14 h-14 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-4">
+              <LogIn size={24} className="text-gold" />
+            </div>
+            <h2 className="font-playfair text-xl text-white font-bold mb-2">Connectez-vous d'abord</h2>
+            <p className="text-gray-500 text-sm mb-6">Vous devez être connecté pour devenir vendeur.</p>
+            <Link to="/" className="inline-block px-8 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all">
+              Se connecter
+            </Link>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className={`space-y-5 bg-luxury-dark border border-gold/10 rounded-xl p-8 ${!user ? 'opacity-40 pointer-events-none' : ''}`}>
           <div>
             <label className="text-xs text-gold/60 uppercase tracking-widest mb-2 block font-semibold">Nom de la boutique *</label>
             <div className="relative">
