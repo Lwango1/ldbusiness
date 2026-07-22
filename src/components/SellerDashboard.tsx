@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, X, Save, Store, Package, LogOut, ShieldAlert, MessageCircle, MessageSquare, CheckCircle, Upload, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit3, Trash2, X, Save, Store, Package, LogOut, ShieldAlert, MessageCircle, MessageSquare, CheckCircle, Upload, Image as ImageIcon, Tag, Percent, PackageX } from 'lucide-react';
 import { Product, Seller, Message, COMMISSION_RATE } from '../types';
 import { getSellerProducts, addProduct, updateProduct, deleteProduct, getSellerMessages, markMessageRead, replyToMessage, uploadProductImage } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,7 @@ interface SellerDashboardProps {
 const emptyProduct = {
   name: '', description: '', price: 0, currency: 'CDF',
   image: '', category: '', sizes: [], colors: [],
+  stock: undefined, promoCode: '', discount: undefined,
 };
 
 const categoryOptions = ['Robes de Soirée', 'Costumes Homme', 'Mariage', 'Traditionnel', 'Événements', 'Accessoires', 'Autre'];
@@ -209,11 +210,44 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {products.map(p => (
               <div key={p.id} className="bg-luxury-dark border border-gold/10 rounded-xl p-5 flex gap-4">
-                <img src={p.image} alt={p.name} className="w-24 h-24 object-cover rounded-lg border border-gold/10" />
+                <div className="relative">
+                  <img src={p.image} alt={p.name} className="w-24 h-24 object-cover rounded-lg border border-gold/10" />
+                  {p.stock !== undefined && p.stock === 0 && (
+                    <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
+                      <span className="text-red-400 text-[9px] font-bold uppercase tracking-widest -rotate-45">Rupture</span>
+                    </div>
+                  )}
+                  {p.discount && p.discount > 0 && p.stock !== 0 && (
+                    <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-sm shadow-lg">
+                      -{p.discount}%
+                    </div>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-white font-semibold truncate">{p.name}</h3>
-                  <p className="text-gold font-bold text-sm mt-1">{p.price.toLocaleString()} CDF</p>
-                  <span className="inline-block mt-2 px-2 py-0.5 bg-gold/10 text-gold text-[10px] rounded-sm">{p.category}</span>
+                  <div className="flex items-center gap-2 mt-1">
+                    {p.discount && p.discount > 0 ? (
+                      <>
+                        <span className="text-gray-500 text-xs line-through">{p.price.toLocaleString()} CDF</span>
+                        <span className="text-gold font-bold text-sm">{(p.price * (1 - p.discount / 100)).toLocaleString()} CDF</span>
+                      </>
+                    ) : (
+                      <p className="text-gold font-bold text-sm">{p.price.toLocaleString()} CDF</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className="px-2 py-0.5 bg-gold/10 text-gold text-[10px] rounded-sm">{p.category}</span>
+                    {p.stock !== undefined && (
+                      <span className={`px-2 py-0.5 text-[10px] rounded-sm ${p.stock > 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                        Stock: {p.stock}
+                      </span>
+                    )}
+                    {p.promoCode && p.stock !== 0 && (
+                      <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] rounded-sm flex items-center gap-1">
+                        <Tag size={10} /> {p.promoCode}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex flex-col gap-2">
                   <button onClick={() => handleEdit(p)} className="p-2 border border-gold/20 rounded-sm text-gold hover:bg-gold/10 transition-all">
@@ -261,6 +295,31 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                       <option value="">Choisir</option>
                       {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Stock *</label>
+                    <div className="relative">
+                      <PackageX size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gold/40" />
+                      <input type="number" min="0" value={editing.stock ?? ''} onChange={e => setEditing({...editing, stock: e.target.value ? Number(e.target.value) : undefined})} placeholder="Quantité" className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Prix promo (optionnel)</label>
+                    <div className="relative">
+                      <Percent size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gold/40" />
+                      <input type="number" min="0" max="100" value={editing.discount ?? ''} onChange={e => setEditing({...editing, discount: e.target.value ? Number(e.target.value) : undefined})} placeholder="Ex: 10 pour 10%" className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none" />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Code promo (optionnel)</label>
+                  <div className="relative">
+                    <Tag size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gold/40" />
+                    <input type="text" value={editing.promoCode || ''} onChange={e => setEditing({...editing, promoCode: e.target.value})} placeholder="Ex: PROMO10" className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none" />
                   </div>
                 </div>
 

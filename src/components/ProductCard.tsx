@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, ShoppingBag, Store } from 'lucide-react';
+import { Eye, ShoppingBag, Store, Tag } from 'lucide-react';
 import { Product, Seller } from '../types';
 import { getSeller } from '../services/database';
 import { Link } from 'react-router-dom';
@@ -36,6 +36,16 @@ export default function ProductCard({ product, onView3D, onAddToCart }: ProductC
           <div className="absolute top-3 left-3 px-3 py-1 bg-luxury-black/70 text-gold text-xs rounded-full border border-gold/20">
             {product.category}
           </div>
+          {product.discount && product.discount > 0 && product.stock !== 0 && (
+            <div className="absolute top-3 right-3 px-2 py-1 bg-red-600 text-white text-[10px] font-bold rounded-sm shadow-lg">
+              -{product.discount}%
+            </div>
+          )}
+          {product.stock !== undefined && product.stock === 0 && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <span className="text-red-400 text-sm font-bold uppercase tracking-widest">Rupture de stock</span>
+            </div>
+          )}
         </Link>
 
         {/* Quick actions (restent des boutons pour ne pas interférer avec le lien) */}
@@ -72,11 +82,35 @@ export default function ProductCard({ product, onView3D, onAddToCart }: ProductC
           )}
           <p className="text-gray-500 text-sm mb-3 line-clamp-2">{product.description}</p>
           <div className="flex items-center justify-between">
-            <span className="text-gold font-bold text-lg">{product.price.toLocaleString()} CDF</span>
-            <span className="text-green-500 text-xs flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full" /> En stock
-            </span>
+            {product.discount && product.discount > 0 ? (
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 text-sm line-through">{product.price.toLocaleString()} CDF</span>
+                <span className="text-gold font-bold text-lg">{(product.price * (1 - product.discount / 100)).toLocaleString()} CDF</span>
+              </div>
+            ) : (
+              <span className="text-gold font-bold text-lg">{product.price.toLocaleString()} CDF</span>
+            )}
+            {product.stock !== undefined && product.stock > 0 && (
+              <span className="text-green-500 text-xs flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full" /> {product.stock} en stock
+              </span>
+            )}
+            {product.stock !== undefined && product.stock === 0 && (
+              <span className="text-red-500 text-xs flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full" /> Rupture
+              </span>
+            )}
+            {product.promoCode && product.stock !== 0 && (
+              <span className="text-blue-400 text-[10px] flex items-center gap-1">
+                <Tag size={10} /> {product.promoCode}
+              </span>
+            )}
           </div>
+          {product.promoCode && product.stock !== 0 && !product.discount && (
+            <div className="flex items-center gap-1 text-blue-400 text-[10px]">
+              <Tag size={10} /> Code: {product.promoCode}
+            </div>
+          )}
         </div>
       </div>
     </div>

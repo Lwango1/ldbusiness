@@ -76,6 +76,9 @@ export async function addProduct(product: Omit<Product, 'id'>, sellerId: string)
     category: product.category,
     sizes: product.sizes || [],
     colors: product.colors || [],
+    stock: product.stock ?? null,
+    promo_code: product.promoCode || null,
+    discount: product.discount ?? null,
   }).select().single();
   return data ? mapProduct(data) : null;
 }
@@ -89,6 +92,9 @@ export async function updateProduct(id: number, product: Partial<Product>, selle
     category: product.category,
     sizes: product.sizes,
     colors: product.colors,
+    stock: product.stock ?? null,
+    promo_code: product.promoCode || null,
+    discount: product.discount ?? null,
   }).eq('id', id).eq('seller_id', sellerId);
   return !error;
 }
@@ -115,6 +121,9 @@ function mapProduct(p: any): Product {
     sizes: p.sizes || [],
     colors: p.colors || [],
     sellerId: p.seller_id,
+    stock: p.stock ?? undefined,
+    promoCode: p.promo_code || undefined,
+    discount: p.discount ?? undefined,
   };
 }
 

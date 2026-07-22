@@ -19,6 +19,9 @@ export interface Product {
   sizes?: string[];
   colors?: string[];
   sellerId?: string;
+  stock?: number;
+  promoCode?: string;
+  discount?: number;
 }
 
 export interface CartItem extends Product {

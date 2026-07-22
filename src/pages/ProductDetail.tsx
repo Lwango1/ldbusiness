@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Store, ShieldAlert, MessageCircle } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Store, ShieldAlert, MessageCircle, Tag } from 'lucide-react';
 import { Product, Seller } from '../types';
 import { getProducts, getSeller } from '../services/database';
 import ContactSeller from '../components/ContactSeller';
@@ -73,7 +73,30 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
               </div>
             )}
             <h1 className="font-playfair text-4xl md:text-6xl font-bold mt-4">{product.name}</h1>
-            <p className="text-2xl text-gold mt-4 font-bold">{product.price.toLocaleString()} CDF</p>
+            <div className="flex items-center gap-3 mt-4">
+              {product.discount && product.discount > 0 ? (
+                <>
+                  <span className="text-gray-500 text-xl line-through">{product.price.toLocaleString()} CDF</span>
+                  <span className="text-2xl text-gold font-bold">{(product.price * (1 - product.discount / 100)).toLocaleString()} CDF</span>
+                  <span className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-sm">-{product.discount}%</span>
+                </>
+              ) : (
+                <p className="text-2xl text-gold font-bold">{product.price.toLocaleString()} CDF</p>
+              )}
+            </div>
+            {product.stock !== undefined && (
+              <div className="flex items-center gap-2 mt-3">
+                <span className={`text-xs font-bold uppercase tracking-widest ${product.stock > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {product.stock > 0 ? `${product.stock} en stock` : 'Rupture de stock'}
+                </span>
+              </div>
+            )}
+            {product.promoCode && product.stock !== 0 && (
+              <div className="flex items-center gap-1 mt-2 text-blue-400 text-xs">
+                <Tag size={12} /> Code promo: <span className="font-bold">{product.promoCode}</span>
+                {product.discount && <span> ({product.discount}% de réduction)</span>}
+              </div>
+            )}
           </div>
 
           <p className="text-gray-400 leading-relaxed text-lg italic">
