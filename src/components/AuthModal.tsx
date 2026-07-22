@@ -39,8 +39,6 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     if (e.key === 'Enter') handleAdminLogin();
   };
 
-  const ADMIN_CRED_KEY = 'ldbusiness_admin_creds';
-
   const handleAdminLogin = async () => {
     const fullPin = adminPin.join('');
     if (fullPin.length !== 6) { setError('Code à 6 chiffres requis'); return; }
@@ -50,30 +48,38 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
       const hash = await sha256(fullPin);
       if (hash !== ADMIN_HASH) { setError('Code secret incorrect'); setAdminPin(Array(6).fill('')); document.getElementById('ap-0')?.focus(); setLoading(false); return; }
 
-      const stored = localStorage.getItem(ADMIN_CRED_KEY);
-      let creds;
-      if (stored) {
-        creds = JSON.parse(stored);
-        await signIn(creds.phone, creds.password);
-      } else {
-        const genPhone = `+243${Date.now().toString().slice(-9)}`;
-        const genPassword = 'Admin@' + Math.random().toString(36).slice(2, 8);
-        await signUp(genPhone, genPassword, 'Administrateur', 'admin');
-        await signIn(genPhone, genPassword);
-        creds = { phone: genPhone, password: genPassword };
-        localStorage.setItem(ADMIN_CRED_KEY, JSON.stringify(creds));
+      const ADMIN_PHONE = '+243800000001';
+      const stored = localStorage.getItem('ldbusiness_admin_creds');
+      let password = stored ? JSON.parse(stored).password : 'Admin@' + Math.random().toString(36).slice(2, 8);
+
+      try {
+        await signIn(ADMIN_PHONE, password);
+      } catch {
+        try {
+          await signUp(ADMIN_PHONE, password, 'Administrateur', 'admin');
+        } catch (e: any) {
+          if (e?.message?.includes('already') || e?.message?.includes('exists')) {
+            setError('Compte admin déjà existant. Contactez le support.');
+            setLoading(false);
+            return;
+          }
+          if (!e?.message?.includes('rate')) throw e;
+          setError('Trop de tentatives. Attendez quelques minutes puis réessayez.');
+          setLoading(false);
+          return;
+        }
+        await signIn(ADMIN_PHONE, password);
+        localStorage.setItem('ldbusiness_admin_creds', JSON.stringify({ phone: ADMIN_PHONE, password }));
       }
 
       for (let i = 0; i < 20; i++) {
         const u = await getCurrentUser();
-        if (u) { setAdminCredentials(creds); onSuccess(); return; }
+        if (u) { onSuccess(); return; }
         await new Promise(r => setTimeout(r, 200));
       }
-      setError('Connexion réussie, mise à jour... veuillez rafraîchir');
+      setError('Connecté, veuillez rafraîchir');
     } catch (err: any) {
-      const s = localStorage.getItem(ADMIN_CRED_KEY);
-      if (s) localStorage.removeItem(ADMIN_CRED_KEY);
-      setError(err.message || 'Échec de connexion. Réessayez.');
+      setError(err.message || 'Échec de connexion.');
     } finally {
       setLoading(false);
     }
