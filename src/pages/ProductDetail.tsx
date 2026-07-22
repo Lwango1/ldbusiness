@@ -126,7 +126,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
                 key={selectedImage}
                 src={images[selectedImage]}
                 alt={product.name}
-                className="w-full h-full object-cover animate-in fade-in duration-700"
+                className="w-full h-full object-contain animate-in fade-in duration-700"
               />
             </div>
             <div
@@ -178,7 +178,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
                       <img
                         src={img}
                         alt=""
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-110"
+                        className="w-full h-full object-contain transition-transform duration-300 group-hover/thumb:scale-110"
                       />
                     </div>
                   </button>

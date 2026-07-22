@@ -229,7 +229,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
             {products.map(p => (
               <div key={p.id} className="bg-luxury-dark border border-gold/10 rounded-xl p-5 flex gap-4">
                 <div className="relative">
-                  <img src={p.image} alt={p.name} className="w-24 h-24 object-cover rounded-lg border border-gold/10" />
+                  <img src={p.image} alt={p.name} className="w-24 h-24 object-contain rounded-lg border border-gold/10 bg-black" />
                   {p.stock !== undefined && p.stock === 0 && (
                     <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
                       <span className="text-red-400 text-[9px] font-bold uppercase tracking-widest -rotate-45">Rupture</span>
@@ -356,7 +356,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                       <div key={i} className="relative aspect-square bg-black border-2 border-dashed border-gold/20 rounded-sm hover:border-gold/50 transition-all">
                         {img ? (
                           <>
-                            <img src={img} alt="" className="w-full h-full object-cover rounded-sm" />
+                            <img src={img} alt="" className="w-full h-full object-contain rounded-sm bg-black" />
                             <button
                               onClick={() => {
                                 const newImages = (editing.images || []).filter((_, idx) => idx !== i);

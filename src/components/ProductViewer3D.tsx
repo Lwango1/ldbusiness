@@ -152,7 +152,7 @@ export default function ProductViewer3D({ product, onClose, onAddToCart }: Produ
               <img
                 src={product.image}
                 alt={product.name}
-                className="w-full h-full object-cover pointer-events-none"
+                className="w-full h-full object-contain pointer-events-none"
                 draggable={false}
               />
 
