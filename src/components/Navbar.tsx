@@ -1,40 +1,27 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingBag, Menu, X, User, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import AuthModal from './AuthModal';
 
 interface NavbarProps {
   cartCount: number;
   onCartClick: () => void;
+  isMobileMenuOpen: boolean;
+  onMobileMenuToggle: () => void;
+  onMobileMenuClose: () => void;
+  showAuth: boolean;
+  onAuthOpen: () => void;
+  onAuthClose: () => void;
 }
 
-export default function Navbar({ cartCount, onCartClick }: NavbarProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
-  const [navHeight, setNavHeight] = useState(65);
-  const navRef = useRef<HTMLElement>(null);
+export default function Navbar({ cartCount, onCartClick, isMobileMenuOpen, onMobileMenuToggle, onMobileMenuClose, showAuth, onAuthOpen, onAuthClose }: NavbarProps) {
   const { user, isAuthenticated, signOut } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
-    if (navRef.current) {
-      setNavHeight(navRef.current.offsetHeight);
-    }
-  }, []);
-
-  useEffect(() => {
-    setIsMenuOpen(false);
+    onMobileMenuClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
-
-  useEffect(() => {
-    if (isMenuOpen) {
-      window.history.pushState(null, '', window.location.pathname);
-      const handlePopState = () => setIsMenuOpen(false);
-      window.addEventListener('popstate', handlePopState);
-      return () => window.removeEventListener('popstate', handlePopState);
-    }
-  }, [isMenuOpen]);
 
   const navItems = [
     { label: 'Accueil', path: '/' },
@@ -48,7 +35,7 @@ export default function Navbar({ cartCount, onCartClick }: NavbarProps) {
 
   return (
     <>
-      <nav ref={navRef} className="sticky top-0 z-50 bg-luxury-black/95 backdrop-blur-md border-b border-gold/20">
+      <nav className="sticky top-0 z-50 bg-luxury-black/95 backdrop-blur-md border-b border-gold/20">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
             <img src="/images/logo.png" alt="LDBusiness" className="h-10 md:h-14 object-contain" />
@@ -74,7 +61,7 @@ export default function Navbar({ cartCount, onCartClick }: NavbarProps) {
                 <LogOut size={12} /> {user?.user_metadata?.full_name?.split(' ')[0] || 'Quitter'}
               </button>
             ) : (
-              <button onClick={() => setShowAuth(true)} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gold uppercase tracking-widest border border-gold/30 rounded-sm hover:bg-gold/10 transition-all">
+              <button onClick={onAuthOpen} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gold uppercase tracking-widest border border-gold/30 rounded-sm hover:bg-gold/10 transition-all">
                 <User size={12} /> Connexion
               </button>
             )}
@@ -86,51 +73,12 @@ export default function Navbar({ cartCount, onCartClick }: NavbarProps) {
                 </span>
               )}
             </button>
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden p-2 text-gold">
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            <button onClick={onMobileMenuToggle} className="md:hidden p-2 text-gold">
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
 
-          {showAuth && <AuthModal onClose={() => setShowAuth(false)} onSuccess={() => setShowAuth(false)} />}
         </div>
-
-        {isMenuOpen && (
-          <>
-            <div className="fixed inset-0 z-30 bg-black/20" style={{ top: navHeight }} onClick={() => setIsMenuOpen(false)} />
-            <div className="fixed inset-0 z-40 bg-luxury-black flex flex-col p-6" style={{ top: navHeight }}>
-            <div className="flex flex-col gap-6">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`text-left py-4 text-2xl font-playfair border-b border-gold/10 transition-all ${
-                    location.pathname === item.path ? 'text-gold' : 'text-gray-200'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <div className="pt-4 space-y-4">
-                {isAuthenticated && (
-                  <Link to="/mes-commandes" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2 text-gold text-sm">
-                    <ShoppingBag size={16} /> Mes Commandes
-                  </Link>
-                )}
-                {isAuthenticated ? (
-                  <button onClick={() => { signOut(); setIsMenuOpen(false); }} className="flex items-center gap-2 text-red-400 text-sm">
-                    <LogOut size={16} /> Déconnexion
-                  </button>
-                ) : (
-                  <button onClick={() => { setShowAuth(true); setIsMenuOpen(false); }} className="flex items-center gap-2 text-gold text-sm">
-                    <User size={16} /> Connexion / Inscription
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-          </>
-        )}
       </nav>
     </>
   );
