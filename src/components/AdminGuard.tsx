@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Shield, Lock, KeyRound } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-const ADMIN_HASH = '628c7389fd25ae26a3c81380d330cbabd0f22163e1b402960b58e6767745cec2'; // SHA-256 de "151191"
+export const ADMIN_HASH = '628c7389fd25ae26a3c81380d330cbabd0f22163e1b402960b58e6767745cec2'; // SHA-256 de "151191"
 const STORAGE_KEY = 'ldbusiness_admin_auth';
 
-function sha256(str: string): Promise<string> {
+export function sha256(str: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(str);
   return crypto.subtle.digest('SHA-256', data).then(buf => {
