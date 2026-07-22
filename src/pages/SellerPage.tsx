@@ -36,26 +36,38 @@ export default function SellerPage() {
       setConnecting(true);
       setConnectError('');
       (async () => {
+        let signedIn = false;
         try {
           await supabase.auth.signInWithPassword({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
-        } catch {
-          try {
-            const { error } = await supabase.auth.signUp({
-              email: ADMIN_EMAIL,
-              password: ADMIN_PASSWORD,
-              options: { data: { full_name: 'Administrateur', role: 'seller', phone: '+243996710821' } },
-            });
-            if (!error) {
-              await supabase.auth.signInWithPassword({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+          signedIn = true;
+        } catch (e1: any) {
+          const msg = e1?.message || '';
+          if (msg.includes('Invalid login') || msg.includes('user not found')) {
+            try {
+              const { error } = await supabase.auth.signUp({
+                email: ADMIN_EMAIL,
+                password: ADMIN_PASSWORD,
+                options: { data: { full_name: 'Administrateur', role: 'seller', phone: '+243996710821' } },
+              });
+              if (!error) {
+                await supabase.auth.signInWithPassword({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
+                signedIn = true;
+              } else {
+                setConnectError(error.message);
+              }
+            } catch (e2: any) {
+              setConnectError(e2?.message || 'Erreur inconnue');
             }
-          } catch {}
+          } else {
+            setConnectError(msg);
+          }
         }
-        const u = await supabase.auth.getUser();
-        if (u.data?.user) {
-          localStorage.setItem(ADMIN_AUTH_KEY, 'done');
-          await refresh();
-        } else {
-          setConnectError('Impossible de connecter le compte admin. Réessayez dans quelques minutes.');
+        if (signedIn) {
+          const u = await supabase.auth.getUser();
+          if (u.data?.user) {
+            localStorage.setItem(ADMIN_AUTH_KEY, 'done');
+            await refresh();
+          }
         }
         setConnecting(false);
       })();
