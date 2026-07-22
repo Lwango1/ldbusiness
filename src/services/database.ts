@@ -68,14 +68,13 @@ export async function getProductById(id: number): Promise<Product | null> {
 }
 
 export async function addProduct(product: Omit<Product, 'id'>, sellerId: string): Promise<Product | null> {
-  const { data } = await supabase.from('products').insert({
+  const { data, error } = await supabase.from('products').insert({
     seller_id: sellerId,
     name: product.name,
     description: product.description,
     price: product.price,
     currency: product.currency,
     image_url: product.image,
-    images: product.images || [],
     category: product.category,
     sizes: product.sizes || [],
     colors: product.colors || [],
@@ -83,6 +82,7 @@ export async function addProduct(product: Omit<Product, 'id'>, sellerId: string)
     promo_code: product.promoCode || null,
     discount: product.discount ?? null,
   }).select().single();
+  if (error) console.error('addProduct error:', error);
   return data ? mapProduct(data) : null;
 }
 
@@ -93,7 +93,6 @@ export async function updateProduct(id: number, product: Partial<Product>, selle
     price: product.price,
     currency: product.currency,
     image_url: product.image,
-    images: product.images,
     category: product.category,
     sizes: product.sizes,
     colors: product.colors,
@@ -101,6 +100,7 @@ export async function updateProduct(id: number, product: Partial<Product>, selle
     promo_code: product.promoCode || null,
     discount: product.discount ?? null,
   }).eq('id', id).eq('seller_id', sellerId);
+  if (error) console.error('updateProduct error:', error);
   return !error;
 }
 
