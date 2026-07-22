@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Phone, Lock, User, Store, Shield, KeyRound, Eye, EyeOff } from 'lucide-react';
-import { signUp, signIn, UserRole } from '../services/auth';
+import { signUp, signIn, getCurrentUser, UserRole } from '../services/auth';
 import { sha256, ADMIN_HASH } from './AdminGuard';
 
 interface AuthModalProps {
@@ -51,27 +51,29 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
       if (hash !== ADMIN_HASH) { setError('Code secret incorrect'); setAdminPin(Array(6).fill('')); document.getElementById('ap-0')?.focus(); setLoading(false); return; }
 
       const stored = localStorage.getItem(ADMIN_CRED_KEY);
+      let creds;
       if (stored) {
-        const creds = JSON.parse(stored);
+        creds = JSON.parse(stored);
         await signIn(creds.phone, creds.password);
-        setAdminCredentials(creds);
-        onSuccess();
-        return;
+      } else {
+        const genPhone = `+243${Date.now().toString().slice(-9)}`;
+        const genPassword = 'Admin@' + Math.random().toString(36).slice(2, 8);
+        await signUp(genPhone, genPassword, 'Administrateur', 'admin');
+        await signIn(genPhone, genPassword);
+        creds = { phone: genPhone, password: genPassword };
+        localStorage.setItem(ADMIN_CRED_KEY, JSON.stringify(creds));
       }
 
-      const genPhone = `+243${Date.now().toString().slice(-9)}`;
-      const genPassword = 'Admin@' + Math.random().toString(36).slice(2, 8);
-      await signUp(genPhone, genPassword, 'Administrateur', 'admin');
-      await signIn(genPhone, genPassword);
-      const creds = { phone: genPhone, password: genPassword };
-      localStorage.setItem(ADMIN_CRED_KEY, JSON.stringify(creds));
-      setAdminCredentials(creds);
-      onSuccess();
-    } catch (err: any) {
-      if (stored) {
-        localStorage.removeItem(ADMIN_CRED_KEY);
+      for (let i = 0; i < 20; i++) {
+        const u = await getCurrentUser();
+        if (u) { setAdminCredentials(creds); onSuccess(); return; }
+        await new Promise(r => setTimeout(r, 200));
       }
-      setError(err.message || 'Une erreur est survenue');
+      setError('Connexion réussie, mise à jour... veuillez rafraîchir');
+    } catch (err: any) {
+      const s = localStorage.getItem(ADMIN_CRED_KEY);
+      if (s) localStorage.removeItem(ADMIN_CRED_KEY);
+      setError(err.message || 'Échec de connexion. Réessayez.');
     } finally {
       setLoading(false);
     }
