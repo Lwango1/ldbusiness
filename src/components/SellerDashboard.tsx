@@ -31,6 +31,8 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
   const [replyText, setReplyText] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const refresh = async () => { const p = await getSellerProducts(effectiveUserId); setProducts(p); };
   const refreshMessages = async () => { const m = await getSellerMessages(effectiveUserId); setMessages(m); };
@@ -58,12 +60,24 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
   };
 
   const handleSave = async () => {
-    if (!editing || !editing.name || !editing.price || !editing.image || !editing.category || !effectiveUserId) return;
-    if (editing.id) {
-      await updateProduct(editing.id, editing, effectiveUserId);
-    } else {
-      await addProduct(editing as Omit<Product, 'id'>, effectiveUserId);
+    setSaveError('');
+    setSaveSuccess(false);
+    if (!editing || !editing.name || !editing.price || !editing.category || !effectiveUserId) {
+      setSaveError('Remplissez tous les champs obligatoires.');
+      return;
     }
+    if (!editing.image && !editing.images?.length && !editing.id) {
+      setSaveError('Ajoutez au moins une image.');
+      return;
+    }
+    const ok = editing.id
+      ? await updateProduct(editing.id, editing, effectiveUserId)
+      : !!(await addProduct(editing as Omit<Product, 'id'>, effectiveUserId));
+    if (!ok) {
+      setSaveError('Erreur lors de la sauvegarde. Vérifiez votre connexion.');
+      return;
+    }
+    setSaveSuccess(true);
     setShowForm(false);
     setEditing(null);
     refresh();
@@ -415,6 +429,9 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                     <button onClick={() => { if (colorInput.trim()) { setEditing({...editing, colors: [...(editing.colors || []), colorInput.trim()]}); setColorInput(''); } }} className="px-3 py-2 bg-gold/20 text-gold rounded-sm text-xs">+</button>
                   </div>
                 </div>
+
+                {saveError && <p className="text-red-500 text-xs text-center">{saveError}</p>}
+                {saveSuccess && <p className="text-green-500 text-xs text-center">✓ Produit enregistré</p>}
 
                 <button onClick={handleSave} className="w-full py-4 bg-gold text-black font-bold uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all flex items-center justify-center gap-2">
                   <Save size={16} /> {editing.id ? 'Enregistrer' : 'Publier le produit'}
