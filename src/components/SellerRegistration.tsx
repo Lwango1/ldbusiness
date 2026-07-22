@@ -19,7 +19,7 @@ export default function SellerRegistration({ onRegistered }: SellerRegistrationP
       setError('Veuillez remplir tous les champs obligatoires.');
       return;
     }
-    await registerSeller(user.id, { storeName: form.storeName, description: form.description });
+    await registerSeller(user.id, { storeName: form.storeName, description: form.description, ownerName: form.ownerName, phone: form.phone });
     onRegistered();
   };
 
