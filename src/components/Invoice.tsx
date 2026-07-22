@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Printer, Download, CheckCircle, Smartphone, Bitcoin, CreditCard, ArrowLeft, Shield } from 'lucide-react';
 import { CartItem } from '../types';
-import { createTransaction } from '../services/database';
+import { createTransaction, updateProductStock } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';
 import PaymentConfirmation from './PaymentConfirmation';
 
@@ -41,7 +41,10 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
     }
   }, [isOpen, step, onClose]);
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => {
+    const effectivePrice = item.discount ? item.price * (1 - item.discount / 100) : item.price;
+    return sum + effectivePrice * item.quantity;
+  }, 0);
   const tax = Math.round(subtotal * 0.16);
   const total = subtotal + tax;
   const invoiceNumber = `LM-${Date.now().toString(36).toUpperCase()}`;
@@ -257,9 +260,18 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                         <td className="py-4">
                           <p className="font-bold uppercase text-xs">{item.name}</p>
                           <p className="text-[9px] text-gray-500">{item.category}</p>
+                          {item.discount && item.discount > 0 && (
+                            <span className="text-[8px] text-red-500">-{item.discount}%</span>
+                          )}
                         </td>
                         <td className="py-4 text-center font-bold">{item.quantity}</td>
-                        <td className="py-4 text-right font-black">{item.price.toLocaleString()} CDF</td>
+                        <td className="py-4 text-right font-black">
+                          {item.discount && item.discount > 0 ? (
+                            <span>{(item.price * (1 - item.discount / 100)).toLocaleString()} CDF</span>
+                          ) : (
+                            <span>{item.price.toLocaleString()} CDF</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -322,6 +334,11 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                         total,
                       });
                       if (txn) setTxnId(txn.id);
+                      for (const item of items) {
+                        if (item.stock !== undefined && item.stock > 0) {
+                          await updateProductStock(item.id, item.stock - item.quantity);
+                        }
+                      }
                     }
                     setTxnRecorded(true);
                   }}

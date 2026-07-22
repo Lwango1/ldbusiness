@@ -104,6 +104,11 @@ export async function deleteProduct(id: number, sellerId: string): Promise<boole
   return !error;
 }
 
+export async function updateProductStock(id: number, newStock: number): Promise<boolean> {
+  const { error } = await supabase.from('products').update({ stock: newStock }).eq('id', id);
+  return !error;
+}
+
 export async function getSellerProducts(sellerId: string): Promise<Product[]> {
   const { data } = await supabase.from('products').select('*').eq('seller_id', sellerId).eq('is_active', true);
   return (data || []).map(mapProduct);

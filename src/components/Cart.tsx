@@ -1,4 +1,5 @@
-import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
+import { useState } from 'react';
+import { X, Plus, Minus, Trash2, ShoppingBag, Tag } from 'lucide-react';
 import { CartItem } from '../types';
 
 interface CartProps {
@@ -11,9 +12,27 @@ interface CartProps {
 }
 
 export default function Cart({ items, isOpen, onClose, onUpdateQuantity, onRemoveItem, onCheckout }: CartProps) {
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const [promoInput, setPromoInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
+  const [promoError, setPromoError] = useState('');
+
+  const subtotal = items.reduce((sum, item) => {
+    const effectivePrice = item.discount ? item.price * (1 - item.discount / 100) : item.price;
+    return sum + effectivePrice * item.quantity;
+  }, 0);
   const tax = Math.round(subtotal * 0.16);
   const total = subtotal + tax;
+
+  const applyPromo = () => {
+    const code = promoInput.trim().toUpperCase();
+    const match = items.find(i => i.promoCode?.toUpperCase() === code);
+    if (match) {
+      setAppliedPromo(code);
+      setPromoError('');
+    } else {
+      setPromoError('Code promo invalide pour ces articles');
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -73,7 +92,18 @@ export default function Cart({ items, isOpen, onClose, onUpdateQuantity, onRemov
                         <Trash2 size={16} />
                       </button>
                     </div>
-                    <p className="text-gold font-bold text-sm mt-1">{item.price.toLocaleString()} CDF</p>
+                    {item.discount && item.discount > 0 ? (
+                      <div>
+                        <p className="text-gray-500 text-xs line-through">{item.price.toLocaleString()} CDF</p>
+                        <p className="text-gold font-bold text-sm">{(item.price * (1 - item.discount / 100)).toLocaleString()} CDF</p>
+                        <span className="text-[9px] text-red-400">-{item.discount}%</span>
+                      </div>
+                    ) : (
+                      <p className="text-gold font-bold text-sm mt-1">{item.price.toLocaleString()} CDF</p>
+                    )}
+                    {item.promoCode && (
+                      <span className="text-[9px] text-blue-400 flex items-center gap-1"><Tag size={10} /> {item.promoCode}</span>
+                    )}
                   </div>
 
                   {/* Contrôles de Quantité */}
@@ -116,6 +146,30 @@ export default function Cart({ items, isOpen, onClose, onUpdateQuantity, onRemov
                 <span className="text-white font-playfair italic">Total</span>
                 <span className="text-gold">{total.toLocaleString()} CDF</span>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[9px] text-gold/60 uppercase tracking-widest flex items-center gap-1">
+                <Tag size={12} /> Code promo
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={promoInput}
+                  onChange={e => { setPromoInput(e.target.value); setPromoError(''); }}
+                  placeholder="Ex: PROMO10"
+                  className="flex-1 px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-xs uppercase"
+                />
+                <button
+                  onClick={applyPromo}
+                  disabled={!promoInput.trim() || !!appliedPromo}
+                  className="px-4 py-3 bg-gold/20 text-gold text-xs rounded-sm border border-gold/30 hover:bg-gold/30 transition-all disabled:opacity-30"
+                >
+                  Appliquer
+                </button>
+              </div>
+              {promoError && <p className="text-red-500 text-[9px]">{promoError}</p>}
+              {appliedPromo && <p className="text-green-400 text-[9px] flex items-center gap-1">✓ Code {appliedPromo} appliqué</p>}
             </div>
 
             <button
