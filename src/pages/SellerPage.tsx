@@ -9,7 +9,7 @@ import SellerRegistration from '../components/SellerRegistration';
 import SellerDashboard from '../components/SellerDashboard';
 import AuthModal from '../components/AuthModal';
 
-const ADMIN_PHONE = '+243800000001';
+const ADMIN_PHONE = '+243996710821';
 const ADMIN_PASSWORD = 'Admin@151191';
 
 export default function SellerPage() {
