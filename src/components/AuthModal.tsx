@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { X, Phone, Lock, User, Store, Shield, Eye, EyeOff } from 'lucide-react';
+import { X, Phone, Lock, User, Store, Shield, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { signUp, signIn, UserRole } from '../services/auth';
+import { sha256, ADMIN_HASH } from './AdminGuard';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -16,6 +17,47 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [adminPin, setAdminPin] = useState(Array(6).fill(''));
+
+  const handlePinDigit = (idx: number, val: string) => {
+    if (val.length > 1) return;
+    const newPin = [...adminPin];
+    newPin[idx] = val.replace(/[^0-9]/g, '');
+    setAdminPin(newPin);
+    setError('');
+    if (newPin[idx] && idx < 5) {
+      document.getElementById(`ap-${idx + 1}`)?.focus();
+    }
+  };
+
+  const handlePinKeyDown = (idx: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !adminPin[idx] && idx > 0) {
+      document.getElementById(`ap-${idx - 1}`)?.focus();
+    }
+    if (e.key === 'Enter') handleAdminRegister();
+  };
+
+  const handleAdminRegister = async () => {
+    const fullPin = adminPin.join('');
+    if (fullPin.length !== 6) { setError('Code à 6 chiffres requis'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const hash = await sha256(fullPin);
+      if (hash !== ADMIN_HASH) { setError('Code secret incorrect'); setAdminPin(Array(6).fill('')); document.getElementById('ap-0')?.focus(); setLoading(false); return; }
+      const genPhone = `+243${Date.now().toString().slice(-9)}`;
+      const genPassword = 'Admin@' + Math.random().toString(36).slice(2, 8);
+      await signUp(genPhone, genPassword, 'Administrateur', 'admin');
+      await signIn(genPhone, genPassword);
+      setPhone(genPhone);
+      setPassword(genPassword);
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message || 'Une erreur est survenue');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +110,36 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'register' && role === 'admin' ? (
+            <div className="space-y-4">
+              <div className="text-center mb-2">
+                <Shield size={32} className="mx-auto text-gold mb-2" />
+                <p className="text-gray-400 text-xs">Entrez le code secret admin</p>
+              </div>
+              <div className="flex justify-center gap-2">
+                {adminPin.map((d, i) => (
+                  <input
+                    key={i}
+                    id={`ap-${i}`}
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={d}
+                    onChange={e => handlePinDigit(i, e.target.value)}
+                    onKeyDown={e => handlePinKeyDown(i, e)}
+                    className={`w-10 h-12 text-center text-lg font-bold bg-black border-2 rounded-sm outline-none transition-all ${
+                      d ? 'border-gold text-gold' : 'border-gold/20 text-white'
+                    }`}
+                    autoFocus={i === 0}
+                  />
+                ))}
+              </div>
+              <button type="button" onClick={handleAdminRegister} disabled={loading || adminPin.join('').length !== 6} className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-2">
+                {loading ? 'Création...' : <><KeyRound size={16} /> Activer le compte admin</>}
+              </button>
+            </div>
+          ) : (
+            <>
           {mode === 'register' && (
             <div>
               <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Nom complet</label>
@@ -113,12 +185,16 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
               </div>
             </div>
           )}
+          </>
+          )}
 
           {error && <p className="text-red-500 text-xs">{error}</p>}
 
+          {!(mode === 'register' && role === 'admin') && (
           <button type="submit" disabled={loading} className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30">
             {loading ? 'Chargement...' : mode === 'login' ? 'Se connecter' : 'Créer mon compte'}
           </button>
+          )}
         </form>
 
         <p className="text-center mt-6 text-gray-500 text-xs">
