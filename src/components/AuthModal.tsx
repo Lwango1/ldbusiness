@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Phone, Lock, User, Store, Shield, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { signUp, signIn, UserRole } from '../services/auth';
 import { sha256, ADMIN_HASH, STORAGE_KEY } from './AdminGuard';
+import { supabase } from '../lib/supabase';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -52,6 +53,20 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
       return;
     }
     sessionStorage.setItem(STORAGE_KEY, 'true');
+
+    try {
+      await supabase.auth.signInWithPassword({ email: 'lwangodany@gmail.com', password: 'Admin@151191' });
+    } catch {
+      try {
+        await supabase.auth.signUp({
+          email: 'lwangodany@gmail.com',
+          password: 'Admin@151191',
+          options: { data: { full_name: 'Administrateur', role: 'seller', phone: '+243996710821' } },
+        });
+        await supabase.auth.signInWithPassword({ email: 'lwangodany@gmail.com', password: 'Admin@151191' });
+      } catch {}
+    }
+
     setLoading(false);
     onSuccess();
   };
