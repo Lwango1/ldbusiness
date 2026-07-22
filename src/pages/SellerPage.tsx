@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Store, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { Store, Shield, ArrowLeft } from 'lucide-react';
 import { getSeller } from '../services/database';
-import { Seller } from '../types';
+import { useNavigate } from 'react-router-dom';
 import { isAdminAuthenticated } from '../components/AdminGuard';
 import SellerRegistration from '../components/SellerRegistration';
 import SellerDashboard from '../components/SellerDashboard';
@@ -10,10 +10,10 @@ import AuthModal from '../components/AuthModal';
 
 export default function SellerPage() {
   const { user, role } = useAuth();
-  const [seller, setSeller] = useState<Seller | null>(null);
+  const navigate = useNavigate();
+  const [seller, setSeller] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
-
   const adminAuthed = isAdminAuthenticated();
 
   useEffect(() => {
@@ -24,20 +24,25 @@ export default function SellerPage() {
     }
   }, [user]);
 
-  if (loading) return null;
-
-  const adminSeller: Seller = {
-    id: 'admin',
-    storeName: 'LDBusiness (Admin)',
-    ownerName: 'Administrateur',
-    phone: '+243800000001',
-    email: '',
-    description: 'Boutique administrateur',
-    createdAt: new Date().toISOString(),
+  const handleSellerRegistered = async () => {
+    if (user) { const s = await getSeller(user.id); setSeller(s); }
   };
 
-  if (adminAuthed && role !== 'buyer') {
-    return <SellerDashboard seller={seller || adminSeller} />;
+  if (loading) return null;
+
+  if (adminAuthed && !user) {
+    return (
+      <div className="min-h-screen pt-28 pb-20 px-6 bg-luxury-black flex items-start justify-center">
+        <div className="max-w-sm w-full mt-20 text-center">
+          <Shield size={48} className="mx-auto text-gold/30 mb-4" />
+          <h1 className="font-playfair text-2xl font-bold text-white mb-2">Accès Admin</h1>
+          <p className="text-gray-500 text-sm mb-6">Connectez-vous avec un compte vendeur pour gérer les produits, ou utilisez le tableau de bord admin.</p>
+          <button onClick={() => navigate('/admin')} className="px-6 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm flex items-center gap-2 mx-auto">
+            <ArrowLeft size={14} /> Tableau de bord admin
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
@@ -72,5 +77,5 @@ export default function SellerPage() {
     return <SellerDashboard seller={seller} />;
   }
 
-  return <SellerRegistration onRegistered={async () => { if (user) { const s = await getSeller(user.id); setSeller(s); } }} />;
+  return <SellerRegistration onRegistered={handleSellerRegistered} />;
 }

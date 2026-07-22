@@ -3,6 +3,7 @@ import { Plus, Edit3, Trash2, X, Save, Store, Package, LogOut, ShieldAlert, Mess
 import { Product, Seller, Message, COMMISSION_RATE } from '../types';
 import { getSellerProducts, addProduct, updateProduct, deleteProduct, getSellerMessages, markMessageRead, replyToMessage, uploadProductImage } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';
+import { isAdminAuthenticated, clearAdminAuth } from './AdminGuard';
 
 interface SellerDashboardProps {
   seller: Seller;
@@ -18,6 +19,8 @@ const categoryOptions = ['Robes de Soirée', 'Costumes Homme', 'Mariage', 'Tradi
 
 export default function SellerDashboard({ seller }: SellerDashboardProps) {
   const { user, signOut } = useAuth();
+  const adminAuthed = isAdminAuthenticated();
+  const effectiveUserId = user?.id || seller.id;
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -29,11 +32,11 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const refresh = async () => { const p = await getSellerProducts(user?.id || ''); setProducts(p); };
-  const refreshMessages = async () => { const m = await getSellerMessages(user?.id || ''); setMessages(m); };
+  const refresh = async () => { const p = await getSellerProducts(effectiveUserId); setProducts(p); };
+  const refreshMessages = async () => { const m = await getSellerMessages(effectiveUserId); setMessages(m); };
 
-  useEffect(() => { refresh(); }, [user?.id]);
-  useEffect(() => { if (tab === 'messages') refreshMessages(); }, [tab, user?.id]);
+  useEffect(() => { refresh(); }, [effectiveUserId]);
+  useEffect(() => { if (tab === 'messages') refreshMessages(); }, [tab, effectiveUserId]);
 
   const unreadCount = messages.filter(m => !m.read).length;
 
@@ -48,18 +51,18 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm('Supprimer ce produit ?') && user) {
-      await deleteProduct(id, user.id);
+    if (confirm('Supprimer ce produit ?') && effectiveUserId) {
+      await deleteProduct(id, effectiveUserId);
       refresh();
     }
   };
 
   const handleSave = async () => {
-    if (!editing || !editing.name || !editing.price || !editing.image || !editing.category || !user) return;
+    if (!editing || !editing.name || !editing.price || !editing.image || !editing.category || !effectiveUserId) return;
     if (editing.id) {
-      await updateProduct(editing.id, editing, user.id);
+      await updateProduct(editing.id, editing, effectiveUserId);
     } else {
-      await addProduct(editing as Omit<Product, 'id'>, user.id);
+      await addProduct(editing as Omit<Product, 'id'>, effectiveUserId);
     }
     setShowForm(false);
     setEditing(null);
@@ -68,6 +71,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
 
   const handleLogout = () => {
     signOut();
+    clearAdminAuth();
   };
 
   return (
