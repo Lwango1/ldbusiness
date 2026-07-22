@@ -39,6 +39,8 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     if (e.key === 'Enter') handleAdminLogin();
   };
 
+  const ADMIN_CRED_KEY = 'ldbusiness_admin_creds';
+
   const handleAdminLogin = async () => {
     const fullPin = adminPin.join('');
     if (fullPin.length !== 6) { setError('Code à 6 chiffres requis'); return; }
@@ -47,13 +49,28 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     try {
       const hash = await sha256(fullPin);
       if (hash !== ADMIN_HASH) { setError('Code secret incorrect'); setAdminPin(Array(6).fill('')); document.getElementById('ap-0')?.focus(); setLoading(false); return; }
+
+      const stored = localStorage.getItem(ADMIN_CRED_KEY);
+      if (stored) {
+        const creds = JSON.parse(stored);
+        await signIn(creds.phone, creds.password);
+        setAdminCredentials(creds);
+        onSuccess();
+        return;
+      }
+
       const genPhone = `+243${Date.now().toString().slice(-9)}`;
       const genPassword = 'Admin@' + Math.random().toString(36).slice(2, 8);
       await signUp(genPhone, genPassword, 'Administrateur', 'admin');
       await signIn(genPhone, genPassword);
-      setAdminCredentials({ phone: genPhone, password: genPassword });
+      const creds = { phone: genPhone, password: genPassword };
+      localStorage.setItem(ADMIN_CRED_KEY, JSON.stringify(creds));
+      setAdminCredentials(creds);
       onSuccess();
     } catch (err: any) {
+      if (stored) {
+        localStorage.removeItem(ADMIN_CRED_KEY);
+      }
       setError(err.message || 'Une erreur est survenue');
     } finally {
       setLoading(false);
