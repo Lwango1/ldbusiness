@@ -3,6 +3,7 @@ import { Store, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getSeller } from '../services/database';
 import { Seller } from '../types';
+import { isAdminAuthenticated } from '../components/AdminGuard';
 import SellerRegistration from '../components/SellerRegistration';
 import SellerDashboard from '../components/SellerDashboard';
 import AuthModal from '../components/AuthModal';
@@ -13,6 +14,8 @@ export default function SellerPage() {
   const [loading, setLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
 
+  const adminAuthed = isAdminAuthenticated();
+
   useEffect(() => {
     if (user) {
       getSeller(user.id).then(s => { setSeller(s); setLoading(false); });
@@ -22,6 +25,20 @@ export default function SellerPage() {
   }, [user]);
 
   if (loading) return null;
+
+  const adminSeller: Seller = {
+    id: 'admin',
+    storeName: 'LDBusiness (Admin)',
+    ownerName: 'Administrateur',
+    phone: '+243800000001',
+    email: '',
+    description: 'Boutique administrateur',
+    createdAt: new Date().toISOString(),
+  };
+
+  if (adminAuthed && role !== 'buyer') {
+    return <SellerDashboard seller={seller || adminSeller} />;
+  }
 
   if (!user) {
     return (
