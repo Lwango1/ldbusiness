@@ -101,7 +101,7 @@ export default function Cart({ items, isOpen, onClose, onUpdateQuantity, onRemov
                     ) : (
                       <div>
                         <p className="text-gold font-bold text-sm mt-1">{formatDualPrice(item.price, item.currency).primary}</p>
-                        <p className="text-gray-500 text-[9px]">(~{formatDualPrice(item.price, item.currency).secondary})</p>
+                        <p className="text-gray-500 text-[9px]">({formatDualPrice(item.price, item.currency).secondary})</p>
                       </div>
                     )}
                     {item.promoCode && (

@@ -92,7 +92,7 @@ export default function ProductCard({ product, onView3D, onAddToCart }: ProductC
               ) : (
                 <div>
                   <span className="text-gold font-bold text-lg">{fp.primary}</span>
-                  <span className="text-gray-500 text-xs ml-2">(~{fp.secondary})</span>
+                  <span className="text-gray-500 text-xs ml-2">({fp.secondary})</span>
                 </div>
               );
             })()}

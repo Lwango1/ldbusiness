@@ -194,7 +194,7 @@ export default function ProductViewer3D({ product, onClose, onAddToCart }: Produ
           <div className="flex items-center gap-4 mb-6">
             <div>
               <div className="text-3xl font-bold text-gold">{formatDualPrice(product.price, product.currency).primary}</div>
-              <div className="text-gray-500 text-sm">(~{formatDualPrice(product.price, product.currency).secondary})</div>
+              <div className="text-gray-500 text-sm">({formatDualPrice(product.price, product.currency).secondary})</div>
             </div>
             <div className="h-6 w-[1px] bg-gold/20" />
             <span className="text-green-500 text-sm flex items-center gap-2">

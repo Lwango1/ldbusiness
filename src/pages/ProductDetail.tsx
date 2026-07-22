@@ -197,7 +197,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
               ) : (
                 <div>
                   <p className="text-2xl text-gold font-bold">{formatDualPrice(product.price, product.currency).primary}</p>
-                  <p className="text-gray-500 text-sm">(~{formatDualPrice(product.price, product.currency).secondary})</p>
+                  <p className="text-gray-500 text-sm">({formatDualPrice(product.price, product.currency).secondary})</p>
                 </div>
               )}
             </div>

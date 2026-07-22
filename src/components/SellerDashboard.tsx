@@ -236,7 +236,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                         <span className="text-gold font-bold text-sm">{formatDualPrice(p.price * (1 - p.discount / 100), p.currency).primary}</span>
                       </>
                     ) : (
-                      <p className="text-gold font-bold text-sm">{formatDualPrice(p.price, p.currency).primary} <span className="text-gray-500">(~{formatDualPrice(p.price, p.currency).secondary})</span></p>
+                      <p className="text-gold font-bold text-sm">{formatDualPrice(p.price, p.currency).primary} <span className="text-gray-500">({formatDualPrice(p.price, p.currency).secondary})</span></p>
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
