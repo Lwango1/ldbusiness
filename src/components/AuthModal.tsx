@@ -17,7 +17,9 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [adminMode, setAdminMode] = useState(false);
   const [adminPin, setAdminPin] = useState(Array(6).fill(''));
+  const [adminCredentials, setAdminCredentials] = useState<{ phone: string; password: string } | null>(null);
 
   const handlePinDigit = (idx: number, val: string) => {
     if (val.length > 1) return;
@@ -34,10 +36,10 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     if (e.key === 'Backspace' && !adminPin[idx] && idx > 0) {
       document.getElementById(`ap-${idx - 1}`)?.focus();
     }
-    if (e.key === 'Enter') handleAdminRegister();
+    if (e.key === 'Enter') handleAdminLogin();
   };
 
-  const handleAdminRegister = async () => {
+  const handleAdminLogin = async () => {
     const fullPin = adminPin.join('');
     if (fullPin.length !== 6) { setError('Code à 6 chiffres requis'); return; }
     setLoading(true);
@@ -49,8 +51,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
       const genPassword = 'Admin@' + Math.random().toString(36).slice(2, 8);
       await signUp(genPhone, genPassword, 'Administrateur', 'admin');
       await signIn(genPhone, genPassword);
-      setPhone(genPhone);
-      setPassword(genPassword);
+      setAdminCredentials({ phone: genPhone, password: genPassword });
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Une erreur est survenue');
@@ -110,11 +111,11 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {mode === 'register' && role === 'admin' ? (
+          {mode === 'login' && adminMode ? (
             <div className="space-y-4">
               <div className="text-center mb-2">
                 <Shield size={32} className="mx-auto text-gold mb-2" />
-                <p className="text-gray-400 text-xs">Entrez le code secret admin</p>
+                <p className="text-gray-400 text-xs">Code secret admin</p>
               </div>
               <div className="flex justify-center gap-2">
                 {adminPin.map((d, i) => (
@@ -134,8 +135,11 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
                   />
                 ))}
               </div>
-              <button type="button" onClick={handleAdminRegister} disabled={loading || adminPin.join('').length !== 6} className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-2">
-                {loading ? 'Création...' : <><KeyRound size={16} /> Activer le compte admin</>}
+              <button type="button" onClick={handleAdminLogin} disabled={loading || adminPin.join('').length !== 6} className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-2">
+                {loading ? 'Connexion...' : <><KeyRound size={16} /> Connexion Admin</>}
+              </button>
+              <button type="button" onClick={() => { setAdminMode(false); setError(''); setAdminPin(Array(6).fill('')); }} className="w-full py-2 text-gray-500 text-xs hover:text-gold transition-all">
+                Retour à la connexion normale
               </button>
             </div>
           ) : (
@@ -172,17 +176,22 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
           {mode === 'register' && (
             <div>
               <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Je suis</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button type="button" onClick={() => setRole('buyer')} className={`py-3 px-4 text-xs rounded-sm border transition-all flex items-center justify-center gap-2 ${role === 'buyer' ? 'bg-gold text-black border-gold' : 'border-gold/20 text-gray-400 hover:border-gold/40'}`}>
                   <User size={14} /> Acheteur
                 </button>
                 <button type="button" onClick={() => setRole('seller')} className={`py-3 px-4 text-xs rounded-sm border transition-all flex items-center justify-center gap-2 ${role === 'seller' ? 'bg-gold text-black border-gold' : 'border-gold/20 text-gray-400 hover:border-gold/40'}`}>
                   <Store size={14} /> Vendeur
                 </button>
-                <button type="button" onClick={() => setRole('admin')} className={`py-3 px-4 text-xs rounded-sm border transition-all flex items-center justify-center gap-2 ${role === 'admin' ? 'bg-gold text-black border-gold' : 'border-gold/20 text-gray-400 hover:border-gold/40'}`}>
-                  <Shield size={14} /> Admin
-                </button>
               </div>
+            </div>
+          )}
+
+          {mode === 'login' && (
+            <div className="text-center">
+              <button type="button" onClick={() => setAdminMode(true)} className="text-gold text-xs hover:underline flex items-center justify-center gap-1 mx-auto">
+                <Shield size={12} /> Connexion Admin
+              </button>
             </div>
           )}
           </>
@@ -190,7 +199,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
           {error && <p className="text-red-500 text-xs">{error}</p>}
 
-          {!(mode === 'register' && role === 'admin') && (
+          {!(mode === 'login' && adminMode) && (
           <button type="submit" disabled={loading} className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30">
             {loading ? 'Chargement...' : mode === 'login' ? 'Se connecter' : 'Créer mon compte'}
           </button>
