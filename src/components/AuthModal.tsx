@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Phone, Lock, User, Store, Eye, EyeOff } from 'lucide-react';
+import { X, Phone, Lock, User, Store, Shield, Eye, EyeOff } from 'lucide-react';
 import { signUp, signIn, UserRole } from '../services/auth';
 
 interface AuthModalProps {
@@ -100,12 +100,15 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
           {mode === 'register' && (
             <div>
               <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Je suis</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button type="button" onClick={() => setRole('buyer')} className={`py-3 px-4 text-xs rounded-sm border transition-all flex items-center justify-center gap-2 ${role === 'buyer' ? 'bg-gold text-black border-gold' : 'border-gold/20 text-gray-400 hover:border-gold/40'}`}>
                   <User size={14} /> Acheteur
                 </button>
                 <button type="button" onClick={() => setRole('seller')} className={`py-3 px-4 text-xs rounded-sm border transition-all flex items-center justify-center gap-2 ${role === 'seller' ? 'bg-gold text-black border-gold' : 'border-gold/20 text-gray-400 hover:border-gold/40'}`}>
                   <Store size={14} /> Vendeur
+                </button>
+                <button type="button" onClick={() => setRole('admin')} className={`py-3 px-4 text-xs rounded-sm border transition-all flex items-center justify-center gap-2 ${role === 'admin' ? 'bg-gold text-black border-gold' : 'border-gold/20 text-gray-400 hover:border-gold/40'}`}>
+                  <Shield size={14} /> Admin
                 </button>
               </div>
             </div>

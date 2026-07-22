@@ -10,7 +10,7 @@ interface MobileDrawerProps {
 }
 
 export default function MobileDrawer({ onClose, onOpenAuth }: MobileDrawerProps) {
-  const { user, isAuthenticated, signOut } = useAuth();
+  const { user, isAuthenticated, role, signOut } = useAuth();
   const location = useLocation();
 
   const navItems = [
@@ -21,6 +21,7 @@ export default function MobileDrawer({ onClose, onOpenAuth }: MobileDrawerProps)
     { label: 'Contact', path: '/contact' },
     { label: 'Vendre', path: '/vendre' },
     ...(isAuthenticated ? [{ label: 'Mes Commandes', path: '/mes-commandes' }] : []),
+    ...(role === 'admin' ? [{ label: 'Admin', path: '/admin' }] : []),
   ];
 
   return (

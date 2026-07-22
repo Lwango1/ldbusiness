@@ -15,7 +15,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ cartCount, onCartClick, isMobileMenuOpen, onMobileMenuToggle, onMobileMenuClose, showAuth, onAuthOpen, onAuthClose }: NavbarProps) {
-  const { user, isAuthenticated, signOut } = useAuth();
+  const { user, isAuthenticated, role, signOut } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -31,6 +31,7 @@ export default function Navbar({ cartCount, onCartClick, isMobileMenuOpen, onMob
     { label: 'Contact', path: '/contact' },
     { label: 'Vendre', path: '/vendre' },
     ...(isAuthenticated ? [{ label: 'Mes Commandes', path: '/mes-commandes' }] : []),
+    ...(role === 'admin' ? [{ label: 'Admin', path: '/admin' }] : []),
   ];
 
   return (

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Shield, Lock, KeyRound, X } from 'lucide-react';
+import { useState } from 'react';
+import { Shield, Lock, KeyRound } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const ADMIN_HASH = '628c7389fd25ae26a3c81380d330cbabd0f22163e1b402960b58e6767745cec2'; // SHA-256 de "151191"
 const STORAGE_KEY = 'ldbusiness_admin_auth';
@@ -23,9 +24,10 @@ export function clearAdminAuth(): void {
 const PIN_LENGTH = 6;
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
+  const { role } = useAuth();
   const [pin, setPin] = useState(Array(PIN_LENGTH).fill(''));
   const [error, setError] = useState('');
-  const [verified, setVerified] = useState(isAdminAuthenticated());
+  const [verified, setVerified] = useState(isAdminAuthenticated() || role === 'admin');
   const [loading, setLoading] = useState(false);
 
   const handleDigit = (idx: number, val: string) => {
