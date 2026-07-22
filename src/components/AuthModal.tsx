@@ -54,7 +54,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     }
     sessionStorage.setItem(STORAGE_KEY, 'true');
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email: 'admin@ldbusiness.app', password: 'Admin@151191' });
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email: 'lwangodany@gmail.com', password: 'Admin@151191' });
     if (signInError) {
       setError(signInError.message);
       setLoading(false);
