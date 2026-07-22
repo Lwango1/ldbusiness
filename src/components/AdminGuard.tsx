@@ -3,7 +3,7 @@ import { Shield, Lock, KeyRound } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const ADMIN_HASH = '628c7389fd25ae26a3c81380d330cbabd0f22163e1b402960b58e6767745cec2'; // SHA-256 de "151191"
-const STORAGE_KEY = 'ldbusiness_admin_auth';
+export const STORAGE_KEY = 'ldbusiness_admin_auth';
 
 export function sha256(str: string): Promise<string> {
   const encoder = new TextEncoder();

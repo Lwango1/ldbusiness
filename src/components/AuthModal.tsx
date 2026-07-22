@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, Phone, Lock, User, Store, Shield, KeyRound, Eye, EyeOff } from 'lucide-react';
-import { signUp, signIn, getCurrentUser, UserRole } from '../services/auth';
-import { sha256, ADMIN_HASH } from './AdminGuard';
+import { signUp, signIn, UserRole } from '../services/auth';
+import { sha256, ADMIN_HASH, STORAGE_KEY } from './AdminGuard';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -19,7 +19,6 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   const [loading, setLoading] = useState(false);
   const [adminMode, setAdminMode] = useState(false);
   const [adminPin, setAdminPin] = useState(Array(6).fill(''));
-  const [adminCredentials, setAdminCredentials] = useState<{ phone: string; password: string } | null>(null);
 
   const handlePinDigit = (idx: number, val: string) => {
     if (val.length > 1) return;
@@ -44,45 +43,17 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     if (fullPin.length !== 6) { setError('Code à 6 chiffres requis'); return; }
     setLoading(true);
     setError('');
-    try {
-      const hash = await sha256(fullPin);
-      if (hash !== ADMIN_HASH) { setError('Code secret incorrect'); setAdminPin(Array(6).fill('')); document.getElementById('ap-0')?.focus(); setLoading(false); return; }
-
-      const ADMIN_PHONE = '+243800000001';
-      const stored = localStorage.getItem('ldbusiness_admin_creds');
-      let password = stored ? JSON.parse(stored).password : 'Admin@' + Math.random().toString(36).slice(2, 8);
-
-      try {
-        await signIn(ADMIN_PHONE, password);
-      } catch {
-        try {
-          await signUp(ADMIN_PHONE, password, 'Administrateur', 'admin');
-        } catch (e: any) {
-          if (e?.message?.includes('already') || e?.message?.includes('exists')) {
-            setError('Compte admin déjà existant. Contactez le support.');
-            setLoading(false);
-            return;
-          }
-          if (!e?.message?.includes('rate')) throw e;
-          setError('Trop de tentatives. Attendez quelques minutes puis réessayez.');
-          setLoading(false);
-          return;
-        }
-        await signIn(ADMIN_PHONE, password);
-        localStorage.setItem('ldbusiness_admin_creds', JSON.stringify({ phone: ADMIN_PHONE, password }));
-      }
-
-      for (let i = 0; i < 20; i++) {
-        const u = await getCurrentUser();
-        if (u) { onSuccess(); return; }
-        await new Promise(r => setTimeout(r, 200));
-      }
-      setError('Connecté, veuillez rafraîchir');
-    } catch (err: any) {
-      setError(err.message || 'Échec de connexion.');
-    } finally {
+    const hash = await sha256(fullPin);
+    if (hash !== ADMIN_HASH) {
+      setError('Code secret incorrect');
+      setAdminPin(Array(6).fill(''));
+      document.getElementById('ap-0')?.focus();
       setLoading(false);
+      return;
     }
+    sessionStorage.setItem(STORAGE_KEY, 'true');
+    setLoading(false);
+    onSuccess();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
