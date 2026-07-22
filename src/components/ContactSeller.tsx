@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Send, MessageCircle, Shield } from 'lucide-react';
-import { Product } from '../types';
+import { Product, formatDualPrice } from '../types';
 import { sendMessage } from '../services/database';
 
 interface ContactSellerProps {
@@ -57,7 +57,7 @@ export default function ContactSeller({ product, onClose, onSent }: ContactSelle
               <img src={product.image} alt={product.name} className="w-14 h-14 object-cover rounded-md" />
               <div className="min-w-0">
                 <p className="text-white text-sm font-semibold truncate">{product.name}</p>
-                <p className="text-gold text-xs font-bold">{product.price.toLocaleString()} CDF</p>
+                <p className="text-gold text-xs font-bold">{formatDualPrice(product.price, product.currency).primary}</p>
               </div>
             </div>
 

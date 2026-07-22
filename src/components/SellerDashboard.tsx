@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit3, Trash2, X, Save, Store, Package, LogOut, ShieldAlert, MessageCircle, MessageSquare, CheckCircle, Upload, Image as ImageIcon, Tag, Percent, PackageX } from 'lucide-react';
-import { Product, Seller, Message, COMMISSION_RATE } from '../types';
+import { Product, Seller, Message, COMMISSION_RATE, formatDualPrice } from '../types';
 import { getSellerProducts, addProduct, updateProduct, deleteProduct, getSellerMessages, markMessageRead, replyToMessage, uploadProductImage } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdminAuthenticated, clearAdminAuth } from './AdminGuard';
@@ -232,11 +232,11 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                   <div className="flex items-center gap-2 mt-1">
                     {p.discount && p.discount > 0 ? (
                       <>
-                        <span className="text-gray-500 text-xs line-through">{p.price.toLocaleString()} CDF</span>
-                        <span className="text-gold font-bold text-sm">{(p.price * (1 - p.discount / 100)).toLocaleString()} CDF</span>
+                        <span className="text-gray-500 text-xs line-through">{formatDualPrice(p.price, p.currency).primary}</span>
+                        <span className="text-gold font-bold text-sm">{formatDualPrice(p.price * (1 - p.discount / 100), p.currency).primary}</span>
                       </>
                     ) : (
-                      <p className="text-gold font-bold text-sm">{p.price.toLocaleString()} CDF</p>
+                      <p className="text-gold font-bold text-sm">{formatDualPrice(p.price, p.currency).primary} <span className="text-gray-500">(~{formatDualPrice(p.price, p.currency).secondary})</span></p>
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -288,9 +288,9 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                   <textarea value={editing.description || ''} onChange={e => setEditing({...editing, description: e.target.value})} rows={3} className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Prix (CDF) *</label>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2">
+                    <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Prix ({editing.currency || 'CDF'}) *</label>
                     <input type="number" value={editing.price || ''} onChange={e => setEditing({...editing, price: Number(e.target.value)})} className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none" />
                   </div>
                   <div>
@@ -300,6 +300,14 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                       {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Devise</label>
+                  <select value={editing.currency || 'CDF'} onChange={e => setEditing({...editing, currency: e.target.value})} className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none">
+                    <option value="CDF">CDF (Franc Congolais)</option>
+                    <option value="USD">USD (Dollar)</option>
+                  </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -341,7 +349,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                                 setEditing({...editing, images: newImages, image: newImages[0] || ''});
                               }}
                               className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center text-[10px]"
-                            >&times;</button>
+                            >×</button>
                           </>
                         ) : (
                           <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer text-gray-500">
@@ -382,7 +390,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                     {(editing.sizes || []).map(s => (
                       <span key={s} className="px-3 py-1 bg-gold/10 text-gold text-xs rounded-sm flex items-center gap-1">
                         {s}
-                        <button onClick={() => setEditing({...editing, sizes: (editing.sizes || []).filter(x => x !== s)})} className="text-red-400">&times;</button>
+                        <button onClick={() => setEditing({...editing, sizes: (editing.sizes || []).filter(function(x) { return x !== s })})} className="text-red-400">X</button>
                       </span>
                     ))}
                   </div>
@@ -398,7 +406,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                     {(editing.colors || []).map(c => (
                       <span key={c} className="px-3 py-1 bg-gold/10 text-gold text-xs rounded-sm flex items-center gap-1">
                         {c}
-                        <button onClick={() => setEditing({...editing, colors: (editing.colors || []).filter(x => x !== c)})} className="text-red-400">&times;</button>
+                        <button onClick={() => setEditing({...editing, colors: (editing.colors || []).filter(x => x !== c)})} className="text-red-400">×</button>
                       </span>
                     ))}
                   </div>

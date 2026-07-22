@@ -61,7 +61,17 @@ export interface Transaction {
   screenshotUrl?: string;
 }
 
-export const COMMISSION_RATE = 0.10; // 10%
+export const COMMISSION_RATE = 0.10;
+export const USD_TO_CDF = 2850;
+
+export function formatDualPrice(price: number, currency: string = 'CDF'): { primary: string; secondary: string } {
+  if (currency === 'USD') {
+    const cdf = Math.round(price * USD_TO_CDF);
+    return { primary: `${price.toLocaleString()} USD`, secondary: `${cdf.toLocaleString()} CDF` };
+  }
+  const usd = (price / USD_TO_CDF).toFixed(2);
+  return { primary: `${price.toLocaleString()} CDF`, secondary: `${usd} USD` };
+}
 
 export interface LiveStream {
   id: string;

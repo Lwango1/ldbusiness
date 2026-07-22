@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Plus, Minus, Trash2, ShoppingBag, Tag } from 'lucide-react';
-import { CartItem } from '../types';
+import { CartItem, formatDualPrice } from '../types';
 
 interface CartProps {
   items: CartItem[];
@@ -94,12 +94,15 @@ export default function Cart({ items, isOpen, onClose, onUpdateQuantity, onRemov
                     </div>
                     {item.discount && item.discount > 0 ? (
                       <div>
-                        <p className="text-gray-500 text-xs line-through">{item.price.toLocaleString()} CDF</p>
-                        <p className="text-gold font-bold text-sm">{(item.price * (1 - item.discount / 100)).toLocaleString()} CDF</p>
+                        <p className="text-gray-500 text-xs line-through">{formatDualPrice(item.price, item.currency).primary}</p>
+                        <p className="text-gold font-bold text-sm">{formatDualPrice(item.price * (1 - item.discount / 100), item.currency).primary}</p>
                         <span className="text-[9px] text-red-400">-{item.discount}%</span>
                       </div>
                     ) : (
-                      <p className="text-gold font-bold text-sm mt-1">{item.price.toLocaleString()} CDF</p>
+                      <div>
+                        <p className="text-gold font-bold text-sm mt-1">{formatDualPrice(item.price, item.currency).primary}</p>
+                        <p className="text-gray-500 text-[9px]">(~{formatDualPrice(item.price, item.currency).secondary})</p>
+                      </div>
                     )}
                     {item.promoCode && (
                       <span className="text-[9px] text-blue-400 flex items-center gap-1"><Tag size={10} /> {item.promoCode}</span>

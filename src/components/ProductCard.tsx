@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Eye, ShoppingBag, Store, Tag } from 'lucide-react';
-import { Product, Seller } from '../types';
+import { Product, Seller, formatDualPrice } from '../types';
 import { getSeller } from '../services/database';
 import { Link } from 'react-router-dom';
 
@@ -82,14 +82,20 @@ export default function ProductCard({ product, onView3D, onAddToCart }: ProductC
           )}
           <p className="text-gray-500 text-sm mb-3 line-clamp-2">{product.description}</p>
           <div className="flex items-center justify-between">
-            {product.discount && product.discount > 0 ? (
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500 text-sm line-through">{product.price.toLocaleString()} CDF</span>
-                <span className="text-gold font-bold text-lg">{(product.price * (1 - product.discount / 100)).toLocaleString()} CDF</span>
-              </div>
-            ) : (
-              <span className="text-gold font-bold text-lg">{product.price.toLocaleString()} CDF</span>
-            )}
+            {(() => {
+              const fp = formatDualPrice(product.price, product.currency);
+              return product.discount && product.discount > 0 ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 text-sm line-through">{fp.primary}</span>
+                  <span className="text-gold font-bold text-lg">{formatDualPrice(product.price * (1 - product.discount / 100), product.currency).primary}</span>
+                </div>
+              ) : (
+                <div>
+                  <span className="text-gold font-bold text-lg">{fp.primary}</span>
+                  <span className="text-gray-500 text-xs ml-2">(~{fp.secondary})</span>
+                </div>
+              );
+            })()}
             {product.stock !== undefined && product.stock > 0 && (
               <span className="text-green-500 text-xs flex items-center gap-1">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full" /> {product.stock} en stock

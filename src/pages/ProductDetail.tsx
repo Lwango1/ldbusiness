@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Store, ShieldAlert, MessageCircle, Tag } from 'lucide-react';
-import { Product, Seller } from '../types';
+import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Store, ShieldAlert, MessageCircle, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Product, Seller, formatDualPrice } from '../types';
 import { getProducts, getSeller } from '../services/database';
 import ContactSeller from '../components/ContactSeller';
 
@@ -18,6 +18,13 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
 
+  const imageRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 });
+  const [isHovering, setIsHovering] = useState(false);
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  const images = product?.images?.length ? product.images : (product?.image ? [product.image] : []);
+
   useEffect(() => {
     if (id) {
       setLoading(true);
@@ -31,6 +38,28 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
       });
     }
   }, [id]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!imageRef.current) return;
+    const rect = imageRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateY = ((x - centerX) / centerX) * 15;
+    const rotateX = ((centerY - y) / centerY) * 15;
+    setTilt({ rotateX, rotateY });
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setTilt({ rotateX: 0, rotateY: 0 });
+  };
+
+  const scrollCarousel = (dir: number) => {
+    if (!carouselRef.current) return;
+    carouselRef.current.scrollBy({ left: dir * 200, behavior: 'smooth' });
+  };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-white"><p className="text-gray-500">Chargement...</p></div>;
@@ -55,28 +84,95 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Images du produit */}
+        {/* Images du produit avec effet 3D */}
         <div className="space-y-4">
-          <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-luxury-dark border border-gold/10">
-            <img
-              src={product.images?.[selectedImage] || product.image}
-              alt={product.name}
-              className="w-full h-full object-cover transition-opacity duration-300"
+          <div
+            ref={imageRef}
+            onMouseMove={handleMouseMove}
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={handleMouseLeave}
+            className="relative aspect-[3/4] overflow-hidden rounded-sm bg-luxury-dark border border-gold/10 group"
+            style={{
+              perspective: '1200px',
+            }}
+          >
+            <div
+              className="w-full h-full transition-transform duration-200 ease-out"
+              style={{
+                transform: isHovering
+                  ? `perspective(1200px) rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg) scale3d(1.02, 1.02, 1.02)`
+                  : 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
+              }}
+            >
+              <img
+                src={images[selectedImage]}
+                alt={product.name}
+                className="w-full h-full object-cover transition-opacity duration-500"
+              />
+            </div>
+            <div
+              className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+              style={{
+                opacity: isHovering ? 1 : 0,
+                background: isHovering
+                  ? `radial-gradient(circle at ${50 + tilt.rotateY}% ${50 - tilt.rotateX}%, rgba(212, 175, 55, 0.08) 0%, transparent 60%)`
+                  : 'transparent',
+              }}
             />
           </div>
-          {(product.images?.length || 0) > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {product.images?.map((img, i) => (
+
+          {/* Carrousel 3D des miniatures */}
+          {images.length > 1 && (
+            <div className="relative">
+              {images.length > 4 && (
                 <button
-                  key={i}
-                  onClick={() => setSelectedImage(i)}
-                  className={`w-16 h-16 shrink-0 rounded-sm border-2 overflow-hidden transition-all ${
-                    selectedImage === i ? 'border-gold opacity-100' : 'border-transparent opacity-50 hover:opacity-80'
-                  }`}
+                  onClick={() => scrollCarousel(-1)}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-black/60 border border-gold/20 rounded-full flex items-center justify-center text-gold hover:bg-gold/20 transition-all"
                 >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
+                  <ChevronLeft size={14} />
                 </button>
-              ))}
+              )}
+              <div
+                ref={carouselRef}
+                className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 px-2"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedImage(i)}
+                    className="group/thumb shrink-0"
+                    style={{
+                      perspective: '800px',
+                    }}
+                  >
+                    <div
+                      className="w-16 h-16 rounded-sm overflow-hidden border-2 transition-all duration-300"
+                      style={{
+                        borderColor: selectedImage === i ? 'rgb(212, 175, 55)' : 'rgba(212, 175, 55, 0.1)',
+                        transform: selectedImage === i
+                          ? 'perspective(800px) rotateY(-5deg) scale(1.1)'
+                          : 'perspective(800px) rotateY(0deg) scale(1)',
+                        opacity: selectedImage === i ? 1 : 0.5,
+                      }}
+                    >
+                      <img
+                        src={img}
+                        alt=""
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover/thumb:scale-110"
+                      />
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {images.length > 4 && (
+                <button
+                  onClick={() => scrollCarousel(1)}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-black/60 border border-gold/20 rounded-full flex items-center justify-center text-gold hover:bg-gold/20 transition-all"
+                >
+                  <ChevronRight size={14} />
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -94,12 +190,15 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
             <div className="flex items-center gap-3 mt-4">
               {product.discount && product.discount > 0 ? (
                 <>
-                  <span className="text-gray-500 text-xl line-through">{product.price.toLocaleString()} CDF</span>
-                  <span className="text-2xl text-gold font-bold">{(product.price * (1 - product.discount / 100)).toLocaleString()} CDF</span>
+                  <span className="text-gray-500 text-xl line-through">{formatDualPrice(product.price, product.currency).primary}</span>
+                  <span className="text-2xl text-gold font-bold">{formatDualPrice(product.price * (1 - product.discount / 100), product.currency).primary}</span>
                   <span className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-sm">-{product.discount}%</span>
                 </>
               ) : (
-                <p className="text-2xl text-gold font-bold">{product.price.toLocaleString()} CDF</p>
+                <div>
+                  <p className="text-2xl text-gold font-bold">{formatDualPrice(product.price, product.currency).primary}</p>
+                  <p className="text-gray-500 text-sm">(~{formatDualPrice(product.price, product.currency).secondary})</p>
+                </div>
               )}
             </div>
             {product.stock !== undefined && (
@@ -139,7 +238,6 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
             <ShoppingBag size={20} /> Ajouter au Panier
           </button>
 
-          {/* Sécurisé LDBusiness */}
           <div className="flex items-center gap-2 justify-center text-[10px] text-gold/50 uppercase tracking-widest pt-2">
             <ShieldAlert size={12} />
             <span>Achat sécurisé • Transaction via LDBusiness uniquement</span>
@@ -148,7 +246,6 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
             Toute transaction en dehors de la plateforme est interdite et non garantie
           </p>
 
-          {/* Contacter le vendeur */}
           {seller && (
             <button
               onClick={() => setShowContact(true)}
