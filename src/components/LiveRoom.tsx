@@ -427,9 +427,9 @@ export default function LiveRoom() {
 
       {/* Chat Modal */}
       {showChat && (
-        <div className="fixed inset-0 z-50 flex">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowChat(false)} />
-          <div className="relative ml-auto w-full max-w-sm h-full bg-luxury-dark border-l border-gold/20 flex flex-col shadow-2xl">
+          <div className="relative w-full max-w-sm bg-luxury-dark border border-gold/20 flex flex-col shadow-2xl md:rounded-xl md:max-h-[80vh] h-[85dvh] md:h-auto">
             <div className="p-4 bg-luxury-light border-b border-gold/10 shrink-0">
               <div className="flex items-center justify-between mb-3">
                 <button onClick={() => setShowChat(false)} className="text-gray-500 hover:text-white">
