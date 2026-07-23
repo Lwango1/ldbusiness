@@ -17,6 +17,8 @@ export default function LiveRoom() {
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
+  const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<{ user: string; text: string; time: string; isHost?: boolean }[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -46,11 +48,51 @@ export default function LiveRoom() {
   useEffect(() => {
     if (!live) return;
     let cancelled = false;
+    setError('');
+
+    const attachVideo = (track: RemoteTrack, el: HTMLVideoElement | null) => {
+      if (track.kind === 'video' && el) {
+        track.attach(el);
+        setHasRemoteVideo(true);
+      }
+    };
+
     (async () => {
       try {
         const token = await getLiveKitToken(live.roomName, identity, user?.id === live.hostId);
         await room.connect(LIVEKIT_URL, token);
         if (cancelled) { room.disconnect(); return; }
+
+        // Check for already-subscribed remote tracks (viewer joining after host)
+        room.remoteParticipants.forEach(participant => {
+          participant.trackPublications.forEach(pub => {
+            if (pub.track && pub.kind === 'video' && participant.identity !== room.localParticipant.identity) {
+              attachVideo(pub.track as RemoteTrack, hostVideoRef.current);
+            }
+          });
+        });
+
+        // Listen for new remote tracks
+        room.on('trackSubscribed', (track: RemoteTrack, _publication: any, participant: Participant) => {
+          if (participant.identity !== room.localParticipant.identity) {
+            attachVideo(track, hostVideoRef.current);
+          }
+        });
+
+        room.on('trackUnsubscribed', (track: RemoteTrack) => {
+          if (track.kind === 'video') {
+            track.detach();
+            setHasRemoteVideo(false);
+          }
+        });
+
+        room.on('participantConnected', (participant: Participant) => {
+          participant.trackPublications.forEach(pub => {
+            if (pub.track && pub.kind === 'video' && participant.identity !== room.localParticipant.identity) {
+              attachVideo(pub.track as RemoteTrack, hostVideoRef.current);
+            }
+          });
+        });
 
         if (user?.id === live.hostId) {
           const videoTrack = await createLocalVideoTrack({ facingMode: 'user', resolution: { width: 1280, height: 720 } });
@@ -62,21 +104,12 @@ export default function LiveRoom() {
             videoTrack.attach(localVideoRef.current);
           }
         }
-
-        room.on('trackSubscribed', (track: RemoteTrack, _publication: any, participant: Participant) => {
-          if (track.kind === 'video' && hostVideoRef.current && participant.identity !== identity) {
-            track.attach(hostVideoRef.current);
-          }
-        });
-
-        room.on('trackUnsubscribed', (track: RemoteTrack) => {
-          track.detach();
-        });
-      } catch (err) {
+      } catch (err: any) {
         console.error('LiveKit connection error:', err);
+        setError(err.message || 'Erreur de connexion au live');
       }
     })();
-    return () => { room.disconnect(); };
+    return () => { room.disconnect(); setHasRemoteVideo(false); };
   }, [live]);
 
   const chatPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -192,16 +225,19 @@ export default function LiveRoom() {
                 </>
               ) : (
                 <>
-                  <video ref={hostVideoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover" />
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="text-center">
-                      <div className="w-20 h-20 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-4">
-                        <Radio size={36} className="text-gold" />
+                  <video ref={hostVideoRef} autoPlay playsInline className={`absolute inset-0 w-full h-full object-cover ${hasRemoteVideo ? '' : 'hidden'}`} />
+                  {!hasRemoteVideo && (
+                    <div className="absolute inset-0 bg-black flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-20 h-20 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-4">
+                          <Radio size={36} className="text-gold" />
+                        </div>
+                        <p className="text-gold font-playfair text-lg">En direct</p>
+                        <p className="text-gray-500 text-xs mt-1">{live.hostName}</p>
+                        {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
                       </div>
-                      <p className="text-gold font-playfair text-lg">En direct</p>
-                      <p className="text-gray-500 text-xs mt-1">{live.hostName}</p>
                     </div>
-                  </div>
+                  )}
                 </>
               )}
 
