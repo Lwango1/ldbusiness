@@ -28,6 +28,8 @@ export default function LiveRoom() {
   const [chatMessages, setChatMessages] = useState<{ user: string; text: string; time: string; isHost?: boolean }[]>([]);
   const [participants, setParticipants] = useState<{ identity: string; name: string; isHost: boolean }[]>([]);
   const [chatTab, setChatTab] = useState<'messages' | 'participants'>('messages');
+  const [confirmEnd, setConfirmEnd] = useState(false);
+  const [endingLive, setEndingLive] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
   const hostVideoRef = useRef<HTMLVideoElement>(null);
@@ -294,9 +296,22 @@ export default function LiveRoom() {
     }
   }, [isScreenSharing, room, startCamera]);
 
+  // Warn before leaving page while live
+  useEffect(() => {
+    if (!isHost) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isHost]);
+
   const handleStopLive = useCallback(async () => {
+    setEndingLive(true);
+    try {
+      if (live) await stopLive(live.id);
+    } catch (err) {
+      console.error('Failed to stop live in DB:', err);
+    }
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    if (live) await stopLive(live.id);
     room.disconnect();
     navigate('/live');
   }, [live, room, navigate]);
@@ -398,28 +413,32 @@ export default function LiveRoom() {
         {live.description && <p className="text-gray-500 text-xs mb-4 line-clamp-2">{live.description}</p>}
 
         <div className="flex items-center gap-3">
-          {isHost && cameraStarted && (
-            <div className="flex gap-2">
-              <button onClick={toggleCamera} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isCameraOn ? 'bg-white/10 border-white/20' : 'bg-red-600/80 border-red-400'} text-white`}>
-                {isCameraOn ? <Video size={16} /> : <VideoOff size={16} />}
-              </button>
-              {isCameraOn && (
-                <button onClick={flipCamera} className="p-3 rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all">
-                  <RefreshCw size={16} />
-                </button>
+          {isHost && (
+            <>
+              {cameraStarted && (
+                <div className="flex gap-2">
+                  <button onClick={toggleCamera} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isCameraOn ? 'bg-white/10 border-white/20' : 'bg-red-600/80 border-red-400'} text-white`}>
+                    {isCameraOn ? <Video size={16} /> : <VideoOff size={16} />}
+                  </button>
+                  {isCameraOn && (
+                    <button onClick={flipCamera} className="p-3 rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all">
+                      <RefreshCw size={16} />
+                    </button>
+                  )}
+                  <button onClick={toggleMic} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isMicOn ? 'bg-white/10 border-white/20' : 'bg-red-600/80 border-red-400'} text-white`}>
+                    {isMicOn ? <Mic size={16} /> : <MicOff size={16} />}
+                  </button>
+                  <button onClick={toggleScreenShare} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isScreenSharing ? 'bg-gold text-black' : 'bg-white/10 border-white/20 text-white'}`}>
+                    <ScreenShare size={16} />
+                  </button>
+                </div>
               )}
-              <button onClick={toggleMic} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isMicOn ? 'bg-white/10 border-white/20' : 'bg-red-600/80 border-red-400'} text-white`}>
-                {isMicOn ? <Mic size={16} /> : <MicOff size={16} />}
-              </button>
-              <button onClick={toggleScreenShare} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isScreenSharing ? 'bg-gold text-black' : 'bg-white/10 border-white/20 text-white'}`}>
-                <ScreenShare size={16} />
-              </button>
-              <button onClick={handleStopLive} className="px-4 py-3 bg-white/90 text-black font-bold text-[10px] rounded-full uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all whitespace-nowrap">
+              <button onClick={() => setConfirmEnd(true)} className={`px-4 py-3 font-bold text-[10px] rounded-full uppercase tracking-widest transition-all whitespace-nowrap ${cameraStarted ? 'bg-white/90 text-black hover:bg-red-500 hover:text-white' : 'bg-red-600/80 text-white border border-red-400'}`}>
                 Terminer
               </button>
-            </div>
+            </>
           )}
-          <button onClick={() => setShowChat(true)} className={`ml-auto p-3 bg-gold text-black rounded-full shadow-lg ${!isHost || cameraStarted ? '' : 'hidden'}`}>
+          <button onClick={() => setShowChat(true)} className="ml-auto p-3 bg-gold text-black rounded-full shadow-lg">
             <MessageCircle size={18} />
           </button>
           {!isHost && (
@@ -429,6 +448,33 @@ export default function LiveRoom() {
           )}
         </div>
       </div>
+
+      {/* Confirmation modal */}
+      {confirmEnd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => !endingLive && setConfirmEnd(false)} />
+          <div className="relative bg-luxury-dark border border-red-500/30 rounded-xl p-6 w-full max-w-sm mx-4 shadow-2xl text-center">
+            <p className="text-white font-bold text-lg mb-2">Terminer le live ?</p>
+            <p className="text-gray-400 text-sm mb-6">Le direct sera arrêté pour tous les spectateurs.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmEnd(false)}
+                disabled={endingLive}
+                className="flex-1 py-3 bg-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-white/20 transition-all disabled:opacity-30"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleStopLive}
+                disabled={endingLive}
+                className="flex-1 py-3 bg-red-600 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-red-700 transition-all disabled:opacity-30 flex items-center justify-center gap-2"
+              >
+                {endingLive ? <><Loader size={16} className="animate-spin" /> Arrêt...</> : 'Terminer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Chat Modal */}
       {showChat && (
