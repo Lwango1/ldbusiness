@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Store, Shield } from 'lucide-react';
 import { getSeller } from '../services/database';
+import { supabase } from '../lib/supabase';
 import SellerRegistration from '../components/SellerRegistration';
 import SellerDashboard from '../components/SellerDashboard';
 import AuthModal from '../components/AuthModal';
@@ -13,11 +14,22 @@ export default function SellerPage() {
   const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      getSeller(user.id).then(s => { setSeller(s); setLoading(false); });
-    } else {
-      setLoading(false);
-    }
+    if (!user) { setLoading(false); return; }
+    let cancelled = false;
+    (async () => {
+      let s = await getSeller(user.id);
+      if (!s) {
+        await supabase.from('profiles').upsert({
+          id: user.id,
+          full_name: user.user_metadata?.full_name || '',
+          phone: user.user_metadata?.phone || '',
+          role: user.user_metadata?.role || 'buyer',
+        }, { onConflict: 'id' });
+        s = await getSeller(user.id);
+      }
+      if (!cancelled) { setSeller(s); setLoading(false); }
+    })();
+    return () => { cancelled = true; };
   }, [user]);
 
   const handleAuthSuccess = () => {

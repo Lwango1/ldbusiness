@@ -18,6 +18,17 @@ export async function signUp(phone: string, password: string, fullName: string, 
     },
   });
   if (error) throw error;
+
+  if (data.user) {
+    const { error: profileError } = await supabase.from('profiles').upsert({
+      id: data.user.id,
+      full_name: fullName,
+      phone,
+      role,
+    }, { onConflict: 'id' });
+    if (profileError) console.error('Profile creation error:', profileError.message);
+  }
+
   return data;
 }
 
