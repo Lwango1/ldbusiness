@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingBag, User, LogOut, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { getActiveLives } from '../services/database';
 
 const DRAWER_WIDTH = 280;
 
@@ -12,6 +14,17 @@ interface MobileDrawerProps {
 export default function MobileDrawer({ onClose, onOpenAuth }: MobileDrawerProps) {
   const { user, isAuthenticated, role, signOut } = useAuth();
   const location = useLocation();
+  const [hasActiveLive, setHasActiveLive] = useState(false);
+
+  useEffect(() => {
+    const check = async () => {
+      const lives = await getActiveLives();
+      setHasActiveLive(lives.length > 0);
+    };
+    check();
+    const interval = setInterval(check, 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   const navItems = [
     { label: 'Accueil', path: '/' },
@@ -49,6 +62,12 @@ export default function MobileDrawer({ onClose, onOpenAuth }: MobileDrawerProps)
             }`}
           >
             {item.label}
+            {item.path === '/live' && hasActiveLive && (
+              <span className="ml-2 inline-flex items-center gap-1 bg-red-600 px-1.5 py-0.5 rounded-sm">
+                <span className="w-1 h-1 bg-white rounded-full animate-ping" />
+                <span className="text-white text-[8px] font-black">LIVE</span>
+              </span>
+            )}
           </Link>
         ))}
       </div>
