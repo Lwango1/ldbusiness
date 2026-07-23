@@ -198,7 +198,7 @@ export default function LiveRoom() {
         if (localVideoRef.current) localVideoRef.current.srcObject = screenStream;
 
         room.localParticipant.getTrackPublications().forEach(pub => {
-          if (pub.track?.kind === 'video') room.localParticipant.unpublishTrack(pub.track);
+          if (pub.track?.kind === 'video' && pub.track?.mediaStreamTrack) room.localParticipant.unpublishTrack(pub.track.mediaStreamTrack);
         });
         await room.localParticipant.publishTrack(screenTrack, { name: 'screenshare' });
         setIsScreenSharing(true);

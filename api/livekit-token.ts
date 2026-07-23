@@ -1,4 +1,4 @@
-import { AccessToken } from 'livekit-server-sdk';
+import jwt from 'jsonwebtoken';
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
@@ -18,17 +18,22 @@ export default async function handler(req: any, res: any) {
     return res.status(500).json({ error: 'Server misconfigured' });
   }
 
-  const token = new AccessToken(apiKey, apiSecret, {
-    identity,
-    ttl: '1h',
-  });
+  const now = Math.floor(Date.now() / 1000);
 
-  token.addGrant({
-    roomJoin: true,
-    room: roomName,
-    canPublish: !!canPublish,
-    canSubscribe: true,
-  });
+  const payload = {
+    iss: apiKey,
+    iat: now,
+    exp: now + 3600,
+    sub: identity,
+    video: {
+      room: roomName,
+      roomJoin: true,
+      canPublish: !!canPublish,
+      canSubscribe: true,
+    },
+  };
 
-  res.status(200).json({ token: token.toJwt() });
+  const token = jwt.sign(payload, apiSecret, { algorithm: 'HS256' });
+
+  res.status(200).json({ token });
 }
