@@ -101,6 +101,9 @@ export default function LiveRoom() {
             }
           });
         });
+
+        // Unlock audio on mobile
+        try { room.startAudio(); } catch (_) {} 
       } catch (err: any) {
         console.error('LiveKit connection error:', err);
         setError(err.message || 'Erreur de connexion au live');
@@ -168,9 +171,10 @@ export default function LiveRoom() {
 
   const toggleCamera = useCallback(async () => {
     if (isCameraOn) {
-      if (streamRef.current) {
-        streamRef.current.getVideoTracks().forEach(t => t.stop());
-      }
+      room.localParticipant.getTrackPublications().forEach(pub => {
+        if (pub.track?.kind === 'video' && pub.track?.mediaStreamTrack) room.localParticipant.unpublishTrack(pub.track.mediaStreamTrack);
+      });
+      if (streamRef.current) streamRef.current.getVideoTracks().forEach(t => t.stop());
       setIsCameraOn(false);
     } else {
       try {
@@ -196,9 +200,10 @@ export default function LiveRoom() {
 
   const toggleMic = useCallback(async () => {
     if (isMicOn) {
-      if (streamRef.current) {
-        streamRef.current.getAudioTracks().forEach(t => t.stop());
-      }
+      room.localParticipant.getTrackPublications().forEach(pub => {
+        if (pub.track?.kind === 'audio' && pub.track?.mediaStreamTrack) room.localParticipant.unpublishTrack(pub.track.mediaStreamTrack);
+      });
+      if (streamRef.current) streamRef.current.getAudioTracks().forEach(t => t.stop());
       setIsMicOn(false);
     } else {
       try {
