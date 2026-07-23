@@ -22,10 +22,16 @@ export default function LiveSection() {
 
   const categories = ['Mode', 'Artisanat', 'Défilé', 'Questions/Réponses', 'Événement', 'Automobile', 'Électronique', 'Électroménager', 'Maison', 'Autre'];
 
-  const handleStartLive = async () => {
-    if (!form.title || !user) return;
-    setStarting(true);
+  const handleStartLive = async (e?: React.MouseEvent | React.TouchEvent) => {
+    e?.preventDefault();
     setStartError('');
+    if (starting) return;
+    if (!form.title) return;
+    if (!user) {
+      setStartError('Vous devez être connecté pour lancer un live');
+      return;
+    }
+    setStarting(true);
     try {
       const hostName = user.user_metadata?.full_name || 'LDBusiness';
       const live = await startLive({
@@ -174,7 +180,7 @@ export default function LiveSection() {
 
                 {startError && <p className="text-red-500 text-xs text-center">{startError}</p>}
 
-                <button onClick={handleStartLive} disabled={!form.title || starting} className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-2">
+                <button type="button" onClick={handleStartLive} disabled={!form.title || starting} className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-2 cursor-pointer select-none touch-manipulation">
                   {starting ? <><Loader size={16} className="animate-spin" /> Démarrage...</> : <><Play size={16} /> Démarrer le live</>}
                 </button>
               </div>
