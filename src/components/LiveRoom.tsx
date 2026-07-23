@@ -317,11 +317,15 @@ export default function LiveRoom() {
   }, [live, room, navigate]);
 
   const handleSendMessage = async () => {
-    if (message.trim() && live && user) {
-      await sendLiveChatMessage(live.id, user.user_metadata?.full_name || 'Anonyme', message, isHost);
+    if (!message.trim() || !live) return;
+    const senderName = user?.user_metadata?.full_name || (identity === live.hostId ? live.hostName : 'Visiteur');
+    try {
+      await sendLiveChatMessage(live.id, senderName, message, !!(user && isHost));
       const msgs = await getLiveChatMessages(live.id);
       setChatMessages(msgs);
       setMessage('');
+    } catch (err) {
+      console.error('sendMessage error:', err);
     }
   };
 
@@ -545,24 +549,22 @@ export default function LiveRoom() {
               </div>
             )}
 
-            {user && (
-              <div className="p-4 bg-luxury-light/50 border-t border-gold/10 shrink-0">
-                <div className="flex gap-2 bg-black/40 p-1 rounded-full border border-gold/10">
-                  <input
-                    ref={chatInputRef}
-                    type="text"
-                    placeholder="Écrivez un message..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-1 px-4 py-2 bg-transparent text-white text-sm outline-none min-w-0"
-                  />
-                  <button onClick={handleSendMessage} className="p-2.5 bg-gold text-black rounded-full hover:scale-105 transition-transform shrink-0">
-                    <Send size={14} />
-                  </button>
-                </div>
+            <div className="p-4 bg-luxury-light/50 border-t border-gold/10 shrink-0">
+              <div className="flex gap-2 bg-black/40 p-1 rounded-full border border-gold/10">
+                <input
+                  ref={chatInputRef}
+                  type="text"
+                  placeholder="Écrivez un message..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                  className="flex-1 px-4 py-2 bg-transparent text-white text-sm outline-none min-w-0"
+                />
+                <button onClick={handleSendMessage} className="p-2.5 bg-gold text-black rounded-full hover:scale-105 transition-transform shrink-0">
+                  <Send size={14} />
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
