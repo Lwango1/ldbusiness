@@ -131,9 +131,9 @@ export default function LiveSection() {
 
         {/* Form Lancement Live */}
         {showForm && (
-          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
-            <div className="fixed inset-0 bg-black/90 backdrop-blur-md" onClick={() => setShowForm(false)} />
-            <div className="relative bg-luxury-dark border border-gold/20 rounded-xl p-8 max-w-md w-full shadow-2xl">
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-md" />
+            <div className="relative bg-luxury-dark border border-gold/20 rounded-xl p-8 max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
               <button onClick={() => setShowForm(false)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white">
                 <X size={20} />
               </button>
