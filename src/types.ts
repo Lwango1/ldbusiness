@@ -77,6 +77,7 @@ export function formatDualPrice(price: number | null | undefined, currency: stri
 
 export interface LiveStream {
   id: string;
+  hostId: string;
   hostName: string;
   title: string;
   description: string;
@@ -84,6 +85,7 @@ export interface LiveStream {
   isLive: boolean;
   createdAt: string;
   category: string;
+  roomName: string;
   hostAvatar?: string;
 }
 

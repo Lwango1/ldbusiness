@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Radio, Users, Eye, Play, Plus, X, Clock, Tag } from 'lucide-react';
+import { Radio, Eye, Play, X, Clock } from 'lucide-react';
 import { LiveStream } from '../types';
 import { getActiveLives, startLive } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';

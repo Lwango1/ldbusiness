@@ -385,6 +385,7 @@ export async function getActiveLives(): Promise<LiveStream[]> {
   const { data } = await supabase.from('lives').select('*').eq('is_live', true).order('created_at', { ascending: false });
   return (data || []).map(l => ({
     id: l.id,
+    hostId: l.host_id,
     hostName: l.host_name,
     title: l.title,
     description: l.description || '',
@@ -392,6 +393,7 @@ export async function getActiveLives(): Promise<LiveStream[]> {
     isLive: l.is_live,
     createdAt: l.created_at,
     category: l.category || 'Mode',
+    roomName: l.room_name || '',
   }));
 }
 
@@ -399,6 +401,7 @@ export async function getAllLives(): Promise<LiveStream[]> {
   const { data } = await supabase.from('lives').select('*').order('created_at', { ascending: false });
   return (data || []).map(l => ({
     id: l.id,
+    hostId: l.host_id,
     hostName: l.host_name,
     title: l.title,
     description: l.description || '',
@@ -406,6 +409,7 @@ export async function getAllLives(): Promise<LiveStream[]> {
     isLive: l.is_live,
     createdAt: l.created_at,
     category: l.category || 'Mode',
+    roomName: l.room_name || '',
   }));
 }
 
@@ -414,6 +418,7 @@ export async function getLiveById(id: string): Promise<LiveStream | null> {
   if (!data) return null;
   return {
     id: data.id,
+    hostId: data.host_id,
     hostName: data.host_name,
     title: data.title,
     description: data.description || '',
@@ -421,6 +426,7 @@ export async function getLiveById(id: string): Promise<LiveStream | null> {
     isLive: data.is_live,
     createdAt: data.created_at,
     category: data.category || 'Mode',
+    roomName: data.room_name || '',
   };
 }
 
@@ -442,6 +448,7 @@ export async function startLive(data: { hostId: string; hostName: string; title:
   }).select().single();
   return live ? {
     id: live.id,
+    hostId: live.host_id,
     hostName: live.host_name,
     title: live.title,
     description: live.description || '',
@@ -449,6 +456,7 @@ export async function startLive(data: { hostId: string; hostName: string; title:
     isLive: live.is_live,
     createdAt: live.created_at,
     category: live.category,
+    roomName: live.room_name || '',
   } : null;
 }
 
