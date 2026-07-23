@@ -445,6 +445,7 @@ export async function startLive(data: { hostId: string; hostName: string; title:
     description: data.description,
     category: data.category,
     room_name: `room_${Date.now()}`,
+    is_live: true,
   }).select().single();
   return live ? {
     id: live.id,

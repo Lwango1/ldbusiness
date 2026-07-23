@@ -21,13 +21,18 @@ export default function Navbar({ cartCount, onCartClick, isMobileMenuOpen, onMob
   const [hasActiveLive, setHasActiveLive] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const check = async () => {
-      const lives = await getActiveLives();
-      setHasActiveLive(lives.length > 0);
+      try {
+        const lives = await getActiveLives();
+        if (!cancelled) setHasActiveLive(lives.length > 0);
+      } catch (err) {
+        console.error('Live check error:', err);
+      }
     };
     check();
-    const interval = setInterval(check, 15000);
-    return () => clearInterval(interval);
+    const interval = setInterval(check, 8000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
   useEffect(() => {
