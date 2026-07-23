@@ -23,6 +23,7 @@ import SellerPage from './pages/SellerPage';
 import AdminPage from './pages/AdminPage';
 import OrdersPage from './pages/OrdersPage';
 import AdPage from './pages/AdPage';
+import SubscriptionPage from './pages/SubscriptionPage';
 import LiveRoom from './components/LiveRoom';
 
 const DRAWER_WIDTH = 280;
@@ -116,6 +117,7 @@ export default function App() {
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/mes-commandes" element={<OrdersPage />} />
               <Route path="/publicite" element={<AdPage />} />
+              <Route path="/abonnement" element={<SubscriptionPage />} />
             </Routes>
           </main>
 

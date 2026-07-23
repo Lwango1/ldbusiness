@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Radio, Eye, Play, X, Clock, ArrowRight, Loader } from 'lucide-react';
+import { Radio, Eye, Play, X, Clock, ArrowRight, Loader, Crown } from 'lucide-react';
 import { LiveStream } from '../types';
-import { getActiveLives, startLive } from '../services/database';
+import { getActiveLives, startLive, getActiveSubscription } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function LiveSection() {
@@ -13,6 +13,7 @@ export default function LiveSection() {
   const [form, setForm] = useState({ title: '', description: '', category: 'Mode' });
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState('');
+  const [showSubscribe, setShowSubscribe] = useState(false);
 
   useEffect(() => {
     getActiveLives().then(setLives);
@@ -67,7 +68,12 @@ export default function LiveSection() {
         {/* Lancez votre live */}
         <div className="text-center mb-12">
           <button
-            onClick={() => setShowForm(true)}
+            onClick={async () => {
+              if (!user) { setStartError('Vous devez être connecté'); return; }
+              const sub = await getActiveSubscription(user.id);
+              if (!sub) { setShowSubscribe(true); return; }
+              setShowForm(true);
+            }}
             className="px-8 py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all inline-flex items-center gap-2"
           >
             <Radio size={18} /> Lancer mon Live
@@ -132,6 +138,27 @@ export default function LiveSection() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {showSubscribe && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4" onClick={() => setShowSubscribe(false)}>
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-md" />
+            <div className="relative bg-luxury-dark border border-gold/20 rounded-xl p-8 max-w-md w-full shadow-2xl text-center" onClick={e => e.stopPropagation()}>
+              <Crown size={40} className="text-gold mx-auto mb-4" />
+              <h3 className="text-white font-playfair text-xl font-bold mb-2">Abonnement requis</h3>
+              <p className="text-gray-400 text-sm mb-6">
+                Vous devez être membre abonné pour lancer un live. Frais de maintenance à partir de 3$/mois.
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowSubscribe(false)} className="flex-1 py-3 bg-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-white/20 transition-all">
+                  Plus tard
+                </button>
+                <button onClick={() => navigate('/abonnement')} className="flex-1 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-gold-light transition-all">
+                  S'abonner
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

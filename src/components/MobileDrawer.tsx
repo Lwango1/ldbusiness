@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingBag, User, LogOut, X } from 'lucide-react';
+import { Crown, ShoppingBag, User, LogOut, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getActiveLives } from '../services/database';
 
@@ -38,6 +38,7 @@ export default function MobileDrawer({ onClose, onOpenAuth }: MobileDrawerProps)
     { label: 'Live', path: '/live' },
     { label: 'Contact', path: '/contact' },
     { label: 'Vendre', path: '/vendre' },
+    { label: 'Abonnement', path: '/abonnement' },
     ...(isAuthenticated ? [{ label: 'Mes Commandes', path: '/mes-commandes' }] : []),
     ...(role === 'admin' ? [{ label: 'Admin', path: '/admin' }] : []),
   ];

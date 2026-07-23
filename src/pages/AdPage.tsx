@@ -1,9 +1,22 @@
 import { useState } from 'react';
-import { Megaphone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Megaphone, Crown, X } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { getActiveSubscription } from '../services/database';
 import AdForm from '../components/AdForm';
 
 export default function AdPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
+  const [showSubscribe, setShowSubscribe] = useState(false);
+
+  const handleRequestAd = async () => {
+    if (!user) return;
+    const sub = await getActiveSubscription(user.id);
+    if (!sub) { setShowSubscribe(true); return; }
+    setShowForm(true);
+  };
 
   return (
     <div className="min-h-screen pt-28 pb-20 px-6 bg-luxury-black">
@@ -39,11 +52,32 @@ export default function AdPage() {
         </div>
 
         <button
-          onClick={() => setShowForm(true)}
+          onClick={handleRequestAd}
           className="px-10 py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all"
         >
           Faire une demande
         </button>
+
+        {showSubscribe && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4" onClick={() => setShowSubscribe(false)}>
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-md" />
+            <div className="relative bg-luxury-dark border border-gold/20 rounded-xl p-8 max-w-md w-full shadow-2xl text-center" onClick={e => e.stopPropagation()}>
+              <Crown size={40} className="text-gold mx-auto mb-4" />
+              <h3 className="text-white font-playfair text-xl font-bold mb-2">Abonnement requis</h3>
+              <p className="text-gray-400 text-sm mb-6">
+                Vous devez être membre abonné pour faire de la publicité. Frais de maintenance à partir de 3$/mois.
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowSubscribe(false)} className="flex-1 py-3 bg-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-white/20 transition-all">
+                  Plus tard
+                </button>
+                <button onClick={() => navigate('/abonnement')} className="flex-1 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-gold-light transition-all">
+                  S'abonner
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showForm && <AdForm onClose={() => setShowForm(false)} />}
       </div>

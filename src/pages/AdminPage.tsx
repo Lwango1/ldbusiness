@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, TrendingUp, ShoppingCart, CheckCircle, Clock, Lock, Users, XCircle, Image as ImageIcon, Hash, Megaphone, ThumbsUp, ThumbsDown, Trash2, ExternalLink } from 'lucide-react';
-import { Transaction, Ad } from '../types';
-import { getTransactions, completeTransaction, cancelTransaction, getTotalCommissions, getPendingCommissions, getAllAdRequests, approveAd, rejectAd, deleteAd } from '../services/database';
+import { DollarSign, TrendingUp, ShoppingCart, CheckCircle, Clock, Lock, Users, XCircle, Image as ImageIcon, Hash, Megaphone, ThumbsUp, ThumbsDown, Trash2, ExternalLink, Crown, Search } from 'lucide-react';
+import { Transaction, Ad, Subscription, SubscriptionPlan } from '../types';
+import { getTransactions, completeTransaction, cancelTransaction, getTotalCommissions, getPendingCommissions, getAllAdRequests, approveAd, rejectAd, deleteAd, getAllSubscriptionRequests, approveSubscription, rejectSubscription } from '../services/database';
 import AdminGuard, { clearAdminAuth } from '../components/AdminGuard';
 
 function AdminDashboard() {
@@ -9,8 +9,10 @@ function AdminDashboard() {
   const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
   const [totalCommissions, setTotalCommissions] = useState(0);
   const [pendingCommissions, setPendingCommissions] = useState(0);
-  const [tab, setTab] = useState<'transactions' | 'ads'>('transactions');
+  const [tab, setTab] = useState<'transactions' | 'ads' | 'subscriptions'>('transactions');
   const [ads, setAds] = useState<Ad[]>([]);
+  const [subscriptions, setSubscriptions] = useState<(Subscription & { user?: { name: string; phone: string } })[]>([]);
+  const [txIdInput, setTxIdInput] = useState<Record<string, string>>({});
   const [showLock, setShowLock] = useState(false);
 
   useEffect(() => {
@@ -73,12 +75,15 @@ function AdminDashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-8 bg-luxury-dark/50 border border-gold/10 rounded-lg p-1 w-fit">
+        <div className="flex gap-1 mb-8 bg-luxury-dark/50 border border-gold/10 rounded-lg p-1 w-fit flex-wrap">
           <button onClick={() => setTab('transactions')} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${tab === 'transactions' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
             Transactions
           </button>
           <button onClick={() => { setTab('ads'); getAllAdRequests().then(setAds); }} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${tab === 'ads' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
             <Megaphone size={14} className="inline mr-2" /> Publicité
+          </button>
+          <button onClick={() => { setTab('subscriptions'); getAllSubscriptionRequests().then(setSubscriptions); }} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${tab === 'subscriptions' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
+            <Crown size={14} className="inline mr-2" /> Abonnements
           </button>
         </div>
 
@@ -129,6 +134,71 @@ function AdminDashboard() {
                               <Trash2 size={12} />
                             </button>
                           </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : tab === 'subscriptions' ? (
+          <div className="bg-luxury-dark border border-gold/10 rounded-xl overflow-hidden">
+            <div className="p-5 border-b border-gold/10 flex items-center justify-between">
+              <h2 className="text-white font-bold text-sm uppercase tracking-widest">Demandes d'Abonnement</h2>
+              <span className="text-gold text-[10px]">{subscriptions.filter(s => s.status === 'pending').length} en attente</span>
+            </div>
+            {subscriptions.length === 0 ? (
+              <div className="p-10 text-center">
+                <Crown size={40} className="mx-auto text-gold/20 mb-3" />
+                <p className="text-gray-500 font-playfair italic">Aucune demande d'abonnement.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gold/5">
+                {subscriptions.map(sub => (
+                  <div key={sub.id} className="p-5">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center shrink-0">
+                        <Crown size={20} className="text-gold" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-white font-bold text-sm">{(sub as any).user?.name || 'Utilisateur'}</h3>
+                          <span className={`px-2 py-0.5 text-[9px] rounded-sm uppercase tracking-widest font-bold ${sub.status === 'active' ? 'bg-green-500/20 text-green-400' : sub.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {sub.status === 'active' ? 'Actif' : sub.status === 'pending' ? 'En attente' : 'Expiré'}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-[10px] text-gray-500">
+                          <span>{sub.amountUsd}$</span>
+                          <span>•</span>
+                          <span>{(sub as any).user?.phone || 'Tél. non renseigné'}</span>
+                          <span>•</span>
+                          <span>Demandé le {new Date(sub.createdAt).toLocaleDateString('fr-FR')}</span>
+                        </div>
+                        {sub.status === 'pending' && (
+                          <div className="flex gap-2 mt-3 items-center flex-wrap">
+                            <input
+                              type="text"
+                              value={txIdInput[sub.id] || ''}
+                              onChange={e => setTxIdInput({...txIdInput, [sub.id]: e.target.value})}
+                              placeholder="ID transaction Airtel Money"
+                              className="px-3 py-1.5 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 text-[10px] outline-none focus:border-gold w-40"
+                            />
+                            <button onClick={async () => {
+                              const txId = txIdInput[sub.id];
+                              if (!txId) return;
+                              await approveSubscription(sub.id, txId);
+                              getAllSubscriptionRequests().then(setSubscriptions);
+                            }} className="px-4 py-1.5 bg-green-600/20 border border-green-500/30 text-green-400 text-[10px] uppercase tracking-widest rounded-sm hover:bg-green-600/30 flex items-center gap-1">
+                              <ThumbsUp size={12} /> Valider
+                            </button>
+                            <button onClick={async () => { await rejectSubscription(sub.id); getAllSubscriptionRequests().then(setSubscriptions); }} className="px-3 py-1.5 border border-red-500/30 text-red-400 text-[10px] rounded-sm hover:bg-red-500/10">
+                              <ThumbsDown size={12} /> Rejeter
+                            </button>
+                          </div>
+                        )}
+                        {sub.status === 'active' && sub.transactionId && (
+                          <p className="text-[10px] text-gray-600 mt-1">Tx: {sub.transactionId}</p>
                         )}
                       </div>
                     </div>

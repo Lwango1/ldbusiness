@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Product, CartItem, Transaction, Message, LiveStream, Seller, Ad, AdZone } from '../types';
+import { Product, CartItem, Transaction, Message, LiveStream, Seller, Ad, AdZone, Subscription, SubscriptionPlan, SubscriptionStatus } from '../types';
 import { UserRole } from './auth';
 
 // =========== STORAGE (UPLOAD IMAGES) ===========
@@ -563,5 +563,76 @@ function mapAd(a: any): Ad {
     impressions: a.impressions || 0,
     clicks: a.clicks || 0,
     createdAt: a.created_at,
+  };
+}
+
+// =========== ABONNEMENTS ===========
+
+export async function createSubscription(userId: string, plan: SubscriptionPlan, amountUsd: number): Promise<Subscription | null> {
+  const endDate = new Date();
+  const monthsMap: Record<SubscriptionPlan, number> = { monthly: 1, quarterly: 3, biannual: 6 };
+  endDate.setMonth(endDate.getMonth() + monthsMap[plan]);
+
+  const { data, error } = await supabase.from('subscriptions').insert({
+    user_id: userId,
+    plan,
+    amount_usd: amountUsd,
+    status: 'pending',
+    end_date: endDate.toISOString(),
+  }).select().single();
+
+  if (error) { console.error('createSubscription error:', error); return null; }
+  return mapSubscription(data);
+}
+
+export async function getMySubscriptions(userId: string): Promise<Subscription[]> {
+  const { data } = await supabase.from('subscriptions').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+  return (data || []).map(mapSubscription);
+}
+
+export async function getActiveSubscription(userId: string): Promise<Subscription | null> {
+  const { data } = await supabase.from('subscriptions').select('*')
+    .eq('user_id', userId).eq('status', 'active')
+    .order('created_at', { ascending: false }).limit(1);
+  if (!data || data.length === 0) return null;
+  const sub = data[0];
+  if (sub.end_date && new Date(sub.end_date) < new Date()) return null;
+  return mapSubscription(sub);
+}
+
+export async function getAllSubscriptionRequests(): Promise<Subscription[]> {
+  const { data } = await supabase.from('subscriptions').select('*, profiles(full_name, phone)').order('created_at', { ascending: false });
+  return (data || []).map((s: any) => ({
+    ...mapSubscription(s),
+    user: s.profiles ? { name: s.profiles.full_name, phone: s.profiles.phone } : undefined,
+  })) as any;
+}
+
+export async function approveSubscription(id: string, transactionId: string): Promise<boolean> {
+  const { error } = await supabase.from('subscriptions').update({
+    status: 'active',
+    transaction_id: transactionId,
+    start_date: new Date().toISOString(),
+  }).eq('id', id);
+  return !error;
+}
+
+export async function rejectSubscription(id: string): Promise<boolean> {
+  const { error } = await supabase.from('subscriptions').update({ status: 'cancelled' }).eq('id', id);
+  return !error;
+}
+
+function mapSubscription(s: any): Subscription {
+  return {
+    id: s.id,
+    userId: s.user_id,
+    plan: s.plan,
+    amountUsd: s.amount_usd,
+    paymentMethod: s.payment_method,
+    transactionId: s.transaction_id,
+    status: s.status,
+    startDate: s.start_date,
+    endDate: s.end_date,
+    createdAt: s.created_at,
   };
 }

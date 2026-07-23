@@ -89,6 +89,28 @@ export interface LiveStream {
   hostAvatar?: string;
 }
 
+export type SubscriptionPlan = 'monthly' | 'quarterly' | 'biannual';
+export type SubscriptionStatus = 'pending' | 'active' | 'expired' | 'cancelled';
+
+export interface Subscription {
+  id: string;
+  userId: string;
+  plan: SubscriptionPlan;
+  amountUsd: number;
+  paymentMethod: string;
+  transactionId?: string;
+  status: SubscriptionStatus;
+  startDate?: string;
+  endDate?: string;
+  createdAt: string;
+}
+
+export const SUBSCRIPTION_PRICES: Record<SubscriptionPlan, { label: string; price: number; months: number }> = {
+  monthly: { label: '1 Mois', price: 3, months: 1 },
+  quarterly: { label: '3 Mois', price: 5, months: 3 },
+  biannual: { label: '6 Mois', price: 8, months: 6 },
+};
+
 export type AdZone = 'hero' | 'between_products' | 'popup' | 'sidebar';
 export type AdFrequency = 'hourly' | 'daily_5' | 'daily_10' | 'daily_20';
 export type AdStatus = 'pending' | 'approved' | 'rejected' | 'expired';
