@@ -2,10 +2,15 @@ import { supabase } from '../lib/supabase';
 
 export type UserRole = 'buyer' | 'seller' | 'admin';
 
-// Convertit un numéro de téléphone en email technique pour Supabase
 function phoneToEmail(phone: string): string {
   const clean = phone.replace(/[^0-9+]/g, '');
   return `${clean.replace('+', '00')}@ldbusiness.app`;
+}
+
+function createEndDate(months: number): string {
+  const date = new Date();
+  date.setMonth(date.getMonth() + months);
+  return date.toISOString();
 }
 
 export async function signUp(phone: string, password: string, fullName: string, role: UserRole = 'buyer') {
@@ -27,6 +32,18 @@ export async function signUp(phone: string, password: string, fullName: string, 
       role,
     }, { onConflict: 'id' });
     if (profileError) console.error('Profile creation error:', profileError.message);
+
+    // Offrir 1 mois gratuit
+    const { error: subError } = await supabase.from('subscriptions').insert({
+      user_id: data.user.id,
+      plan: 'monthly',
+      amount_usd: 0,
+      payment_method: 'free',
+      status: 'active',
+      start_date: new Date().toISOString(),
+      end_date: createEndDate(1),
+    });
+    if (subError) console.error('Free subscription error:', subError.message);
   }
 
   return data;

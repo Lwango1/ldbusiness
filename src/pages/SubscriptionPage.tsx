@@ -82,6 +82,9 @@ export default function SubscriptionPage() {
           <p className="text-gray-500 text-sm max-w-xl mx-auto">
             Accédez au live streaming et à la publicité. Frais de maintenance de la plateforme.
           </p>
+          <div className="mt-4 inline-block bg-gold/10 border border-gold/20 rounded-full px-5 py-2">
+            <span className="text-gold text-xs font-bold">🎁 1 mois gratuit offert à l'inscription !</span>
+          </div>
         </div>
 
         {activeSub ? (
@@ -91,6 +94,9 @@ export default function SubscriptionPage() {
                 <Crown size={32} className="text-gold" />
               </div>
               <p className="text-gold font-playfair text-xl font-bold mb-2">Membre Actif</p>
+              {activeSub.amountUsd === 0 ? (
+                <p className="text-green-400 text-sm font-bold mb-1">Mois gratuit offert</p>
+              ) : null}
               <p className="text-gray-400 text-sm">
                 Expire le {activeSub.endDate ? new Date(activeSub.endDate).toLocaleDateString('fr-FR') : 'N/A'}
               </p>

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Megaphone, Crown, X } from 'lucide-react';
+import { Megaphone, Crown, X, DollarSign } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getActiveSubscription } from '../services/database';
+import { AD_ZONE_PRICES } from '../types';
 import AdForm from '../components/AdForm';
 
 export default function AdPage() {
@@ -33,23 +34,22 @@ export default function AdPage() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 text-left">
-          <div className="bg-luxury-dark border border-gold/10 rounded-xl p-6">
-            <h3 className="text-gold font-bold text-sm mb-2">Bannière Hero</h3>
-            <p className="text-gray-500 text-xs">En haut de la page d'accueil, visible immédiatement par tous les visiteurs.</p>
-          </div>
-          <div className="bg-luxury-dark border border-gold/10 rounded-xl p-6">
-            <h3 className="text-gold font-bold text-sm mb-2">Entre les produits</h3>
-            <p className="text-gray-500 text-xs">Carrousel publicitaire entre les articles de la collection.</p>
-          </div>
-          <div className="bg-luxury-dark border border-gold/10 rounded-xl p-6">
-            <h3 className="text-gold font-bold text-sm mb-2">Pop-up</h3>
-            <p className="text-gray-500 text-xs">Fenêtre contextuelle qui s'affiche selon la fréquence choisie.</p>
-          </div>
-          <div className="bg-luxury-dark border border-gold/10 rounded-xl p-6">
-            <h3 className="text-gold font-bold text-sm mb-2">Bannière latérale</h3>
-            <p className="text-gray-500 text-xs">Affichage discret sur le côté, visible sur desktop.</p>
-          </div>
+          {(Object.entries(AD_ZONE_PRICES) as [string, typeof AD_ZONE_PRICES[keyof typeof AD_ZONE_PRICES]][]).map(([key, zone]) => (
+            <div key={key} className="bg-luxury-dark border border-gold/10 rounded-xl p-6 flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-gold font-bold text-sm mb-1">{zone.label}</h3>
+                <p className="text-gray-500 text-xs">{zone.desc}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-white text-2xl font-bold font-playfair">{zone.price}<span className="text-sm text-gray-500">$/mois</span></p>
+              </div>
+            </div>
+          ))}
         </div>
+
+        <p className="text-gray-500 text-xs mb-8 italic">
+          * Prix par zone, par mois. Vous devez être membre abonné (3$/mois) pour accéder à la publicité.
+        </p>
 
         <button
           onClick={handleRequestAd}
