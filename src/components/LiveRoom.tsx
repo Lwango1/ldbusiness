@@ -29,6 +29,7 @@ export default function LiveRoom() {
   const [participants, setParticipants] = useState<{ identity: string; name: string; isHost: boolean }[]>([]);
   const [chatTab, setChatTab] = useState<'messages' | 'participants'>('messages');
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
   const hostVideoRef = useRef<HTMLVideoElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -53,6 +54,10 @@ export default function LiveRoom() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
+
+  useEffect(() => {
+    if (showChat) setTimeout(() => chatInputRef.current?.focus(), 100);
+  }, [showChat]);
 
   // Connect to LiveKit
   useEffect(() => {
@@ -498,6 +503,7 @@ export default function LiveRoom() {
               <div className="p-4 bg-luxury-light/50 border-t border-gold/10 shrink-0">
                 <div className="flex gap-2 bg-black/40 p-1 rounded-full border border-gold/10">
                   <input
+                    ref={chatInputRef}
                     type="text"
                     placeholder="Écrivez un message..."
                     value={message}
