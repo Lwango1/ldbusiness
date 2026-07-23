@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Radio, Eye, Play, X, Clock } from 'lucide-react';
+import { Radio, Eye, Play, X, Clock, ArrowRight } from 'lucide-react';
 import { LiveStream } from '../types';
 import { getActiveLives, startLive } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,7 +12,11 @@ export default function LiveSection() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', category: 'Mode' });
 
-  useEffect(() => { getActiveLives().then(setLives); }, []);
+  useEffect(() => {
+    getActiveLives().then(setLives);
+    const interval = setInterval(() => getActiveLives().then(setLives), 15000);
+    return () => clearInterval(interval);
+  }, []);
 
   const categories = ['Mode', 'Artisanat', 'Défilé', 'Questions/Réponses', 'Événement', 'Automobile', 'Électronique', 'Électroménager', 'Maison', 'Autre'];
 
@@ -73,6 +77,11 @@ export default function LiveSection() {
                     <div className="w-16 h-16 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center">
                       <Radio size={28} className="text-gold" />
                     </div>
+                  </div>
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="px-6 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm flex items-center gap-2">
+                      <Play size={14} /> Regarder
+                    </span>
                   </div>
                   <div className="absolute top-3 left-3 flex items-center gap-2 bg-red-600 px-2.5 py-1 rounded-sm">
                     <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />

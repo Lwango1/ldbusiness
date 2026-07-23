@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Video, VideoOff, Mic, MicOff, ScreenShare, Users, Send, Radio, ArrowLeft, Camera, MessageCircle, X, Loader } from 'lucide-react';
+import { Video, VideoOff, Mic, MicOff, ScreenShare, Users, Send, Radio, ArrowLeft, Camera, MessageCircle, X, Loader, RefreshCw } from 'lucide-react';
 import { Room, type Participant, type RemoteTrack } from 'livekit-client';
 import { getLiveById, getLiveChatMessages, sendLiveChatMessage, incrementViewers, stopLive } from '../services/database';
 import { getLiveKitToken, LIVEKIT_URL } from '../services/livekit';
@@ -22,6 +22,7 @@ export default function LiveRoom() {
   const [showChat, setShowChat] = useState(false);
   const [error, setError] = useState('');
   const [startingCamera, setStartingCamera] = useState(false);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<{ user: string; text: string; time: string; isHost?: boolean }[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -101,12 +102,13 @@ export default function LiveRoom() {
     return () => { room.disconnect(); setHasRemoteVideo(false); setCameraStarted(false); };
   }, [live]);
 
-  const startCamera = useCallback(async () => {
+  const startCamera = useCallback(async (facing?: 'user' | 'environment') => {
     setStartingCamera(true);
     setError('');
     try {
+      const fMode = facing || facingMode;
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: fMode, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: true,
       });
       streamRef.current = stream;
@@ -121,6 +123,7 @@ export default function LiveRoom() {
         localVideoRef.current.srcObject = stream;
       }
 
+      if (facing) setFacingMode(facing);
       setCameraStarted(true);
       setIsCameraOn(true);
       setIsMicOn(true);
@@ -129,7 +132,32 @@ export default function LiveRoom() {
       setError(err.message || 'Impossible d\'accéder à la caméra');
     }
     setStartingCamera(false);
-  }, [room]);
+  }, [room, facingMode]);
+
+  const flipCamera = useCallback(async () => {
+    const newMode = facingMode === 'user' ? 'environment' : 'user';
+    const oldStream = streamRef.current;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: newMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      const videoTrack = stream.getVideoTracks()[0];
+      streamRef.current = stream;
+      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+
+      if (oldStream) oldStream.getVideoTracks().forEach(t => t.stop());
+
+      room.localParticipant.getTrackPublications().forEach(pub => {
+        if (pub.track?.kind === 'video' && pub.track?.mediaStreamTrack) room.localParticipant.unpublishTrack(pub.track.mediaStreamTrack);
+      });
+      await room.localParticipant.publishTrack(videoTrack, { name: 'camera' });
+      setFacingMode(newMode);
+    } catch (err) {
+      console.error('Flip camera error:', err);
+      setError('Impossible de changer de caméra');
+    }
+  }, [facingMode, room]);
 
   const toggleCamera = useCallback(async () => {
     if (isCameraOn) {
@@ -140,7 +168,7 @@ export default function LiveRoom() {
     } else {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+          video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: false,
         });
         const videoTrack = stream.getVideoTracks()[0];
@@ -318,6 +346,11 @@ export default function LiveRoom() {
               <button onClick={toggleCamera} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isCameraOn ? 'bg-white/10 border-white/20' : 'bg-red-600/80 border-red-400'} text-white`}>
                 {isCameraOn ? <Video size={16} /> : <VideoOff size={16} />}
               </button>
+              {isCameraOn && (
+                <button onClick={flipCamera} className="p-3 rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all">
+                  <RefreshCw size={16} />
+                </button>
+              )}
               <button onClick={toggleMic} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isMicOn ? 'bg-white/10 border-white/20' : 'bg-red-600/80 border-red-400'} text-white`}>
                 {isMicOn ? <Mic size={16} /> : <MicOff size={16} />}
               </button>
