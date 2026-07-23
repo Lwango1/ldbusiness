@@ -56,40 +56,47 @@ export default function LiveRoom() {
     let cancelled = false;
     setError('');
 
+    const attachVideo = (track: RemoteTrack) => {
+      if (hostVideoRef.current) {
+        track.attach(hostVideoRef.current);
+        setHasRemoteVideo(true);
+      }
+    };
+
+    room.on('trackSubscribed', (track: RemoteTrack, _publication: any, participant: Participant) => {
+      if (track.kind === 'video' && participant.identity !== room.localParticipant?.identity) {
+        attachVideo(track);
+      }
+    });
+
+    room.on('trackUnsubscribed', (track: RemoteTrack) => {
+      if (track.kind === 'video') {
+        track.detach();
+        setHasRemoteVideo(false);
+      }
+    });
+
+    room.on('participantConnected', (participant: Participant) => {
+      participant.trackPublications.forEach(pub => {
+        if (pub.track && pub.kind === 'video' && participant.identity !== room.localParticipant?.identity) {
+          (pub.track as RemoteTrack).attach(hostVideoRef.current!);
+          setHasRemoteVideo(true);
+        }
+      });
+    });
+
     (async () => {
       try {
         const token = await getLiveKitToken(live.roomName, identity, user?.id === live.hostId);
+        if (cancelled) return;
         await room.connect(LIVEKIT_URL, token);
         if (cancelled) { room.disconnect(); return; }
 
-        // Check for existing remote tracks (viewer)
+        // Backup: check tracks already subscribed
         room.remoteParticipants.forEach(participant => {
           participant.trackPublications.forEach(pub => {
-            if (pub.track && pub.kind === 'video' && participant.identity !== room.localParticipant.identity) {
+            if (pub.track && pub.kind === 'video' && participant.identity !== room.localParticipant?.identity) {
               (pub.track as RemoteTrack).attach(hostVideoRef.current!);
-              setHasRemoteVideo(true);
-            }
-          });
-        });
-
-        room.on('trackSubscribed', (track: RemoteTrack, _publication: any, participant: Participant) => {
-          if (track.kind === 'video' && participant.identity !== room.localParticipant.identity && hostVideoRef.current) {
-            track.attach(hostVideoRef.current);
-            setHasRemoteVideo(true);
-          }
-        });
-
-        room.on('trackUnsubscribed', (track: RemoteTrack) => {
-          if (track.kind === 'video') {
-            track.detach();
-            setHasRemoteVideo(false);
-          }
-        });
-
-        room.on('participantConnected', (participant: Participant) => {
-          participant.trackPublications.forEach(pub => {
-            if (pub.track && pub.kind === 'video' && participant.identity !== room.localParticipant.identity && hostVideoRef.current) {
-              (pub.track as RemoteTrack).attach(hostVideoRef.current);
               setHasRemoteVideo(true);
             }
           });
