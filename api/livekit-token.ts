@@ -5,7 +5,7 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { roomName, identity, canPublish } = req.body;
+  const { roomName, identity, canPublish, name } = req.body;
 
   if (!roomName || !identity) {
     return res.status(400).json({ error: 'Missing roomName or identity' });
@@ -20,11 +20,12 @@ export default async function handler(req: any, res: any) {
 
   const now = Math.floor(Date.now() / 1000);
 
-  const payload = {
+  const payload: Record<string, any> = {
     iss: apiKey,
     iat: now,
     exp: now + 3600,
     sub: identity,
+    name: name || identity,
     video: {
       room: roomName,
       roomJoin: true,

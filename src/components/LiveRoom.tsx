@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Video, VideoOff, Mic, MicOff, ScreenShare, Users, Send, Radio, ArrowLeft, Camera, MessageCircle, X, Loader, RefreshCw, Volume2, VolumeX } from 'lucide-react';
-import { Room, type Participant, type RemoteTrack } from 'livekit-client';
+import { Room, type RemoteParticipant, type RemoteTrack } from 'livekit-client';
 import { getLiveById, getLiveChatMessages, sendLiveChatMessage, incrementViewers, stopLive } from '../services/database';
 import { getLiveKitToken, LIVEKIT_URL } from '../services/livekit';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,6 +26,8 @@ export default function LiveRoom() {
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<{ user: string; text: string; time: string; isHost?: boolean }[]>([]);
+  const [participants, setParticipants] = useState<{ identity: string; name: string; isHost: boolean }[]>([]);
+  const [chatTab, setChatTab] = useState<'messages' | 'participants'>('messages');
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hostVideoRef = useRef<HTMLVideoElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -72,7 +74,22 @@ export default function LiveRoom() {
       }
     };
 
-    room.on('trackSubscribed', (track: RemoteTrack, _publication: any, participant: Participant) => {
+    const updateParticipants = () => {
+      const list: { identity: string; name: string; isHost: boolean }[] = [];
+      if (live && isHost) {
+        list.push({ identity: user?.id || '', name: live.hostName, isHost: true });
+      } else if (live) {
+        list.push({ identity: live.hostId, name: live.hostName, isHost: true });
+      }
+      room.remoteParticipants.forEach(p => {
+        if (p.identity !== live?.hostId) {
+          list.push({ identity: p.identity, name: p.name || p.identity, isHost: false });
+        }
+      });
+      setParticipants(list);
+    };
+
+    room.on('trackSubscribed', (track: RemoteTrack, _publication: any, participant: RemoteParticipant) => {
       if (participant.identity === room.localParticipant?.identity) return;
       if (track.kind === 'video') attachVideo(track);
       if (track.kind === 'audio') attachAudio(track);
@@ -83,7 +100,8 @@ export default function LiveRoom() {
       if (track.kind === 'video') setHasRemoteVideo(false);
     });
 
-    room.on('participantConnected', (participant: Participant) => {
+    room.on('participantConnected', (participant: RemoteParticipant) => {
+      updateParticipants();
       participant.trackPublications.forEach(pub => {
         if (pub.track && participant.identity !== room.localParticipant?.identity) {
           if (pub.kind === 'video' && hostVideoRef.current) {
@@ -98,12 +116,16 @@ export default function LiveRoom() {
       });
     });
 
+    room.on('participantDisconnected', () => updateParticipants());
+
     (async () => {
       try {
-        const token = await getLiveKitToken(live.roomName, identity, user?.id === live.hostId);
+        const token = await getLiveKitToken(live.roomName, identity, user?.id === live.hostId, live.hostName);
         if (cancelled) return;
         await room.connect(LIVEKIT_URL, token);
         if (cancelled) { room.disconnect(); return; }
+
+        updateParticipants();
 
         // Backup: check tracks already subscribed
         room.remoteParticipants.forEach(participant => {
@@ -408,42 +430,69 @@ export default function LiveRoom() {
         <div className="fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowChat(false)} />
           <div className="relative ml-auto w-full max-w-sm h-full bg-luxury-dark border-l border-gold/20 flex flex-col shadow-2xl">
-            <div className="p-4 bg-luxury-light border-b border-gold/10 flex justify-between items-center shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-gold rounded-full animate-pulse" />
-                <span className="text-white font-bold text-xs uppercase tracking-widest">Chat</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-gray-500 text-[10px]">{chatMessages.length} messages</span>
+            <div className="p-4 bg-luxury-light border-b border-gold/10 shrink-0">
+              <div className="flex items-center justify-between mb-3">
                 <button onClick={() => setShowChat(false)} className="text-gray-500 hover:text-white">
                   <X size={18} />
+                </button>
+                <span className="text-white font-bold text-xs uppercase tracking-widest">Chat</span>
+                <span className="text-gray-500 text-[10px]">{chatMessages.length} messages</span>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setChatTab('messages')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest py-2 rounded-sm transition-all ${chatTab === 'messages' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
+                  Messages
+                </button>
+                <button onClick={() => setChatTab('participants')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest py-2 rounded-sm transition-all ${chatTab === 'participants' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
+                  Participants ({participants.length})
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {chatMessages.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-gray-600 text-sm italic">Soyez le premier à écrire !</p>
-                </div>
-              )}
-              {chatMessages.map((msg, i) => (
-                <div key={i} className={`flex flex-col ${user && msg.user === user.user_metadata?.full_name ? 'items-end' : 'items-start'}`}>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className={`text-[9px] font-bold ${msg.isHost ? 'text-gold' : 'text-gray-500'}`}>{msg.user}</span>
-                    <span className="text-[8px] text-gray-700">{msg.time}</span>
+            {chatTab === 'messages' ? (
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {chatMessages.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 text-sm italic">Soyez le premier à écrire !</p>
                   </div>
-                  <div className={`max-w-[85%] px-3 py-1.5 rounded-2xl text-xs ${
-                    msg.isHost
-                    ? 'bg-gold/10 border border-gold/20 text-gold'
-                    : user && msg.user === user.user_metadata?.full_name ? 'bg-gold text-black rounded-tr-none' : 'bg-luxury-light text-gray-300 rounded-tl-none'
-                  }`}>
-                    {msg.text}
+                )}
+                {chatMessages.map((msg, i) => (
+                  <div key={i} className={`flex flex-col ${user && msg.user === user.user_metadata?.full_name ? 'items-end' : 'items-start'}`}>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className={`text-[9px] font-bold ${msg.isHost ? 'text-gold' : 'text-gray-500'}`}>{msg.user}</span>
+                      <span className="text-[8px] text-gray-700">{msg.time}</span>
+                    </div>
+                    <div className={`max-w-[85%] px-3 py-1.5 rounded-2xl text-xs ${
+                      msg.isHost
+                      ? 'bg-gold/10 border border-gold/20 text-gold'
+                      : user && msg.user === user.user_metadata?.full_name ? 'bg-gold text-black rounded-tr-none' : 'bg-luxury-light text-gray-300 rounded-tl-none'
+                    }`}>
+                      {msg.text}
+                    </div>
                   </div>
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                {participants.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 text-sm italic">Aucun participant</p>
+                  </div>
+                )}
+                {participants.map((p, i) => (
+                  <div key={i} className="flex items-center gap-3 px-3 py-2 bg-luxury-light/50 rounded-sm">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${p.isHost ? 'bg-gold/20 border border-gold/30 text-gold' : 'bg-white/10 text-gray-400'}`}>
+                      {p.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-white text-sm font-medium truncate">{p.name}</p>
+                      <p className="text-[9px] text-gray-600">{p.isHost ? 'Hôte' : 'Spectateur'}</p>
+                    </div>
+                    {p.isHost && <span className="ml-auto text-[9px] text-gold font-bold uppercase tracking-widest">Host</span>}
+                  </div>
+                ))}
+              </div>
+            )}
 
             {user && (
               <div className="p-4 bg-luxury-light/50 border-t border-gold/10 shrink-0">
