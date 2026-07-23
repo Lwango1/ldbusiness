@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Radio, Eye, Play, X, Clock, ArrowRight } from 'lucide-react';
+import { Radio, Eye, Play, X, Clock, ArrowRight, Loader } from 'lucide-react';
 import { LiveStream } from '../types';
 import { getActiveLives, startLive } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,8 @@ export default function LiveSection() {
   const [lives, setLives] = useState<LiveStream[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', category: 'Mode' });
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState('');
 
   useEffect(() => {
     getActiveLives().then(setLives);
@@ -22,15 +24,24 @@ export default function LiveSection() {
 
   const handleStartLive = async () => {
     if (!form.title || !user) return;
-    const hostName = user.user_metadata?.full_name || 'LDBusiness';
-    const live = await startLive({
-      hostId: user.id,
-      hostName,
-      title: form.title,
-      description: form.description,
-      category: form.category,
-    });
-    if (live) navigate(`/live/${live.id}`);
+    setStarting(true);
+    setStartError('');
+    try {
+      const hostName = user.user_metadata?.full_name || 'LDBusiness';
+      const live = await startLive({
+        hostId: user.id,
+        hostName,
+        title: form.title,
+        description: form.description,
+        category: form.category,
+      });
+      if (live) navigate(`/live/${live.id}`);
+      else setStartError('Impossible de créer le live. Vérifiez votre connexion.');
+    } catch (err: any) {
+      console.error('startLive error:', err);
+      setStartError(err.message || 'Erreur lors du démarrage du live');
+    }
+    setStarting(false);
   };
 
   return (
@@ -161,8 +172,10 @@ export default function LiveSection() {
                   En lançant un live, votre session apparaîtra dans la liste des directs. Les visiteurs pourront vous rejoindre et interagir via le chat.
                 </p>
 
-                <button onClick={handleStartLive} disabled={!form.title} className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-2">
-                  <Play size={16} /> Démarrer le live
+                {startError && <p className="text-red-500 text-xs text-center">{startError}</p>}
+
+                <button onClick={handleStartLive} disabled={!form.title || starting} className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-2">
+                  {starting ? <><Loader size={16} className="animate-spin" /> Démarrage...</> : <><Play size={16} /> Démarrer le live</>}
                 </button>
               </div>
             </div>
