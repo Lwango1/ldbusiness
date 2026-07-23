@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Video, VideoOff, Mic, MicOff, ScreenShare, Users, Send, Radio, ArrowLeft, Camera, MessageCircle, X, Loader, RefreshCw } from 'lucide-react';
+import { Video, VideoOff, Mic, MicOff, ScreenShare, Users, Send, Radio, ArrowLeft, Camera, MessageCircle, X, Loader, RefreshCw, Volume2, VolumeX } from 'lucide-react';
 import { Room, type Participant, type RemoteTrack } from 'livekit-client';
 import { getLiveById, getLiveChatMessages, sendLiveChatMessage, incrementViewers, stopLive } from '../services/database';
 import { getLiveKitToken, LIVEKIT_URL } from '../services/livekit';
@@ -23,11 +23,13 @@ export default function LiveRoom() {
   const [error, setError] = useState('');
   const [startingCamera, setStartingCamera] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [audioEnabled, setAudioEnabled] = useState(true);
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<{ user: string; text: string; time: string; isHost?: boolean }[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hostVideoRef = useRef<HTMLVideoElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const identity = user?.id || `viewer_${Date.now()}`;
@@ -63,24 +65,35 @@ export default function LiveRoom() {
       }
     };
 
-    room.on('trackSubscribed', (track: RemoteTrack, _publication: any, participant: Participant) => {
-      if (track.kind === 'video' && participant.identity !== room.localParticipant?.identity) {
-        attachVideo(track);
+    const attachAudio = (track: RemoteTrack) => {
+      if (audioRef.current) {
+        track.attach(audioRef.current);
+        audioRef.current.play().catch(() => {});
       }
+    };
+
+    room.on('trackSubscribed', (track: RemoteTrack, _publication: any, participant: Participant) => {
+      if (participant.identity === room.localParticipant?.identity) return;
+      if (track.kind === 'video') attachVideo(track);
+      if (track.kind === 'audio') attachAudio(track);
     });
 
     room.on('trackUnsubscribed', (track: RemoteTrack) => {
-      if (track.kind === 'video') {
-        track.detach();
-        setHasRemoteVideo(false);
-      }
+      track.detach();
+      if (track.kind === 'video') setHasRemoteVideo(false);
     });
 
     room.on('participantConnected', (participant: Participant) => {
       participant.trackPublications.forEach(pub => {
-        if (pub.track && pub.kind === 'video' && participant.identity !== room.localParticipant?.identity) {
-          (pub.track as RemoteTrack).attach(hostVideoRef.current!);
-          setHasRemoteVideo(true);
+        if (pub.track && participant.identity !== room.localParticipant?.identity) {
+          if (pub.kind === 'video' && hostVideoRef.current) {
+            (pub.track as RemoteTrack).attach(hostVideoRef.current);
+            setHasRemoteVideo(true);
+          }
+          if (pub.kind === 'audio' && audioRef.current) {
+            (pub.track as RemoteTrack).attach(audioRef.current);
+            audioRef.current.play().catch(() => {});
+          }
         }
       });
     });
@@ -95,15 +108,18 @@ export default function LiveRoom() {
         // Backup: check tracks already subscribed
         room.remoteParticipants.forEach(participant => {
           participant.trackPublications.forEach(pub => {
-            if (pub.track && pub.kind === 'video' && participant.identity !== room.localParticipant?.identity) {
-              (pub.track as RemoteTrack).attach(hostVideoRef.current!);
-              setHasRemoteVideo(true);
+            if (pub.track && participant.identity !== room.localParticipant?.identity) {
+              if (pub.kind === 'video' && hostVideoRef.current) {
+                (pub.track as RemoteTrack).attach(hostVideoRef.current);
+                setHasRemoteVideo(true);
+              }
+              if (pub.kind === 'audio' && audioRef.current) {
+                (pub.track as RemoteTrack).attach(audioRef.current);
+                audioRef.current.play().catch(() => {});
+              }
             }
           });
         });
-
-        // Unlock audio on mobile
-        try { room.startAudio(); } catch (_) {} 
       } catch (err: any) {
         console.error('LiveKit connection error:', err);
         setError(err.message || 'Erreur de connexion au live');
@@ -279,6 +295,8 @@ export default function LiveRoom() {
 
   return (
     <div className="h-dvh bg-luxury-black relative overflow-hidden">
+      <audio ref={audioRef} autoPlay playsInline />
+
       <div className="absolute inset-0 bg-luxury-dark">
         {isHost ? (
           <>
@@ -377,6 +395,11 @@ export default function LiveRoom() {
           <button onClick={() => setShowChat(true)} className={`ml-auto p-3 bg-gold text-black rounded-full shadow-lg ${!isHost || cameraStarted ? '' : 'hidden'}`}>
             <MessageCircle size={18} />
           </button>
+          {!isHost && (
+            <button onClick={() => { setAudioEnabled(!audioEnabled); if (audioRef.current) audioRef.current.muted = audioEnabled; }} className="p-3 bg-white/10 border border-white/20 text-white rounded-full shadow-lg">
+              {audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            </button>
+          )}
         </div>
       </div>
 
