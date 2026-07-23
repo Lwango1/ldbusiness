@@ -466,12 +466,13 @@ export async function stopLive(id: string) {
 }
 
 export async function sendLiveChatMessage(liveId: string, userName: string, content: string, isHost: boolean = false) {
-  await supabase.from('live_chat_messages').insert({
+  const { error } = await supabase.from('live_chat_messages').insert({
     live_id: liveId,
     user_name: userName,
     content,
     is_host: isHost,
-  }).then(r => { if (r.error) console.error('sendLiveChatMessage error:', r.error); });
+  });
+  if (error) console.error('sendLiveChatMessage error:', error);
 }
 
 export async function getLiveChatMessages(liveId: string): Promise<{ user: string; text: string; time: string; isHost?: boolean }[]> {

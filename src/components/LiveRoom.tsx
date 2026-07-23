@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Video, VideoOff, Mic, MicOff, ScreenShare, Users, Send, Radio, ArrowLeft, Camera, MessageCircle, X, Loader, RefreshCw, Volume2, VolumeX } from 'lucide-react';
 import { Room, type RemoteParticipant, type RemoteTrack } from 'livekit-client';
-import { getLiveById, getLiveChatMessages, sendLiveChatMessage, incrementViewers, stopLive } from '../services/database';
+import { getLiveById, sendLiveChatMessage, incrementViewers, stopLive } from '../services/database';
 import { getLiveKitToken, LIVEKIT_URL } from '../services/livekit';
 import { useAuth } from '../contexts/AuthContext';
 import { LiveStream } from '../types';
@@ -319,11 +319,19 @@ export default function LiveRoom() {
   const handleSendMessage = async () => {
     if (!message.trim() || !live) return;
     const senderName = user?.user_metadata?.full_name || (identity === live.hostId ? live.hostName : 'Visiteur');
+    const msgText = message.trim();
+    setMessage('');
+
+    // Ajout instantané dans le chat local
+    setChatMessages(prev => [...prev, {
+      user: senderName,
+      text: msgText,
+      time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+      isHost: !!(user && isHost),
+    }]);
+
     try {
-      await sendLiveChatMessage(live.id, senderName, message, !!(user && isHost));
-      const msgs = await getLiveChatMessages(live.id);
-      setChatMessages(msgs);
-      setMessage('');
+      await sendLiveChatMessage(live.id, senderName, msgText, !!(user && isHost));
     } catch (err) {
       console.error('sendMessage error:', err);
     }
