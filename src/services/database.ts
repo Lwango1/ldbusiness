@@ -601,13 +601,14 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
 }
 
 export async function hasPremiumAccess(userId: string): Promise<boolean> {
-  // Vérifie si l'utilisateur a un abonnement actif
+  // Vérifie si l'utilisateur a un abonnement actif (3$/mois)
   const sub = await getActiveSubscription(userId);
   if (sub) return true;
 
-  // OU une campagne publicitaire approuvée et active
-  const { data: ads } = await supabase.from('ads').select('end_date')
+  // OU une campagne publicitaire approuvée de 10$+ (Hero=10$, Carrousel=15$)
+  const { data: ads } = await supabase.from('ads').select('end_date, zone')
     .eq('status', 'approved')
+    .in('zone', ['hero', 'between_products'])
     .order('created_at', { ascending: false }).limit(1);
   if (ads && ads.length > 0 && ads[0].end_date && new Date(ads[0].end_date) > new Date()) return true;
 
