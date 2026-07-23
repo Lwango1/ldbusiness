@@ -199,6 +199,13 @@ CREATE POLICY "anyone_view_active_lives" ON public.lives
 CREATE POLICY "host_manage_own_lives" ON public.lives
   FOR ALL USING (auth.uid() = host_id);
 
+-- CHAT LIVE: tout le monde peut lire, tout le monde peut écrire
+CREATE POLICY "anyone_read_live_chat" ON public.live_chat_messages
+  FOR SELECT USING (true);
+
+CREATE POLICY "anyone_insert_live_chat" ON public.live_chat_messages
+  FOR INSERT WITH CHECK (true);
+
 -- ============================================================
 -- INDEXES
 -- ============================================================

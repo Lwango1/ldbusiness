@@ -471,11 +471,12 @@ export async function sendLiveChatMessage(liveId: string, userName: string, cont
     user_name: userName,
     content,
     is_host: isHost,
-  });
+  }).then(r => { if (r.error) console.error('sendLiveChatMessage error:', r.error); });
 }
 
 export async function getLiveChatMessages(liveId: string): Promise<{ user: string; text: string; time: string; isHost?: boolean }[]> {
-  const { data } = await supabase.from('live_chat_messages').select('*').eq('live_id', liveId).order('created_at', { ascending: true });
+  const { data, error } = await supabase.from('live_chat_messages').select('*').eq('live_id', liveId).order('created_at', { ascending: true });
+  if (error) console.error('getLiveChatMessages error:', error);
   return (data || []).map(m => ({
     user: m.user_name,
     text: m.content,
