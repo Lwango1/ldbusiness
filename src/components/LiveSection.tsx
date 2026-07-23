@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Radio, Eye, Play, X, Clock, ArrowRight, Loader, Crown } from 'lucide-react';
 import { LiveStream } from '../types';
-import { getActiveLives, startLive, getActiveSubscription } from '../services/database';
+import { getActiveLives, startLive, hasPremiumAccess } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function LiveSection() {
@@ -70,8 +70,8 @@ export default function LiveSection() {
           <button
             onClick={async () => {
               if (!user) { setStartError('Vous devez être connecté'); return; }
-              const sub = await getActiveSubscription(user.id);
-              if (!sub) { setShowSubscribe(true); return; }
+              const access = await hasPremiumAccess(user.id);
+              if (!access) { setShowSubscribe(true); return; }
               setShowForm(true);
             }}
             className="px-8 py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all inline-flex items-center gap-2"
@@ -148,7 +148,7 @@ export default function LiveSection() {
               <Crown size={40} className="text-gold mx-auto mb-4" />
               <h3 className="text-white font-playfair text-xl font-bold mb-2">Abonnement requis</h3>
               <p className="text-gray-400 text-sm mb-6">
-                Vous devez être membre abonné pour lancer un live. Frais de maintenance à partir de 3$/mois.
+                Vous devez être membre abonné ou avoir une campagne pub active pour lancer un live. À partir de 3$/mois.
               </p>
               <div className="flex gap-3">
                 <button onClick={() => setShowSubscribe(false)} className="flex-1 py-3 bg-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-white/20 transition-all">

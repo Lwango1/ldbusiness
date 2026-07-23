@@ -600,6 +600,20 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
   return mapSubscription(sub);
 }
 
+export async function hasPremiumAccess(userId: string): Promise<boolean> {
+  // Vérifie si l'utilisateur a un abonnement actif
+  const sub = await getActiveSubscription(userId);
+  if (sub) return true;
+
+  // OU une campagne publicitaire approuvée et active
+  const { data: ads } = await supabase.from('ads').select('end_date')
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false }).limit(1);
+  if (ads && ads.length > 0 && ads[0].end_date && new Date(ads[0].end_date) > new Date()) return true;
+
+  return false;
+}
+
 export async function getAllSubscriptionRequests(): Promise<Subscription[]> {
   const { data } = await supabase.from('subscriptions').select('*, profiles(full_name, phone)').order('created_at', { ascending: false });
   return (data || []).map((s: any) => ({
