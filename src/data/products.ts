@@ -75,5 +75,12 @@ export const categories = [
   "Costumes Homme",
   "Mariage",
   "Traditionnel",
-  "Événements"
+  "Événements",
+  "Accessoires",
+  "Cryptomonnaie",
+  "Automobile",
+  "Électronique",
+  "Électroménager",
+  "Maison",
+  "Autre"
 ];

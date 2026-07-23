@@ -15,7 +15,7 @@ const emptyProduct = {
   stock: undefined, promoCode: '', discount: undefined,
 };
 
-const categoryOptions = ['Robes de Soirée', 'Costumes Homme', 'Mariage', 'Traditionnel', 'Événements', 'Accessoires', 'Cryptomonnaie', 'Autre'];
+const categoryOptions = ['Robes de Soirée', 'Costumes Homme', 'Mariage', 'Traditionnel', 'Événements', 'Accessoires', 'Cryptomonnaie', 'Automobile', 'Électronique', 'Électroménager', 'Maison', 'Autre'];
 
 export default function SellerDashboard({ seller }: SellerDashboardProps) {
   const { user, signOut } = useAuth();

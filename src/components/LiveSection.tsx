@@ -14,7 +14,7 @@ export default function LiveSection() {
 
   useEffect(() => { getActiveLives().then(setLives); }, []);
 
-  const categories = ['Mode', 'Artisanat', 'Défilé', 'Questions/Réponses', 'Événement', 'Autre'];
+  const categories = ['Mode', 'Artisanat', 'Défilé', 'Questions/Réponses', 'Événement', 'Automobile', 'Électronique', 'Électroménager', 'Maison', 'Autre'];
 
   const handleStartLive = async () => {
     if (!form.title || !user) return;
