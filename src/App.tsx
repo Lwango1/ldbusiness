@@ -11,6 +11,7 @@ import ProductViewer3D from './components/ProductViewer3D';
 import InstallBanner from './components/InstallBanner';
 import AuthModal from './components/AuthModal';
 import MobileDrawer from './components/MobileDrawer';
+import SubscriptionAlert from './components/SubscriptionAlert';
 
 // Tes pages
 import Home from './pages/Home';
@@ -83,6 +84,8 @@ export default function App() {
             onAuthOpen={() => setShowAuth(true)}
             onAuthClose={() => setShowAuth(false)}
           />
+
+          <SubscriptionAlert />
 
           {/* Le contenu qui change selon l'URL */}
           <main className="flex-grow">
