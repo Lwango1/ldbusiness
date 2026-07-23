@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Video, VideoOff, Mic, MicOff, ScreenShare, Users, Send, Radio, ArrowLeft, Camera, MessageCircle, X } from 'lucide-react';
-import { Room, createLocalAudioTrack, createLocalVideoTrack, type Participant, type RemoteTrack } from 'livekit-client';
+import { Video, VideoOff, Mic, MicOff, ScreenShare, Users, Send, Radio, ArrowLeft, Camera, MessageCircle, X, Loader } from 'lucide-react';
+import { Room, type Participant, type RemoteTrack } from 'livekit-client';
 import { getLiveById, getLiveChatMessages, sendLiveChatMessage, incrementViewers, stopLive } from '../services/database';
 import { getLiveKitToken, LIVEKIT_URL } from '../services/livekit';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,17 +14,20 @@ export default function LiveRoom() {
   const [live, setLive] = useState<LiveStream | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [room] = useState(() => new Room());
+  const [cameraStarted, setCameraStarted] = useState(false);
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [error, setError] = useState('');
+  const [startingCamera, setStartingCamera] = useState(false);
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<{ user: string; text: string; time: string; isHost?: boolean }[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hostVideoRef = useRef<HTMLVideoElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const identity = user?.id || `viewer_${Date.now()}`;
 
@@ -46,17 +49,11 @@ export default function LiveRoom() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
+  // Connect to LiveKit
   useEffect(() => {
     if (!live) return;
     let cancelled = false;
     setError('');
-
-    const attachVideo = (track: RemoteTrack, el: HTMLVideoElement | null) => {
-      if (track.kind === 'video' && el) {
-        track.attach(el);
-        setHasRemoteVideo(true);
-      }
-    };
 
     (async () => {
       try {
@@ -64,19 +61,20 @@ export default function LiveRoom() {
         await room.connect(LIVEKIT_URL, token);
         if (cancelled) { room.disconnect(); return; }
 
-        // Check for already-subscribed remote tracks (viewer joining after host)
+        // Check for existing remote tracks (viewer)
         room.remoteParticipants.forEach(participant => {
           participant.trackPublications.forEach(pub => {
             if (pub.track && pub.kind === 'video' && participant.identity !== room.localParticipant.identity) {
-              attachVideo(pub.track as RemoteTrack, hostVideoRef.current);
+              (pub.track as RemoteTrack).attach(hostVideoRef.current!);
+              setHasRemoteVideo(true);
             }
           });
         });
 
-        // Listen for new remote tracks
         room.on('trackSubscribed', (track: RemoteTrack, _publication: any, participant: Participant) => {
-          if (participant.identity !== room.localParticipant.identity) {
-            attachVideo(track, hostVideoRef.current);
+          if (track.kind === 'video' && participant.identity !== room.localParticipant.identity && hostVideoRef.current) {
+            track.attach(hostVideoRef.current);
+            setHasRemoteVideo(true);
           }
         });
 
@@ -89,94 +87,132 @@ export default function LiveRoom() {
 
         room.on('participantConnected', (participant: Participant) => {
           participant.trackPublications.forEach(pub => {
-            if (pub.track && pub.kind === 'video' && participant.identity !== room.localParticipant.identity) {
-              attachVideo(pub.track as RemoteTrack, hostVideoRef.current);
+            if (pub.track && pub.kind === 'video' && participant.identity !== room.localParticipant.identity && hostVideoRef.current) {
+              (pub.track as RemoteTrack).attach(hostVideoRef.current);
+              setHasRemoteVideo(true);
             }
           });
         });
-
-        if (user?.id === live.hostId) {
-          const videoTrack = await createLocalVideoTrack({ facingMode: 'user', resolution: { width: 1280, height: 720 } });
-          await room.localParticipant.publishTrack(videoTrack, { name: 'camera' });
-          const audioTrack = await createLocalAudioTrack();
-          await room.localParticipant.publishTrack(audioTrack, { name: 'mic' });
-
-          if (localVideoRef.current) {
-            videoTrack.attach(localVideoRef.current);
-          }
-        }
       } catch (err: any) {
         console.error('LiveKit connection error:', err);
         setError(err.message || 'Erreur de connexion au live');
       }
     })();
-    return () => { room.disconnect(); setHasRemoteVideo(false); };
+    return () => { room.disconnect(); setHasRemoteVideo(false); setCameraStarted(false); };
   }, [live]);
 
-  const chatPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  useEffect(() => {
-    if (!id) return;
-    getLiveChatMessages(id).then(setChatMessages);
-    chatPollRef.current = setInterval(async () => {
-      const msgs = await getLiveChatMessages(id);
-      setChatMessages(msgs);
-    }, 2000);
-    return () => { if (chatPollRef.current) clearInterval(chatPollRef.current); };
-  }, [id]);
+  const startCamera = useCallback(async () => {
+    setStartingCamera(true);
+    setError('');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: true,
+      });
+      streamRef.current = stream;
+
+      const videoTrack = stream.getVideoTracks()[0];
+      const audioTrack = stream.getAudioTracks()[0];
+
+      await room.localParticipant.publishTrack(videoTrack, { name: 'camera' });
+      await room.localParticipant.publishTrack(audioTrack, { name: 'mic' });
+
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+
+      setCameraStarted(true);
+      setIsCameraOn(true);
+      setIsMicOn(true);
+    } catch (err: any) {
+      console.error('Camera start error:', err);
+      setError(err.message || 'Impossible d\'accéder à la caméra');
+    }
+    setStartingCamera(false);
+  }, [room]);
 
   const toggleCamera = useCallback(async () => {
     if (isCameraOn) {
-      const pubs = room.localParticipant.getTrackPublications();
-      for (const pub of pubs) {
-        if (pub.track?.kind === 'video' && pub.track) room.localParticipant.unpublishTrack(pub.track);
+      if (streamRef.current) {
+        streamRef.current.getVideoTracks().forEach(t => t.stop());
       }
       setIsCameraOn(false);
     } else {
-      const videoTrack = await createLocalVideoTrack({ facingMode: 'user', resolution: { width: 1280, height: 720 } });
-      await room.localParticipant.publishTrack(videoTrack, { name: 'camera' });
-      if (localVideoRef.current) videoTrack.attach(localVideoRef.current);
-      setIsCameraOn(true);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+        const videoTrack = stream.getVideoTracks()[0];
+        const oldStream = streamRef.current;
+        streamRef.current = stream;
+
+        if (oldStream) oldStream.getVideoTracks().forEach(t => t.stop());
+        if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+
+        await room.localParticipant.publishTrack(videoTrack, { name: 'camera' });
+        setIsCameraOn(true);
+      } catch (err) {
+        console.error(err);
+        setError('Impossible d\'accéder à la caméra');
+      }
     }
   }, [isCameraOn, room]);
 
   const toggleMic = useCallback(async () => {
     if (isMicOn) {
-      room.localParticipant.getTrackPublications().forEach(pub => {
-        if (pub.track?.kind === 'audio' && pub.track) room.localParticipant.unpublishTrack(pub.track);
-      });
+      if (streamRef.current) {
+        streamRef.current.getAudioTracks().forEach(t => t.stop());
+      }
       setIsMicOn(false);
     } else {
-      const audioTrack = await createLocalAudioTrack();
-      await room.localParticipant.publishTrack(audioTrack, { name: 'mic' });
-      setIsMicOn(true);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+        const audioTrack = stream.getAudioTracks()[0];
+        if (streamRef.current) {
+          streamRef.current.addTrack(audioTrack);
+        } else {
+          streamRef.current = stream;
+        }
+        await room.localParticipant.publishTrack(audioTrack, { name: 'mic' });
+        setIsMicOn(true);
+      } catch (err) {
+        console.error(err);
+        setError('Impossible d\'accéder au microphone');
+      }
     }
   }, [isMicOn, room]);
 
   const toggleScreenShare = useCallback(async () => {
     if (isScreenSharing) {
-      room.localParticipant.getTrackPublications().forEach(pub => {
-        if (pub.track?.kind === 'video' && pub.track) room.localParticipant.unpublishTrack(pub.track);
-      });
       setIsScreenSharing(false);
-      const videoTrack = await createLocalVideoTrack({ facingMode: 'user', resolution: { width: 1280, height: 720 } });
-      await room.localParticipant.publishTrack(videoTrack, { name: 'camera' });
-      if (localVideoRef.current) videoTrack.attach(localVideoRef.current);
+      await startCamera();
     } else {
       try {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
-        room.localParticipant.getTrackPublications().forEach(pub => {
-          if (pub.track?.kind === 'video' && pub.track) room.localParticipant.unpublishTrack(pub.track);
-        });
         const screenTrack = screenStream.getVideoTracks()[0];
-        await room.localParticipant.publishTrack(screenTrack, { name: 'screenshare' });
+        if (streamRef.current) {
+          streamRef.current.getVideoTracks().forEach(t => t.stop());
+        }
+        streamRef.current = screenStream;
         if (localVideoRef.current) localVideoRef.current.srcObject = screenStream;
+
+        room.localParticipant.getTrackPublications().forEach(pub => {
+          if (pub.track?.kind === 'video') room.localParticipant.unpublishTrack(pub.track);
+        });
+        await room.localParticipant.publishTrack(screenTrack, { name: 'screenshare' });
         setIsScreenSharing(true);
-        screenTrack.onended = () => toggleCamera();
+
+        screenTrack.onended = () => {
+          setIsScreenSharing(false);
+          startCamera();
+        };
       } catch (err) { console.error(err); }
     }
-  }, [isScreenSharing, room, toggleCamera]);
+  }, [isScreenSharing, room, startCamera]);
 
   const handleStopLive = useCallback(async () => {
+    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
     if (live) await stopLive(live.id);
     room.disconnect();
     navigate('/live');
@@ -203,16 +239,28 @@ export default function LiveRoom() {
 
   return (
     <div className="h-dvh bg-luxury-black relative overflow-hidden">
-      {/* Video plein écran */}
       <div className="absolute inset-0 bg-luxury-dark">
         {isHost ? (
           <>
-            <video ref={localVideoRef} autoPlay playsInline muted className={`absolute inset-0 w-full h-full object-cover ${isCameraOn ? '' : 'hidden'}`} />
-            {!isCameraOn && (
+            <video ref={localVideoRef} autoPlay playsInline muted className={`absolute inset-0 w-full h-full object-cover ${cameraStarted && isCameraOn ? '' : 'hidden'}`} />
+            {(!cameraStarted || !isCameraOn) && (
               <div className="absolute inset-0 bg-black flex items-center justify-center">
                 <div className="text-center">
-                  <Camera size={40} className="text-gold/50 mx-auto mb-2" />
-                  <p className="text-gray-500">Caméra désactivée</p>
+                  {!cameraStarted ? (
+                    <>
+                      <Camera size={48} className="text-gold/40 mx-auto mb-4" />
+                      <p className="text-gray-400 text-sm mb-4">Prêt à diffuser ?</p>
+                      <button onClick={startCamera} disabled={startingCamera} className="px-8 py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center gap-2 mx-auto">
+                        {startingCamera ? <><Loader size={16} className="animate-spin" /> Caméra...</> : <><Video size={16} /> Démarrer la caméra</>}
+                      </button>
+                      {error && <p className="text-red-500 text-xs mt-3">{error}</p>}
+                    </>
+                  ) : (
+                    <>
+                      <Camera size={40} className="text-gold/50 mx-auto mb-2" />
+                      <p className="text-gray-500">Caméra désactivée</p>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -236,9 +284,9 @@ export default function LiveRoom() {
         )}
       </div>
 
-      {/* Top bar overlay */}
-      <div className="absolute top-0 inset-x-0 p-4 flex items-center justify-between z-10">
-        <button onClick={() => navigate('/live')} className="flex items-center gap-2 text-white/80 hover:text-white text-xs uppercase tracking-widest transition-all">
+      {/* Top bar */}
+      <div className="absolute top-0 inset-x-0 p-4 flex items-center justify-between z-10 pointer-events-none">
+        <button onClick={() => navigate('/live')} className="pointer-events-auto flex items-center gap-2 text-white/80 hover:text-white text-xs uppercase tracking-widest transition-all">
           <ArrowLeft size={16} /> Quitter
         </button>
         <div className="flex items-center gap-2 bg-red-600 px-3 py-1 rounded-sm shadow-lg">
@@ -251,7 +299,7 @@ export default function LiveRoom() {
         </div>
       </div>
 
-      {/* Info overlay en bas */}
+      {/* Bottom controls */}
       <div className="absolute bottom-0 inset-x-0 p-4 z-10">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-8 h-8 rounded-full bg-gold/20 border border-gold/30 flex items-center justify-center text-gold text-xs font-bold shrink-0">
@@ -265,7 +313,7 @@ export default function LiveRoom() {
         {live.description && <p className="text-gray-500 text-xs mb-4 line-clamp-2">{live.description}</p>}
 
         <div className="flex items-center gap-3">
-          {isHost && (
+          {isHost && cameraStarted && (
             <div className="flex gap-2">
               <button onClick={toggleCamera} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isCameraOn ? 'bg-white/10 border-white/20' : 'bg-red-600/80 border-red-400'} text-white`}>
                 {isCameraOn ? <Video size={16} /> : <VideoOff size={16} />}
@@ -281,7 +329,7 @@ export default function LiveRoom() {
               </button>
             </div>
           )}
-          <button onClick={() => setShowChat(true)} className="ml-auto p-3 bg-gold text-black rounded-full shadow-lg">
+          <button onClick={() => setShowChat(true)} className={`ml-auto p-3 bg-gold text-black rounded-full shadow-lg ${!isHost || cameraStarted ? '' : 'hidden'}`}>
             <MessageCircle size={18} />
           </button>
         </div>
