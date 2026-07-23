@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Video, VideoOff, Mic, MicOff, ScreenShare, Users, Send, Radio, ArrowLeft, Camera } from 'lucide-react';
+import { Video, VideoOff, Mic, MicOff, ScreenShare, Users, Send, Radio, ArrowLeft, Camera, MessageCircle, X } from 'lucide-react';
 import { Room, createLocalAudioTrack, createLocalVideoTrack, type Participant, type RemoteTrack } from 'livekit-client';
 import { getLiveById, getLiveChatMessages, sendLiveChatMessage, incrementViewers, stopLive } from '../services/database';
 import { getLiveKitToken, LIVEKIT_URL } from '../services/livekit';
@@ -18,6 +18,7 @@ export default function LiveRoom() {
   const [isMicOn, setIsMicOn] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<{ user: string; text: string; time: string; isHost?: boolean }[]>([]);
@@ -201,105 +202,117 @@ export default function LiveRoom() {
   }
 
   return (
-    <div className="min-h-screen bg-luxury-black">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <button onClick={() => navigate('/live')} className="flex items-center gap-2 text-gold/60 hover:text-gold mb-4 text-xs uppercase tracking-widest transition-all">
-          <ArrowLeft size={16} /> Tous les lives
+    <div className="h-dvh bg-luxury-black relative overflow-hidden">
+      {/* Video plein écran */}
+      <div className="absolute inset-0 bg-luxury-dark">
+        {isHost ? (
+          <>
+            <video ref={localVideoRef} autoPlay playsInline muted className={`absolute inset-0 w-full h-full object-cover ${isCameraOn ? '' : 'hidden'}`} />
+            {!isCameraOn && (
+              <div className="absolute inset-0 bg-black flex items-center justify-center">
+                <div className="text-center">
+                  <Camera size={40} className="text-gold/50 mx-auto mb-2" />
+                  <p className="text-gray-500">Caméra désactivée</p>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <video ref={hostVideoRef} autoPlay playsInline className={`absolute inset-0 w-full h-full object-cover ${hasRemoteVideo ? '' : 'hidden'}`} />
+            {!hasRemoteVideo && (
+              <div className="absolute inset-0 bg-black flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-20 h-20 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-4">
+                    <Radio size={36} className="text-gold" />
+                  </div>
+                  <p className="text-gold font-playfair text-lg">En direct</p>
+                  <p className="text-gray-500 text-xs mt-1">{live.hostName}</p>
+                  {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Top bar overlay */}
+      <div className="absolute top-0 inset-x-0 p-4 flex items-center justify-between z-10">
+        <button onClick={() => navigate('/live')} className="flex items-center gap-2 text-white/80 hover:text-white text-xs uppercase tracking-widest transition-all">
+          <ArrowLeft size={16} /> Quitter
         </button>
+        <div className="flex items-center gap-2 bg-red-600 px-3 py-1 rounded-sm shadow-lg">
+          <span className="w-2 h-2 bg-white rounded-full animate-ping" />
+          <span className="text-white text-[10px] font-black">LIVE</span>
+        </div>
+        <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full">
+          <Users size={12} className="text-gold" />
+          <span className="text-white text-xs font-bold">{live.viewerCount}</span>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Zone Vidéo */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="relative aspect-video bg-luxury-dark rounded-xl overflow-hidden border border-gold/20 shadow-2xl">
-              {isHost ? (
-                <>
-                  <video ref={localVideoRef} autoPlay playsInline muted className={`absolute inset-0 w-full h-full object-cover ${isCameraOn ? '' : 'hidden'}`} />
-                  {!isCameraOn && (
-                    <div className="absolute inset-0 bg-black flex items-center justify-center">
-                      <div className="text-center">
-                        <Camera size={40} className="text-gold/50 mx-auto mb-2" />
-                        <p className="text-gray-500">Caméra désactivée</p>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <video ref={hostVideoRef} autoPlay playsInline className={`absolute inset-0 w-full h-full object-cover ${hasRemoteVideo ? '' : 'hidden'}`} />
-                  {!hasRemoteVideo && (
-                    <div className="absolute inset-0 bg-black flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="w-20 h-20 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-4">
-                          <Radio size={36} className="text-gold" />
-                        </div>
-                        <p className="text-gold font-playfair text-lg">En direct</p>
-                        <p className="text-gray-500 text-xs mt-1">{live.hostName}</p>
-                        {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-600 px-3 py-1 rounded-sm shadow-lg">
-                <span className="w-2 h-2 bg-white rounded-full animate-ping" />
-                <span className="text-white text-[10px] font-black">LIVE</span>
-              </div>
-              <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full">
-                <Users size={12} className="text-gold" />
-                <span className="text-white text-xs font-bold">{live.viewerCount}</span>
-              </div>
-
-              {isHost && (
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3">
-                  <button onClick={toggleCamera} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isCameraOn ? 'bg-white/10 border-white/20' : 'bg-red-600/80 border-red-400'} text-white`}>
-                    {isCameraOn ? <Video size={16} /> : <VideoOff size={16} />}
-                  </button>
-                  <button onClick={toggleMic} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isMicOn ? 'bg-white/10 border-white/20' : 'bg-red-600/80 border-red-400'} text-white`}>
-                    {isMicOn ? <Mic size={16} /> : <MicOff size={16} />}
-                  </button>
-                  <button onClick={toggleScreenShare} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isScreenSharing ? 'bg-gold text-black' : 'bg-white/10 border-white/20 text-white'}`}>
-                    <ScreenShare size={16} />
-                  </button>
-                  <button onClick={handleStopLive} className="px-5 py-2.5 bg-white/90 text-black font-bold text-[10px] rounded-full uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all">
-                    Terminer
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-luxury-dark border border-gold/10 rounded-xl p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-gold/20 border border-gold/30 flex items-center justify-center text-gold text-sm font-bold">
-                  {live.hostName.charAt(0)}
-                </div>
-                <div>
-                  <h1 className="text-white font-playfair text-xl font-bold">{live.title}</h1>
-                  <p className="text-gold/60 text-xs">{live.hostName} • {live.category}</p>
-                </div>
-              </div>
-              {live.description && <p className="text-gray-500 text-sm">{live.description}</p>}
-            </div>
+      {/* Info overlay en bas */}
+      <div className="absolute bottom-0 inset-x-0 p-4 z-10">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded-full bg-gold/20 border border-gold/30 flex items-center justify-center text-gold text-xs font-bold shrink-0">
+            {live.hostName.charAt(0)}
           </div>
+          <div className="min-w-0">
+            <h1 className="text-white font-bold text-sm truncate">{live.title}</h1>
+            <p className="text-gold/60 text-[10px]">{live.hostName} • {live.category}</p>
+          </div>
+        </div>
+        {live.description && <p className="text-gray-500 text-xs mb-4 line-clamp-2">{live.description}</p>}
 
-          {/* Chat */}
-          <div className="flex flex-col h-[500px] lg:h-[calc(100vh-200px)] bg-luxury-dark border border-gold/20 rounded-xl overflow-hidden shadow-2xl">
-            <div className="p-4 bg-luxury-light border-b border-gold/10 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          {isHost && (
+            <div className="flex gap-2">
+              <button onClick={toggleCamera} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isCameraOn ? 'bg-white/10 border-white/20' : 'bg-red-600/80 border-red-400'} text-white`}>
+                {isCameraOn ? <Video size={16} /> : <VideoOff size={16} />}
+              </button>
+              <button onClick={toggleMic} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isMicOn ? 'bg-white/10 border-white/20' : 'bg-red-600/80 border-red-400'} text-white`}>
+                {isMicOn ? <Mic size={16} /> : <MicOff size={16} />}
+              </button>
+              <button onClick={toggleScreenShare} className={`p-3 rounded-full backdrop-blur-md border transition-all ${isScreenSharing ? 'bg-gold text-black' : 'bg-white/10 border-white/20 text-white'}`}>
+                <ScreenShare size={16} />
+              </button>
+              <button onClick={handleStopLive} className="px-4 py-3 bg-white/90 text-black font-bold text-[10px] rounded-full uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all whitespace-nowrap">
+                Terminer
+              </button>
+            </div>
+          )}
+          <button onClick={() => setShowChat(true)} className="ml-auto p-3 bg-gold text-black rounded-full shadow-lg">
+            <MessageCircle size={18} />
+          </button>
+        </div>
+      </div>
+
+      {/* Chat Modal */}
+      {showChat && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowChat(false)} />
+          <div className="relative ml-auto w-full max-w-sm h-full bg-luxury-dark border-l border-gold/20 flex flex-col shadow-2xl">
+            <div className="p-4 bg-luxury-light border-b border-gold/10 flex justify-between items-center shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-gold rounded-full animate-pulse" />
                 <span className="text-white font-bold text-xs uppercase tracking-widest">Chat</span>
               </div>
-              <span className="text-gray-500 text-[10px]">{chatMessages.length} messages</span>
+              <div className="flex items-center gap-3">
+                <span className="text-gray-500 text-[10px]">{chatMessages.length} messages</span>
+                <button onClick={() => setShowChat(false)} className="text-gray-500 hover:text-white">
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {chatMessages.length === 0 && (
                 <div className="text-center py-8">
                   <p className="text-gray-600 text-sm italic">Soyez le premier à écrire !</p>
                 </div>
               )}
               {chatMessages.map((msg, i) => (
-                <div key={i} className={`flex flex-col ${msg.user === 'Vous' || (user && msg.user === user.user_metadata?.full_name) ? 'items-end' : 'items-start'}`}>
+                <div key={i} className={`flex flex-col ${user && msg.user === user.user_metadata?.full_name ? 'items-end' : 'items-start'}`}>
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className={`text-[9px] font-bold ${msg.isHost ? 'text-gold' : 'text-gray-500'}`}>{msg.user}</span>
                     <span className="text-[8px] text-gray-700">{msg.time}</span>
@@ -317,7 +330,7 @@ export default function LiveRoom() {
             </div>
 
             {user && (
-              <div className="p-4 bg-luxury-light/50 border-t border-gold/10">
+              <div className="p-4 bg-luxury-light/50 border-t border-gold/10 shrink-0">
                 <div className="flex gap-2 bg-black/40 p-1 rounded-full border border-gold/10">
                   <input
                     type="text"
@@ -325,9 +338,9 @@ export default function LiveRoom() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-1 px-4 py-2 bg-transparent text-white text-sm outline-none"
+                    className="flex-1 px-4 py-2 bg-transparent text-white text-sm outline-none min-w-0"
                   />
-                  <button onClick={handleSendMessage} className="p-2.5 bg-gold text-black rounded-full hover:scale-105 transition-transform">
+                  <button onClick={handleSendMessage} className="p-2.5 bg-gold text-black rounded-full hover:scale-105 transition-transform shrink-0">
                     <Send size={14} />
                   </button>
                 </div>
@@ -335,7 +348,7 @@ export default function LiveRoom() {
             )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
