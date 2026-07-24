@@ -62,11 +62,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.create_ad_request(
   p_user_id UUID,
   p_brand_name TEXT,
-  p_brand_website TEXT DEFAULT NULL,
   p_image_url TEXT,
-  p_description TEXT DEFAULT NULL,
   p_zone TEXT,
-  p_frequency TEXT
+  p_frequency TEXT,
+  p_brand_website TEXT DEFAULT NULL,
+  p_description TEXT DEFAULT NULL
 ) RETURNS BOOLEAN AS $$
 BEGIN
   INSERT INTO public.ads (user_id, brand_name, brand_website, image_url, description, zone, frequency)

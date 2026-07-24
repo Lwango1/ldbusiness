@@ -501,11 +501,11 @@ export async function createAdRequest(data: {
   const { error } = await supabase.rpc('create_ad_request', {
     p_user_id: data.userId,
     p_brand_name: data.brandName,
-    p_brand_website: data.brandWebsite || null,
     p_image_url: data.imageUrl,
-    p_description: data.description || null,
     p_zone: data.zone,
     p_frequency: data.frequency,
+    p_brand_website: data.brandWebsite || null,
+    p_description: data.description || null,
   });
   return { ok: !error, error: error?.message };
 }
