@@ -86,7 +86,7 @@ export default function StorePage() {
                 </div>
                 <div className="p-4">
                   <h3 className="text-white font-bold text-sm truncate">{product.name}</h3>
-                  <p className="text-gold font-bold mt-1">{formatDualPrice(product.price, product.currency || 'CDF')}</p>
+                  <p className="text-gold font-bold mt-1">{formatDualPrice(product.price, product.currency || 'CDF').primary}</p>
                 </div>
               </Link>
             ))}
