@@ -96,26 +96,21 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
   const handleShare = async () => {
     const url = `https://ldbusiness.vercel.app/produit/${product?.id}`;
     const text = `${product?.name} - ${product?.description}\n\nPrix: ${formatDualPrice(product!.price, product!.currency).primary}\n\nDécouvre-le sur LDBusiness 👇\n${url}`;
+    const shareData = { title: product?.name, text, url };
     try {
       if (navigator.share) {
-        let files: File[] = [];
-        try {
-          const imgUrl = images[0];
-          if (imgUrl) {
+        const imgUrl = images[0];
+        if (imgUrl) {
+          try {
             const resp = await fetch(imgUrl, { mode: 'cors' });
             const blob = await resp.blob();
-            files = [new File([blob], 'produit.jpg', { type: blob.type })];
-          }
-        } catch {}
-        await navigator.share({
-          title: product?.name,
-          text,
-          url,
-          files: files.length ? files : undefined,
-        });
+            await navigator.share({ ...shareData, files: [new File([blob], 'produit.jpg', { type: blob.type })] });
+            return;
+          } catch {}
+        }
+        await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(text);
-        alert('Lien copié ! Partage-le sur WhatsApp, Telegram et autres.');
       }
     } catch (err: any) {
       if (err?.name !== 'AbortError') {
