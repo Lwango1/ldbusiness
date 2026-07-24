@@ -21,7 +21,7 @@ export default function LiveSection() {
     return () => clearInterval(interval);
   }, []);
 
-  const categories = ['Mode', 'Artisanat', 'Défilé', 'Questions/Réponses', 'Événement', 'Automobile', 'Électronique', 'Électroménager', 'Maison', 'Autre'];
+  const categories = ['Mode', 'Artisanat', 'Défilé', 'Vêtement', 'Questions/Réponses', 'Événement', 'Automobile', 'Électronique', 'Électroménager', 'Maison', 'Autre'];
 
   const handleStartLive = async (e?: React.MouseEvent | React.TouchEvent) => {
     e?.preventDefault();
