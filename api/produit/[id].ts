@@ -24,10 +24,10 @@ export default async function handler(req: any, res: any) {
   const url = `https://ldbusiness.vercel.app/produit/${id}`;
 
   const ua = (req.headers['user-agent'] || '').toLowerCase();
-  const isCrawler = /bot|crawler|spider|facebook|whatsapp|twitter|telegram|slack|linkedin|pinterest|discord/i.test(ua);
+  const isCrawler = /bot|crawler|spider|facebook|whatsapp|twitter|telegram|slack|linkedin|pinterest|discord|embedly|quora/i.test(ua);
 
   if (!isCrawler) {
-    return res.redirect(302, url);
+    return res.redirect(302, `/?p=${id}`);
   }
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');

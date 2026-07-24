@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useState, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useCallback, useEffect } from 'react';
 import { Product, CartItem } from './types';
 
 // Tes composants
@@ -29,6 +29,18 @@ import StorePage from './pages/StorePage';
 import LiveRoom from './components/LiveRoom';
 
 const DRAWER_WIDTH = 280;
+
+function DeepLinkHandler() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  useEffect(() => {
+    const p = searchParams.get('p');
+    if (p) {
+      navigate(`/produit/${p}`, { replace: true });
+    }
+  }, []);
+  return null;
+}
 
 export default function App() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -69,6 +81,7 @@ export default function App() {
 
   return (
     <Router>
+      <DeepLinkHandler />
       <div className="min-h-screen bg-luxury-black overflow-hidden">
         <div
           className="flex flex-col min-h-screen transition-transform duration-300 ease-in-out"
