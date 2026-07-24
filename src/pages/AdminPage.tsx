@@ -185,14 +185,23 @@ function AdminDashboard() {
                               className="px-3 py-1.5 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 text-[10px] outline-none focus:border-gold w-40"
                             />
                             <button onClick={async () => {
-                              const txId = txIdInput[sub.id];
-                              if (!txId) return;
-                              await approveSubscription(sub.id, txId);
-                              getAllSubscriptionRequests().then(setSubscriptions);
+                              try {
+                                const txId = txIdInput[sub.id];
+                                if (!txId) { alert('Entrez l\'ID de transaction'); return; }
+                                const ok = await approveSubscription(sub.id, txId);
+                                if (!ok) { alert('Erreur lors de la validation'); return; }
+                                getAllSubscriptionRequests().then(setSubscriptions);
+                              } catch (e: any) { alert('Erreur: ' + e.message); }
                             }} className="px-4 py-1.5 bg-green-600/20 border border-green-500/30 text-green-400 text-[10px] uppercase tracking-widest rounded-sm hover:bg-green-600/30 flex items-center gap-1">
                               <ThumbsUp size={12} /> Valider
                             </button>
-                            <button onClick={async () => { await rejectSubscription(sub.id); getAllSubscriptionRequests().then(setSubscriptions); }} className="px-3 py-1.5 border border-red-500/30 text-red-400 text-[10px] rounded-sm hover:bg-red-500/10">
+                            <button onClick={async () => {
+                              try {
+                                const ok = await rejectSubscription(sub.id);
+                                if (!ok) { alert('Erreur lors du rejet'); return; }
+                                getAllSubscriptionRequests().then(setSubscriptions);
+                              } catch (e: any) { alert('Erreur: ' + e.message); }
+                            }} className="px-3 py-1.5 border border-red-500/30 text-red-400 text-[10px] rounded-sm hover:bg-red-500/10">
                               <ThumbsDown size={12} /> Rejeter
                             </button>
                           </div>

@@ -525,20 +525,17 @@ export async function getAllAdRequests(): Promise<Ad[]> {
 }
 
 export async function approveAd(id: string): Promise<boolean> {
-  const { error } = await supabase.from('ads').update({
-    status: 'approved',
-    start_date: new Date().toISOString(),
-  }).eq('id', id);
+  const { error } = await supabase.rpc('admin_approve_ad', { ad_id: id });
   return !error;
 }
 
 export async function rejectAd(id: string): Promise<boolean> {
-  const { error } = await supabase.from('ads').update({ status: 'rejected' }).eq('id', id);
+  const { error } = await supabase.rpc('admin_reject_ad', { ad_id: id });
   return !error;
 }
 
 export async function deleteAd(id: string): Promise<boolean> {
-  const { error } = await supabase.from('ads').delete().eq('id', id);
+  const { error } = await supabase.rpc('admin_delete_ad', { ad_id: id });
   return !error;
 }
 
@@ -630,16 +627,17 @@ export async function getAllSubscriptionRequests(): Promise<Subscription[]> {
 }
 
 export async function approveSubscription(id: string, transactionId: string): Promise<boolean> {
-  const { error } = await supabase.from('subscriptions').update({
-    status: 'active',
-    transaction_id: transactionId,
-    start_date: new Date().toISOString(),
-  }).eq('id', id);
+  const { error } = await supabase.rpc('admin_approve_subscription', {
+    sub_id: id,
+    tx_id: transactionId,
+  });
   return !error;
 }
 
 export async function rejectSubscription(id: string): Promise<boolean> {
-  const { error } = await supabase.from('subscriptions').update({ status: 'cancelled' }).eq('id', id);
+  const { error } = await supabase.rpc('admin_reject_subscription', {
+    sub_id: id,
+  });
   return !error;
 }
 
