@@ -181,8 +181,8 @@ export default function SubscriptionPage() {
               <p className="text-gray-400 text-xs">Effectuez le transfert Airtel Money au numéro suivant :</p>
               <div className="bg-black/40 rounded-lg p-3 flex items-center justify-between">
                 <div>
-                  <p className="text-white text-sm font-bold">+243 000 000 000</p>
-                  <p className="text-gray-600 text-[10px]">Nom du destinataire</p>
+                   <p className="text-white text-sm font-bold">+243 996 710 821</p>
+                      <p className="text-gray-600 text-[10px]">Lwango | LDBusiness</p>
                 </div>
                 <CreditCard size={20} className="text-gold" />
               </div>
