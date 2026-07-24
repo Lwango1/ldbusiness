@@ -519,8 +519,8 @@ export async function getAds(zone?: AdZone): Promise<Ad[]> {
 }
 
 export async function getAllAdRequests(): Promise<Ad[]> {
-  const { data } = await supabase.from('ads').select('*').order('created_at', { ascending: false });
-  return (data || []).map(mapAd);
+  const { data } = await supabase.rpc('admin_get_all_ads');
+  return (data || []).map((s: any) => mapAd(s));
 }
 
 export async function approveAd(id: string): Promise<boolean> {

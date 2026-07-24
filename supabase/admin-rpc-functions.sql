@@ -75,6 +75,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Lister toutes les pubs (admin)
+CREATE OR REPLACE FUNCTION public.admin_get_all_ads()
+RETURNS SETOF public.ads AS $$
+BEGIN
+  RETURN QUERY SELECT * FROM public.ads ORDER BY created_at DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 GRANT EXECUTE ON FUNCTION public.admin_approve_subscription TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_reject_subscription TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_delete_subscription TO authenticated;
@@ -82,3 +90,4 @@ GRANT EXECUTE ON FUNCTION public.admin_approve_ad TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_reject_ad TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_delete_ad TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_ad_request TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_get_all_ads TO authenticated;
