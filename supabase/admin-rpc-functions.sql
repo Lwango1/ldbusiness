@@ -83,6 +83,26 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Récupérer les pubs approuvées par zone (pour affichage public)
+CREATE OR REPLACE FUNCTION public.get_approved_ads(p_zone TEXT DEFAULT NULL)
+RETURNS SETOF public.ads AS $$
+BEGIN
+  IF p_zone IS NULL THEN
+    RETURN QUERY SELECT * FROM public.ads WHERE status = 'approved' ORDER BY created_at DESC;
+  ELSE
+    RETURN QUERY SELECT * FROM public.ads WHERE status = 'approved' AND zone = p_zone ORDER BY created_at DESC;
+  END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Incrémenter les impressions
+CREATE OR REPLACE FUNCTION public.increment_ad_impression(ad_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE public.ads SET impressions = impressions + 1 WHERE id = ad_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 GRANT EXECUTE ON FUNCTION public.admin_approve_subscription TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_reject_subscription TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_delete_subscription TO authenticated;
@@ -91,3 +111,7 @@ GRANT EXECUTE ON FUNCTION public.admin_reject_ad TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_delete_ad TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_ad_request TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_get_all_ads TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_approved_ads TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_ad_impression TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_approved_ads TO anon;
+GRANT EXECUTE ON FUNCTION public.increment_ad_impression TO anon;

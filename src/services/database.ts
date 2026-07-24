@@ -511,11 +511,8 @@ export async function createAdRequest(data: {
 }
 
 export async function getAds(zone?: AdZone): Promise<Ad[]> {
-  let query = supabase.from('ads').select('*');
-  if (zone) query = query.eq('zone', zone);
-  query = query.eq('status', 'approved').order('created_at', { ascending: false });
-  const { data } = await query;
-  return (data || []).map(mapAd);
+  const { data } = await supabase.rpc('get_approved_ads', { p_zone: zone || null });
+  return (data || []).map((s: any) => mapAd(s));
 }
 
 export async function getAllAdRequests(): Promise<Ad[]> {
@@ -544,10 +541,7 @@ export async function deleteSubscription(id: string): Promise<boolean> {
 }
 
 export async function incrementAdImpression(id: string): Promise<void> {
-  const { data } = await supabase.from('ads').select('impressions').eq('id', id).single();
-  if (data) {
-    await supabase.from('ads').update({ impressions: (data.impressions || 0) + 1 }).eq('id', id);
-  }
+  await supabase.rpc('increment_ad_impression', { ad_id: id });
 }
 
 function mapAd(a: any): Ad {
