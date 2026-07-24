@@ -82,11 +82,24 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
   const handleShare = async () => {
     const url = `https://ldbusiness.vercel.app/produit/${product?.id}`;
     const text = `Découvre "${product?.name}" sur LDBusiness 👇\n${url}`;
-    if (navigator.share) {
-      await navigator.share({ title: product?.name, text, url });
-    } else {
-      await navigator.clipboard.writeText(text);
-      alert('Lien copié ! Partage-le sur WhatsApp, Telegram et autres.');
+    try {
+      if (navigator.share) {
+        const imgUrl = images[0];
+        let files: File[] = [];
+        try {
+          const resp = await fetch(imgUrl, { mode: 'cors' });
+          const blob = await resp.blob();
+          files = [new File([blob], 'produit.jpg', { type: blob.type })];
+        } catch {}
+        await navigator.share({ title: product?.name, text, url, files: files.length ? files : undefined });
+      } else {
+        await navigator.clipboard.writeText(text);
+        alert('Lien copié ! Partage-le sur WhatsApp, Telegram et autres.');
+      }
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        try { await navigator.clipboard.writeText(text); } catch {}
+      }
     }
   };
 
