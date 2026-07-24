@@ -497,7 +497,7 @@ export async function createAdRequest(data: {
   zone: AdZone;
   frequency: string;
   userId: string;
-}): Promise<boolean> {
+}): Promise<{ ok: boolean; error?: string }> {
   const { error } = await supabase.from('ads').insert({
     user_id: data.userId,
     brand_name: data.brandName,
@@ -508,7 +508,7 @@ export async function createAdRequest(data: {
     zone: data.zone,
     frequency: data.frequency,
   });
-  return !error;
+  return { ok: !error, error: error?.message };
 }
 
 export async function getAds(zone?: AdZone): Promise<Ad[]> {

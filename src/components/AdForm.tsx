@@ -44,7 +44,7 @@ export default function AdForm({ onClose }: AdFormProps) {
       return;
     }
 
-    const ok = await createAdRequest({
+    const result = await createAdRequest({
       userId: user?.id || '',
       brandName: form.brandName,
       brandWebsite: form.brandWebsite || undefined,
@@ -55,8 +55,8 @@ export default function AdForm({ onClose }: AdFormProps) {
     });
 
     setUploading(false);
-    if (ok) setSent(true);
-    else setError('Erreur lors de l\'envoi');
+    if (result.ok) setSent(true);
+    else setError(result.error || 'Erreur lors de l\'envoi');
   };
 
   return (
