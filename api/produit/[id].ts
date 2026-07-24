@@ -23,6 +23,13 @@ export default async function handler(req: any, res: any) {
   const image = product?.images?.[0] || product?.image || 'https://ldbusiness.vercel.app/icons/icon-512.png';
   const url = `https://ldbusiness.vercel.app/produit/${id}`;
 
+  const ua = (req.headers['user-agent'] || '').toLowerCase();
+  const isCrawler = /bot|crawler|spider|facebook|whatsapp|twitter|telegram|slack|linkedin|pinterest|discord/i.test(ua);
+
+  if (!isCrawler) {
+    return res.redirect(302, url);
+  }
+
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.status(200).send(`<!DOCTYPE html>
 <html>
@@ -32,17 +39,18 @@ export default async function handler(req: any, res: any) {
   <meta property="og:title" content="${title}" />
   <meta property="og:description" content="${description}" />
   <meta property="og:image" content="${image}" />
+  <meta property="og:image:secure_url" content="${image}" />
+  <meta property="og:image:width" content="800" />
+  <meta property="og:image:height" content="800" />
   <meta property="og:url" content="${url}" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${title}" />
   <meta name="twitter:description" content="${description}" />
   <meta name="twitter:image" content="${image}" />
-  <meta http-equiv="refresh" content="0;url=${url}" />
-  <script>window.location.replace("${url}");</script>
 </head>
 <body>
-  <p>Redirection vers <a href="${url}">${title}</a>...</p>
+  <p>${title} - LDBusiness</p>
 </body>
 </html>`);
 }
