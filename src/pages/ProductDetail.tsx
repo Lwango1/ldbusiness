@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Store, ShieldAlert, MessageCircle, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Store, ShieldAlert, MessageCircle, Tag, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
 import { Product, Seller, formatDualPrice } from '../types';
 import { getProducts, getSeller } from '../services/database';
 import ContactSeller from '../components/ContactSeller';
@@ -77,6 +77,17 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
   const scrollCarousel = (dir: number) => {
     if (!carouselRef.current) return;
     carouselRef.current.scrollBy({ left: dir * 200, behavior: 'smooth' });
+  };
+
+  const handleShare = async () => {
+    const url = `https://ldbusiness.vercel.app/produit/${product?.id}`;
+    const text = `Découvre "${product?.name}" sur LDBusiness 👇\n${url}`;
+    if (navigator.share) {
+      await navigator.share({ title: product?.name, text, url });
+    } else {
+      await navigator.clipboard.writeText(text);
+      alert('Lien copié ! Partage-le sur WhatsApp, Telegram et autres.');
+    }
   };
 
   if (loading) {
@@ -273,6 +284,13 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
               <MessageCircle size={16} /> Contacter {seller.storeName}
             </button>
           )}
+
+          <button
+            onClick={handleShare}
+            className="w-full py-4 border border-gold/10 text-gray-400 text-xs uppercase tracking-widest rounded-sm hover:border-gold/30 hover:text-gold transition-all flex items-center justify-center gap-2"
+          >
+            <Share2 size={16} /> Partager sur WhatsApp / Telegram
+          </button>
         </div>
       </div>
 
