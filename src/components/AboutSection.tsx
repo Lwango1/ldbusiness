@@ -1,16 +1,15 @@
-import { Shield, Users, TrendingUp, Globe } from 'lucide-react';
+import { Shield, Users, TrendingUp, Globe, Radio, Megaphone, Store, ShoppingBag } from 'lucide-react';
 
 export default function AboutSection() {
   const values = [
-    { icon: <Shield className="text-gold" size={24} />, title: 'Transactions Sécurisées', desc: 'Chaque achat est protégé par notre système de facturation intégré.' },
-    { icon: <Users className="text-gold" size={24} />, title: 'Multiples Vendeurs', desc: 'Des centaines de boutiques et artisans réunis sur une seule plateforme.' },
-    { icon: <TrendingUp className="text-gold" size={24} />, title: 'Croissance Locale', desc: 'Nous boostons l\'économie de Goma et du Nord-Kivu.' },
-    { icon: <Globe className="text-gold" size={24} />, title: 'Livraison Partout', desc: 'De Goma vers toute la RDC, nous assurons la livraison.' },
+    { icon: <Store className="text-gold" size={24} />, title: 'Multiples Boutiques', desc: 'Une marketplace qui regroupe vendeurs, artisans et créateurs en un seul endroit.' },
+    { icon: <ShoppingBag className="text-gold" size={24} />, title: 'Achat & Vente', desc: 'Achetez et vendez en toute sécurité avec notre système de facturation intégré.' },
+    { icon: <Radio className="text-gold" size={24} />, title: 'Showroom Live', desc: 'Présentez vos produits en direct et interagissez avec vos clients en temps réel.' },
+    { icon: <Megaphone className="text-gold" size={24} />, title: 'Publicité Intégrée', desc: 'Promouvez votre marque avec nos espaces publicitaires (Hero, Pop-up, Carrousel, Sidebar).' },
   ];
 
   return (
     <section id="about" className="py-24 px-6 bg-luxury-dark relative overflow-hidden">
-      {/* Filigrane décoratif en arrière-plan */}
       <div className="absolute top-0 right-0 text-[15rem] font-playfair font-black text-white/[0.02] select-none pointer-events-none">
         LD
       </div>
@@ -21,17 +20,11 @@ export default function AboutSection() {
           {/* Gauche - Identité Visuelle */}
           <div className="relative group">
             <div className="aspect-square max-w-sm md:max-w-md mx-auto relative flex items-center justify-center">
-              {/* Cercles concentriques animés */}
               <div className="absolute inset-0 border border-gold/10 rounded-full animate-[spin_20s_linear_infinite]" />
               <div className="absolute inset-4 border border-gold/5 rounded-full animate-[spin_15s_linear_infinite_reverse]" />
 
-              {/* Contenu Central */}
               <div className="relative z-10 text-center p-8">
-                <img
-                  src="/images/logo.png"
-                  alt="LDBusiness"
-                  className="h-24 md:h-32 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(201,169,78,0.4)]"
-                />
+                <img src="/images/logo.png" alt="LDBusiness" className="h-24 md:h-32 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(201,169,78,0.4)]" />
                 <div className="w-12 h-[1px] bg-gold/50 mx-auto mb-4" />
                 <p className="font-playfair text-gold text-sm italic leading-relaxed">
                   "La plateforme qui connecte <br />vendeurs et acheteurs à Goma"
@@ -39,7 +32,6 @@ export default function AboutSection() {
                 <p className="text-gray-600 text-[10px] uppercase tracking-widest mt-4">— LDBusiness Marketplace</p>
               </div>
 
-              {/* Accents de coins de luxe */}
               <div className="absolute top-0 left-0 w-12 h-12 border-t border-l border-gold/30" />
               <div className="absolute bottom-0 right-0 w-12 h-12 border-b border-r border-gold/30" />
             </div>
@@ -48,24 +40,35 @@ export default function AboutSection() {
           {/* Droite - Texte & Valeurs */}
           <div className="space-y-8">
             <div>
-              <span className="text-gold text-[10px] uppercase tracking-[0.5em] font-bold">La Plateforme</span>
+              <span className="text-gold text-[10px] uppercase tracking-[0.5em] font-bold">À Propos</span>
               <h2 className="font-playfair text-4xl md:text-6xl font-bold mt-4 leading-tight">
-                <span className="gold-shimmer">LDBusiness</span>
+                <span className="gold-shimmer">Une plateforme</span>
                 <br />
-                <span className="text-white">Marketplace</span>
+                <span className="text-white">tout-en-un</span>
               </h2>
             </div>
 
             <div className="space-y-4 text-gray-400 text-sm md:text-base leading-relaxed font-light">
               <p>
-                Basée à <span className="text-white font-semibold">Goma, Nord-Kivu</span>, LDBusiness est la première marketplace congolaise dédiée à la mode, l'artisanat et les services de luxe. Nous mettons en relation des vendeurs locaux avec des acheteurs du monde entier.
+                <span className="text-white font-semibold">LDBusiness</span> est une <span className="text-gold">marketplace multi-usage</span> basée à Goma, Nord-Kivu.
+                Contrairement aux plateformes classiques, nous ne nous limitons pas à l'achat et à la vente.
+                Nous offrons un écosystème complet qui permet aux vendeurs de <span className="text-white">diffuser en direct</span> leurs produits,
+                de <span className="text-white">promouvoir leur marque</span> via des espaces publicitaires intégrés,
+                et de <span className="text-white">gérer leur boutique</span> en toute autonomie.
               </p>
               <p>
-                Notre mission est de créer un écosystème commercial fiable où chaque transaction est sécurisée, chaque produit est vérifié, et chaque vendeur peut développer son activité en toute confiance. Nous gérons la logistique et la livraison pour garantir une expérience fluide.
+                Pour l'acheteur, c'est la garantie d'une <span className="text-white">expérience fluide et sécurisée</span> :
+                catalogue varié de produits de mode, artisanat et services,
+                live streaming pour voir les produits en action,
+                paiement via Airtel Money, et livraison assurée partout en RDC.
+              </p>
+              <p>
+                Notre mission est simple : <span className="text-white">faciliter le commerce local</span> en donnant aux entrepreneurs congolais les outils
+                (boutique en ligne, live, publicité) pour développer leur activité et toucher plus de clients.
               </p>
             </div>
 
-            {/* Grille de Valeurs optimisée pour APK */}
+            {/* Grille des fonctionnalités */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {values.map((v, i) => (
                 <div key={i} className="group p-5 bg-white/[0.02] border border-white/5 rounded-sm hover:border-gold/30 transition-all duration-500">
@@ -76,7 +79,7 @@ export default function AboutSection() {
               ))}
             </div>
 
-            {/* Statistiques d'Excellence */}
+            {/* Statistiques */}
             <div className="flex justify-between items-center pt-8 border-t border-gold/10">
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">100+</div>
@@ -89,8 +92,13 @@ export default function AboutSection() {
               </div>
               <div className="w-px h-8 bg-gold/20" />
               <div className="text-center">
-                <div className="text-2xl font-bold text-white">Goma</div>
-                <div className="text-[9px] text-gold uppercase tracking-tighter">Nord-Kivu</div>
+                <div className="text-2xl font-bold text-white">Live</div>
+                <div className="text-[9px] text-gold uppercase tracking-tighter">Showroom</div>
+              </div>
+              <div className="w-px h-8 bg-gold/20" />
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white">Pub</div>
+                <div className="text-[9px] text-gold uppercase tracking-tighter">4 Zones</div>
               </div>
             </div>
           </div>
