@@ -95,7 +95,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
 
   const handleShare = async () => {
     const url = `https://ldbusiness.vercel.app/produit/${product?.id}`;
-    const text = `Découvre "${product?.name}" sur LDBusiness 👇\n${url}`;
+    const text = `${product?.name} - ${product?.description}\n\nPrix: ${formatDualPrice(product!.price, product!.currency).primary}\n\nDécouvre-le sur LDBusiness 👇\n${url}`;
     try {
       if (navigator.share) {
         let files: File[] = [];
