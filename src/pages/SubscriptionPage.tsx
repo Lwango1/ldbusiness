@@ -31,12 +31,8 @@ export default function SubscriptionPage() {
     })();
   }, [user]);
 
-  const handleSelectPlan = (type: 'sub' | 'ad', key: string, price: number, label: string) => {
-    if (type === 'ad') {
-      navigate('/publicite');
-      return;
-    }
-    setSelectedPlan({ type, key, price, label, live: true });
+  const handleSelectPlan = (type: 'sub' | 'ad', key: string, price: number, label: string, live: boolean) => {
+    setSelectedPlan({ type, key, price, label, live });
     setShowPayment(true);
     setError('');
     setTxId('');
@@ -48,8 +44,8 @@ export default function SubscriptionPage() {
     setSubscribing(true);
     setError('');
 
-    const sub = await createSubscription(user.id, selectedPlan.key as SubscriptionPlan, selectedPlan.price);
-    if (!sub) { setError('Erreur lors de la création de l\'abonnement. Réessayez.'); setSubscribing(false); return; }
+    const sub = await createSubscription(user.id, 'monthly', selectedPlan.price);
+    if (!sub) { setError('Erreur lors de la création. Réessayez.'); setSubscribing(false); return; }
 
     setSuccess(true);
     setSubscribing(false);
@@ -158,7 +154,7 @@ export default function SubscriptionPage() {
                       <li className="flex items-center gap-2 text-gray-600"><X size={14} className="text-gray-600 shrink-0" /> Sans live</li>
                     )}
                   </ul>
-                  <button onClick={() => handleSelectPlan('ad', key, zone.price, zone.label)} className="w-full py-3 bg-gold/80 text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold transition-all">
+                  <button onClick={() => handleSelectPlan('ad', key, zone.price, zone.label, liveIncluded)} className="w-full py-3 bg-gold/80 text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold transition-all">
                     Choisir
                   </button>
                 </div>
@@ -215,9 +211,20 @@ export default function SubscriptionPage() {
               <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
                 <Check size={32} className="text-green-500" />
               </div>
-              <p className="text-white font-playfair text-xl font-bold mb-2">Demande envoyée !</p>
-              <p className="text-gray-400 text-sm">Votre demande est en attente de vérification. Un administrateur validera votre paiement sous 24h.</p>
-              <button onClick={() => { setSuccess(false); setShowPayment(false); setSelectedPlan(null); }} className="mt-6 text-gold text-xs uppercase tracking-widest">OK</button>
+              <p className="text-white font-playfair text-xl font-bold mb-2">Paiement confirmé !</p>
+              {selectedPlan?.type === 'ad' ? (
+                <>
+                  <p className="text-gray-400 text-sm mb-6">Votre paiement pour <strong>{selectedPlan.label}</strong> a été enregistré. Créez maintenant votre publicité.</p>
+                  <button onClick={() => { navigate('/publicite'); }} className="px-8 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all">
+                    Créer ma publicité
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-400 text-sm">Votre demande d'abonnement est en attente de vérification. Un administrateur validera votre paiement sous 24h.</p>
+                  <button onClick={() => { setSuccess(false); setShowPayment(false); setSelectedPlan(null); }} className="mt-6 text-gold text-xs uppercase tracking-widest">OK</button>
+                </>
+              )}
             </div>
           </div>
         )}
