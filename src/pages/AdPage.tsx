@@ -2,20 +2,20 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Megaphone, Crown, X, DollarSign } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getActiveSubscription } from '../services/database';
+import { hasPremiumAccess } from '../services/database';
 import { AD_ZONE_PRICES } from '../types';
 import AdForm from '../components/AdForm';
 
 export default function AdPage() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
   const [showSubscribe, setShowSubscribe] = useState(false);
 
   const handleRequestAd = async () => {
     if (!user) return;
-    const sub = await getActiveSubscription(user.id);
-    if (!sub) { setShowSubscribe(true); return; }
+    const access = await hasPremiumAccess(user.id, role);
+    if (!access) { setShowSubscribe(true); return; }
     setShowForm(true);
   };
 
