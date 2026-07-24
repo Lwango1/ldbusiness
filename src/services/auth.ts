@@ -22,9 +22,16 @@ export async function signUp(phone: string, password: string, fullName: string, 
       data: { full_name: fullName, role, phone },
     },
   });
-  if (error) throw error;
 
-  if (data.user) {
+  if (error) {
+    if (error.message?.includes('rate_limit') || error.message?.includes('email') || error.message?.includes('smtp')) {
+      console.warn('Email error (ignored):', error.message);
+    } else {
+      throw error;
+    }
+  }
+
+  if (data?.user) {
     const { error: profileError } = await supabase.from('profiles').upsert({
       id: data.user.id,
       full_name: fullName,
