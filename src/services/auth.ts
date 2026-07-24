@@ -73,7 +73,16 @@ export async function getCurrentUserPhone(): Promise<string | null> {
 
 export async function getCurrentUserRole(): Promise<UserRole | null> {
   const user = await getCurrentUser();
-  return user?.user_metadata?.role as UserRole || null;
+  const metaRole = user?.user_metadata?.role as UserRole | undefined;
+  if (metaRole) return metaRole;
+
+  // Fallback: vérifier dans la table profiles
+  if (user) {
+    const { data } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+    if (data?.role) return data.role as UserRole;
+  }
+
+  return null;
 }
 
 export function onAuthChange(callback: (event: string, session: any) => void) {
