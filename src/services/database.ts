@@ -603,6 +603,10 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
 }
 
 export async function hasPremiumAccess(userId: string): Promise<boolean> {
+  // Les admins ont accès à tout
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
+  if (profile?.role === 'admin') return true;
+
   // Vérifie si l'utilisateur a un abonnement actif (3$/mois)
   const sub = await getActiveSubscription(userId);
   if (sub) return true;
