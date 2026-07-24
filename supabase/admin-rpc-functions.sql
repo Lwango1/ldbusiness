@@ -21,6 +21,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+CREATE OR REPLACE FUNCTION public.admin_delete_subscription(sub_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  DELETE FROM public.subscriptions WHERE id = sub_id;
+  RETURN FOUND;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Publicités
 CREATE OR REPLACE FUNCTION public.admin_approve_ad(ad_id UUID)
 RETURNS BOOLEAN AS $$
@@ -50,15 +58,27 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE FUNCTION public.admin_delete_subscription(sub_id UUID)
-RETURNS BOOLEAN AS $$
+-- Création de pub (contourne le cache schema PostgREST)
+CREATE OR REPLACE FUNCTION public.create_ad_request(
+  p_user_id UUID,
+  p_brand_name TEXT,
+  p_brand_website TEXT DEFAULT NULL,
+  p_image_url TEXT,
+  p_description TEXT DEFAULT NULL,
+  p_zone TEXT,
+  p_frequency TEXT
+) RETURNS BOOLEAN AS $$
 BEGIN
-  DELETE FROM public.subscriptions WHERE id = sub_id;
+  INSERT INTO public.ads (user_id, brand_name, brand_website, image_url, description, zone, frequency)
+  VALUES (p_user_id, p_brand_name, p_brand_website, p_image_url, p_description, p_zone, p_frequency);
   RETURN FOUND;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Autoriser les utilisateurs authentifiés à appeler ces fonctions
 GRANT EXECUTE ON FUNCTION public.admin_approve_subscription TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_reject_subscription TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_delete_subscription TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_approve_ad TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_reject_ad TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_delete_ad TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_ad_request TO authenticated;

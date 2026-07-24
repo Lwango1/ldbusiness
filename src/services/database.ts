@@ -498,15 +498,14 @@ export async function createAdRequest(data: {
   frequency: string;
   userId: string;
 }): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await supabase.from('ads').insert({
-    user_id: data.userId,
-    brand_name: data.brandName,
-    brand_logo: data.brandLogo || null,
-    brand_website: data.brandWebsite || null,
-    image_url: data.imageUrl,
-    description: data.description || null,
-    zone: data.zone,
-    frequency: data.frequency,
+  const { error } = await supabase.rpc('create_ad_request', {
+    p_user_id: data.userId,
+    p_brand_name: data.brandName,
+    p_brand_website: data.brandWebsite || null,
+    p_image_url: data.imageUrl,
+    p_description: data.description || null,
+    p_zone: data.zone,
+    p_frequency: data.frequency,
   });
   return { ok: !error, error: error?.message };
 }
