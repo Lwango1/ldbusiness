@@ -83,7 +83,24 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
     setTilt({ rotateX, rotateY });
   };
 
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!imageRef.current || !e.touches[0]) return;
+    const rect = imageRef.current.getBoundingClientRect();
+    const x = e.touches[0].clientX - rect.left;
+    const y = e.touches[0].clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateY = ((x - centerX) / centerX) * 15;
+    const rotateX = ((centerY - y) / centerY) * 15;
+    setTilt({ rotateX, rotateY });
+  };
+
   const handleMouseLeave = () => {
+    setIsHovering(false);
+    setTilt({ rotateX: 0, rotateY: 0 });
+  };
+
+  const handleTouchEnd = () => {
     setIsHovering(false);
     setTilt({ rotateX: 0, rotateY: 0 });
   };
@@ -149,6 +166,9 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
             onMouseMove={(e) => { pauseAutoRotate(); handleMouseMove(e); }}
             onMouseEnter={() => { pauseAutoRotate(); setIsHovering(true); }}
             onMouseLeave={() => { resumeAutoRotate(); handleMouseLeave(); }}
+            onTouchMove={(e) => { pauseAutoRotate(); handleTouchMove(e); }}
+            onTouchStart={() => { pauseAutoRotate(); setIsHovering(true); }}
+            onTouchEnd={() => { resumeAutoRotate(); handleTouchEnd(); }}
             className="relative aspect-[3/4] overflow-hidden rounded-sm bg-luxury-dark border border-gold/10 group"
             style={{
               perspective: '1200px',
