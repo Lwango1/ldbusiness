@@ -57,6 +57,20 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (!product) return;
+    const setMeta = (name: string, content: string) => {
+      let el = document.querySelector(`meta[property="${name}"]`);
+      if (!el) { el = document.createElement('meta'); el.setAttribute('property', name); document.head.appendChild(el); }
+      el.setAttribute('content', content);
+    };
+    setMeta('og:title', `${product.name} - LDBusiness`);
+    setMeta('og:description', product.description.slice(0, 200));
+    setMeta('og:image', images[0]);
+    setMeta('og:url', `https://ldbusiness.vercel.app/produit/${product.id}`);
+    setMeta('og:type', 'website');
+  }, [product]);
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!imageRef.current) return;
     const rect = imageRef.current.getBoundingClientRect();
@@ -84,14 +98,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
     const text = `Découvre "${product?.name}" sur LDBusiness 👇\n${url}`;
     try {
       if (navigator.share) {
-        const imgUrl = images[0];
-        let files: File[] = [];
-        try {
-          const resp = await fetch(imgUrl, { mode: 'cors' });
-          const blob = await resp.blob();
-          files = [new File([blob], 'produit.jpg', { type: blob.type })];
-        } catch {}
-        await navigator.share({ title: product?.name, text, url, files: files.length ? files : undefined });
+        await navigator.share({ title: product?.name, text, url });
       } else {
         await navigator.clipboard.writeText(text);
         alert('Lien copié ! Partage-le sur WhatsApp, Telegram et autres.');
