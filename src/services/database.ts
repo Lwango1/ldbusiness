@@ -539,6 +539,11 @@ export async function deleteAd(id: string): Promise<boolean> {
   return !error;
 }
 
+export async function deleteSubscription(id: string): Promise<boolean> {
+  const { error } = await supabase.rpc('admin_delete_subscription', { sub_id: id });
+  return !error;
+}
+
 export async function incrementAdImpression(id: string): Promise<void> {
   const { data } = await supabase.from('ads').select('impressions').eq('id', id).single();
   if (data) {

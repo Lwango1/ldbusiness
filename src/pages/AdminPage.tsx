@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, ShoppingCart, CheckCircle, Clock, Lock, Users, XCircle, Image as ImageIcon, Hash, Megaphone, ThumbsUp, ThumbsDown, Trash2, ExternalLink, Crown, Search } from 'lucide-react';
 import { Transaction, Ad, Subscription, SubscriptionPlan } from '../types';
-import { getTransactions, completeTransaction, cancelTransaction, getTotalCommissions, getPendingCommissions, getAllAdRequests, approveAd, rejectAd, deleteAd, getAllSubscriptionRequests, approveSubscription, rejectSubscription } from '../services/database';
+import { getTransactions, completeTransaction, cancelTransaction, getTotalCommissions, getPendingCommissions, getAllAdRequests, approveAd, rejectAd, deleteAd, getAllSubscriptionRequests, approveSubscription, rejectSubscription, deleteSubscription } from '../services/database';
 import AdminGuard, { clearAdminAuth } from '../components/AdminGuard';
 
 function AdminDashboard() {
@@ -206,8 +206,17 @@ function AdminDashboard() {
                             </button>
                           </div>
                         )}
-                        {sub.status === 'active' && sub.transactionId && (
-                          <p className="text-[10px] text-gray-600 mt-1">Tx: {sub.transactionId}</p>
+                        {sub.status !== 'pending' && (
+                          <button onClick={async () => {
+                            if (!confirm('Supprimer cette demande ?')) return;
+                            try {
+                              const ok = await deleteSubscription(sub.id);
+                              if (!ok) { alert('Erreur lors de la suppression'); return; }
+                              getAllSubscriptionRequests().then(setSubscriptions);
+                            } catch (e: any) { alert('Erreur: ' + e.message); }
+                          }} className="mt-2 text-[10px] text-gray-500 hover:text-red-400 flex items-center gap-1">
+                            <Trash2 size={10} /> Supprimer
+                          </button>
                         )}
                       </div>
                     </div>
