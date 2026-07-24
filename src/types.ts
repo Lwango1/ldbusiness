@@ -114,7 +114,7 @@ export const SUBSCRIPTION_PRICES: Record<SubscriptionPlan, { label: string; pric
 export type AdZone = 'hero' | 'between_products' | 'popup' | 'sidebar';
 export const AD_ZONE_PRICES: Record<AdZone, { label: string; price: number; desc: string }> = {
   hero: { label: 'Bannière Hero', price: 10, desc: 'En haut de la page d\'accueil' },
-  popup: { label: 'Pop-up', price: 8, desc: 'Fenêtre contextuelle' },
+  popup: { label: 'Pop-up', price: 10, desc: 'Fenêtre contextuelle' },
   between_products: { label: 'Entre les produits', price: 15, desc: 'Carrousel entre les articles' },
   sidebar: { label: 'Bannière latérale', price: 5, desc: 'Affichage sur le côté (desktop)' },
 };

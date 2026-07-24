@@ -35,7 +35,7 @@ export default function AdPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 text-left">
           {(Object.entries(AD_ZONE_PRICES) as [string, typeof AD_ZONE_PRICES[keyof typeof AD_ZONE_PRICES]][]).map(([key, zone]) => {
-            const includesLive = key === 'hero' || key === 'between_products';
+            const includesLive = key === 'hero' || key === 'popup' || key === 'between_products';
             return (
               <div key={key} className={`bg-luxury-dark border rounded-xl p-6 flex items-start justify-between gap-4 ${includesLive ? 'border-gold/30' : 'border-gold/10'}`}>
                 <div>

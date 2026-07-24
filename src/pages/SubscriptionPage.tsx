@@ -142,7 +142,7 @@ export default function SubscriptionPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
             {(Object.entries(AD_ZONE_PRICES) as [string, {label: string; price: number; description?: string}][]).map(([key, zone]) => {
-              const liveIncluded = key === 'hero' || key === 'between_products';
+              const liveIncluded = key === 'hero' || key === 'popup' || key === 'between_products';
               return (
                 <div key={key} className="bg-luxury-dark border border-gold/10 rounded-xl p-6 text-center transition-all hover:border-gold/40">
                   <p className="text-gold text-xs uppercase tracking-widest font-bold mb-2">{zone.label}</p>

@@ -148,7 +148,7 @@ export default function LiveSection() {
               <Crown size={40} className="text-gold mx-auto mb-4" />
                 <h3 className="text-white font-playfair text-xl font-bold mb-2">Accès restreint</h3>
               <p className="text-gray-400 text-sm mb-6">
-                Pour lancer un live, souscrivez à l'abonnement (3$/mois) ou prenez une pub à partir de 10$/mois (Hero ou Carrousel) avec live inclus.
+                Pour lancer un live, souscrivez à l'abonnement (3$/mois) ou prenez une pub à partir de 10$/mois (Hero, Pop-up ou Carrousel) avec live inclus.
               </p>
               <div className="flex gap-3">
                 <button onClick={() => setShowSubscribe(false)} className="flex-1 py-3 bg-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-white/20 transition-all">
