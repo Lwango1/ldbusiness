@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/produit/(.*)", "destination": "/api/produit/$1" },
     { "source": "/((?!api/).*)", "destination": "/" }
   ]
 }
