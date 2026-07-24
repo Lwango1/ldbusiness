@@ -44,7 +44,8 @@ export default function SubscriptionPage() {
     setSubscribing(true);
     setError('');
 
-    const sub = await createSubscription(user.id, 'monthly', selectedPlan.price);
+    const planKey: SubscriptionPlan = selectedPlan.type === 'ad' ? 'monthly' : selectedPlan.key as SubscriptionPlan;
+    const sub = await createSubscription(user.id, planKey, selectedPlan.price);
     if (!sub) { setError('Erreur lors de la création. Réessayez.'); setSubscribing(false); return; }
 
     setSuccess(true);
@@ -200,7 +201,7 @@ export default function SubscriptionPage() {
             {error && <p className="text-red-500 text-xs text-center mb-3">{error}</p>}
 
             <button onClick={handleSubmitPayment} disabled={subscribing} className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-2">
-              {subscribing ? <><Loader size={16} className="animate-spin" /> Traitement...</> : <>Confirmer le paiement</>}
+              {subscribing ? <><Loader size={16} className="animate-spin" /> Traitement...</> : <>Soumettre la demande</>}
             </button>
           </div>
         )}
@@ -211,20 +212,14 @@ export default function SubscriptionPage() {
               <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
                 <Check size={32} className="text-green-500" />
               </div>
-              <p className="text-white font-playfair text-xl font-bold mb-2">Paiement confirmé !</p>
-              {selectedPlan?.type === 'ad' ? (
-                <>
-                  <p className="text-gray-400 text-sm mb-6">Votre paiement pour <strong>{selectedPlan.label}</strong> a été enregistré. Créez maintenant votre publicité.</p>
-                  <button onClick={() => { navigate('/publicite'); }} className="px-8 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all">
-                    Créer ma publicité
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p className="text-gray-400 text-sm">Votre demande d'abonnement est en attente de vérification. Un administrateur validera votre paiement sous 24h.</p>
-                  <button onClick={() => { setSuccess(false); setShowPayment(false); setSelectedPlan(null); }} className="mt-6 text-gold text-xs uppercase tracking-widest">OK</button>
-                </>
+              <p className="text-white font-playfair text-xl font-bold mb-2">Demande envoyée !</p>
+              <p className="text-gray-400 text-sm mb-2">Un administrateur vérifiera votre paiement et approuvera la demande sous 24h.</p>
+              {selectedPlan?.type === 'ad' && (
+                <p className="text-gray-500 text-xs mb-6">Après validation, créez votre publicité depuis la page Publicité.</p>
               )}
+              <button onClick={() => { setSuccess(false); setShowPayment(false); setSelectedPlan(null); }} className="text-gold text-xs uppercase tracking-widest hover:underline">
+                OK
+              </button>
             </div>
           </div>
         )}
