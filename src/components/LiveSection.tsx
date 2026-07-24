@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function LiveSection() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [lives, setLives] = useState<LiveStream[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', category: 'Mode' });
@@ -70,7 +70,7 @@ export default function LiveSection() {
           <button
             onClick={async () => {
               if (!user) { setStartError('Vous devez être connecté'); return; }
-              const access = await hasPremiumAccess(user.id);
+              const access = await hasPremiumAccess(user.id, role);
               if (!access) { setShowSubscribe(true); return; }
               setShowForm(true);
             }}
