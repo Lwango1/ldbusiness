@@ -496,8 +496,10 @@ export async function createAdRequest(data: {
   description?: string;
   zone: AdZone;
   frequency: string;
+  userId: string;
 }): Promise<boolean> {
   const { error } = await supabase.from('ads').insert({
+    user_id: data.userId,
     brand_name: data.brandName,
     brand_logo: data.brandLogo || null,
     brand_website: data.brandWebsite || null,
@@ -607,6 +609,7 @@ export async function hasPremiumAccess(userId: string): Promise<boolean> {
 
   // OU une campagne publicitaire approuvée de 10$+ (Hero=10$, Carrousel=15$)
   const { data: ads } = await supabase.from('ads').select('end_date, zone')
+    .eq('user_id', userId)
     .eq('status', 'approved')
     .in('zone', ['hero', 'between_products'])
     .order('created_at', { ascending: false }).limit(1);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Send, Megaphone, Globe, Image, FileText } from 'lucide-react';
 import { createAdRequest, uploadProductImage } from '../services/database';
+import { useAuth } from '../contexts/AuthContext';
 
 interface AdFormProps {
   onClose: () => void;
@@ -21,6 +22,7 @@ const frequencies = [
 ] as const;
 
 export default function AdForm({ onClose }: AdFormProps) {
+  const { user } = useAuth();
   const [form, setForm] = useState({ brandName: '', brandWebsite: '', description: '', zone: 'hero', frequency: 'hourly' });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -43,6 +45,7 @@ export default function AdForm({ onClose }: AdFormProps) {
     }
 
     const ok = await createAdRequest({
+      userId: user?.id || '',
       brandName: form.brandName,
       brandWebsite: form.brandWebsite || undefined,
       imageUrl,
