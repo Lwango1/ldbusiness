@@ -6,7 +6,7 @@ CREATE TABLE public.ads (
   image_url TEXT NOT NULL,
   description TEXT,
   zone TEXT NOT NULL CHECK (zone IN ('hero', 'between_products', 'popup', 'sidebar')),
-  frequency TEXT NOT NULL DEFAULT 'hourly' CHECK (frequency IN ('hourly', 'daily_5', 'daily_10', 'daily_20')),
+  frequency TEXT NOT NULL DEFAULT 'daily_3' CHECK (frequency IN ('daily_3', 'daily_6', 'hourly', 'every_30min')),
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'expired')),
   start_date TIMESTAMPTZ,
   end_date TIMESTAMPTZ,
