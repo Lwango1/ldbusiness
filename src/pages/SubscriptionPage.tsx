@@ -182,7 +182,7 @@ export default function SubscriptionPage() {
               <div className="bg-black/40 rounded-lg p-3 flex items-center justify-between">
                 <div>
                    <p className="text-white text-sm font-bold">+243 996 710 821</p>
-                      <p className="text-gray-600 text-[10px]">Lwango | LDBusiness</p>
+                      <p className="text-gray-600 text-[10px]">Daniel | LDBusiness</p>
                 </div>
                 <CreditCard size={20} className="text-gold" />
               </div>
