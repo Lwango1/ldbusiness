@@ -136,6 +136,7 @@ export interface Ad {
   impressions: number;
   clicks: number;
   createdAt: string;
+  userId?: string;
 }
 
 export interface Message {

@@ -88,10 +88,9 @@ export default function ProductCard({ product, onView3D, onAddToCart }: ProductC
             </h3>
           </Link>
           {seller && (
-            <div className="flex items-center gap-1 text-[11px] text-gold/60 mb-1">
+            <Link to={`/boutique/${product.sellerId}`} className="flex items-center gap-1 text-[11px] text-gold/60 mb-1 hover:text-gold transition-colors">
               <Store size={10} /> {seller.storeName}
-              <span className="text-[8px] text-red-500/30 ml-auto">🔒 Plateforme</span>
-            </div>
+            </Link>
           )}
           <p className="text-gray-500 text-sm mb-3 line-clamp-2">{product.description}</p>
           <div className="flex items-center justify-between">

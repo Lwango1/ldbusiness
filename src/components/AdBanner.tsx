@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Ad } from '../types';
 import { getAds, incrementAdImpression } from '../services/database';
 
@@ -26,6 +27,7 @@ function AdMedia({ src, alt, className }: { src: string; alt: string; className?
 }
 
 export default function AdBanner({ zone }: AdBannerProps) {
+  const navigate = useNavigate();
   const [ads, setAds] = useState<Ad[]>([]);
   const [index, setIndex] = useState(0);
   const [dismissed, setDismissed] = useState(false);
@@ -68,6 +70,24 @@ export default function AdBanner({ zone }: AdBannerProps) {
 
   const ad = ads[index];
 
+  const handleAdClick = () => {
+    incrementAdImpression(ad.id);
+    if (ad.userId) {
+      navigate(`/boutique/${ad.userId}`);
+    } else if (ad.brandWebsite) {
+      window.open(ad.brandWebsite, '_blank', 'noopener');
+    }
+  };
+
+  const handlePopupVisit = () => {
+    incrementAdImpression(ad.id);
+    if (ad.userId) {
+      navigate(`/boutique/${ad.userId}`);
+    } else if (ad.brandWebsite) {
+      window.open(ad.brandWebsite, '_blank', 'noopener');
+    }
+  };
+
   // Popup
   if (zone === 'popup') {
     return (
@@ -84,11 +104,9 @@ export default function AdBanner({ zone }: AdBannerProps) {
             <h3 className="text-white font-bold text-sm">{ad.brandName}</h3>
             {ad.description && <p className="text-gray-400 text-xs mt-1">{ad.description}</p>}
             <div className="flex gap-2 mt-3">
-              {ad.brandWebsite && (
-                <a href={ad.brandWebsite} target="_blank" rel="noopener noreferrer" onClick={() => incrementAdImpression(ad.id)} className="flex-1 py-2.5 bg-gold text-black font-bold text-[10px] uppercase tracking-widest rounded-sm text-center hover:bg-gold-light transition-all flex items-center justify-center gap-1">
-                  <ExternalLink size={12} /> Voir
-                </a>
-              )}
+              <button onClick={handlePopupVisit} className="flex-1 py-2.5 bg-gold text-black font-bold text-[10px] uppercase tracking-widest rounded-sm text-center hover:bg-gold-light transition-all flex items-center justify-center gap-1">
+                Voir la boutique
+              </button>
               <button onClick={() => setDismissed(true)} className="px-4 py-2.5 border border-gray-500/30 text-gray-400 text-[10px] rounded-sm hover:border-gray-500/50 transition-all">
                 <X size={12} />
               </button>
@@ -106,12 +124,12 @@ export default function AdBanner({ zone }: AdBannerProps) {
         <button onClick={() => setDismissed(true)} className="absolute top-2 right-2 z-10 p-1 bg-black/40 rounded-full text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
           <X size={12} />
         </button>
-        <a href={ad.brandWebsite || '#'} target="_blank" rel="noopener noreferrer" onClick={() => incrementAdImpression(ad.id)}>
+        <button onClick={handleAdClick} className="w-full text-left">
           <AdMedia src={ad.imageUrl} alt={ad.brandName} className="w-full aspect-[2/3] object-cover" />
           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-3">
             <p className="text-white text-[10px] font-bold uppercase tracking-widest">{ad.brandName}</p>
           </div>
-        </a>
+        </button>
       </div>
     );
   }
@@ -123,7 +141,7 @@ export default function AdBanner({ zone }: AdBannerProps) {
         <button onClick={() => setDismissed(true)} className="absolute top-3 right-3 z-10 p-1.5 bg-black/40 rounded-full text-gray-400 hover:text-white transition-opacity">
           <X size={14} />
         </button>
-        <div className="relative">
+        <button onClick={handleAdClick} className="w-full text-left">
           <AdMedia src={ad.imageUrl} alt={ad.brandName} className="w-full aspect-[21/9] md:aspect-[3/1] object-cover transition-opacity duration-500" />
           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4 md:p-6">
             <div className="flex items-center gap-3">
@@ -134,7 +152,7 @@ export default function AdBanner({ zone }: AdBannerProps) {
               </div>
             </div>
           </div>
-        </div>
+        </button>
         {ads.length > 1 && (
           <>
             <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/40 rounded-full text-white hover:bg-black/60 transition-all opacity-0 group-hover:opacity-100">
@@ -160,7 +178,7 @@ export default function AdBanner({ zone }: AdBannerProps) {
       <button onClick={() => setDismissed(true)} className="absolute top-3 right-3 z-10 p-1.5 bg-black/40 rounded-full text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
         <X size={14} />
       </button>
-      <a href={ad.brandWebsite || '#'} target="_blank" rel="noopener noreferrer" onClick={() => incrementAdImpression(ad.id)} className="block">
+      <button onClick={handleAdClick} className="w-full text-left block">
         <AdMedia src={ad.imageUrl} alt={ad.brandName} className="w-full aspect-[21/9] md:aspect-[3/1] object-cover" />
         <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4 md:p-6">
           <div className="flex items-center gap-3">
@@ -171,7 +189,7 @@ export default function AdBanner({ zone }: AdBannerProps) {
             </div>
           </div>
         </div>
-      </a>
+      </button>
     </div>
   );
 }

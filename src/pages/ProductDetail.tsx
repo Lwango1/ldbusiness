@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Store, ShieldAlert, MessageCircle, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product, Seller, formatDualPrice } from '../types';
 import { getProducts, getSeller } from '../services/database';
@@ -201,9 +201,9 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
           <div>
             <span className="text-gold text-[10px] uppercase tracking-[0.4em]">Haute Couture</span>
             {seller && (
-              <div className="flex items-center gap-2 text-sm text-gold/70 mt-2">
+              <Link to={`/boutique/${product.sellerId}`} className="flex items-center gap-2 text-sm text-gold/70 mt-2 hover:text-gold transition-colors">
                 <Store size={14} /> Vendu par {seller.storeName}
-              </div>
+              </Link>
             )}
             <h1 className="font-playfair text-4xl md:text-6xl font-bold mt-4">{product.name}</h1>
             <div className="flex items-center gap-3 mt-4">

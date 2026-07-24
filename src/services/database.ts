@@ -560,6 +560,7 @@ function mapAd(a: any): Ad {
     impressions: a.impressions || 0,
     clicks: a.clicks || 0,
     createdAt: a.created_at,
+    userId: a.user_id,
   };
 }
 
