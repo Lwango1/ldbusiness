@@ -8,22 +8,22 @@ interface AdFormProps {
 }
 
 const zones = [
-  { id: 'hero', label: 'Bannière Hero (page d\'accueil)' },
-  { id: 'between_products', label: 'Entre les produits (carrousel)' },
-  { id: 'popup', label: 'Pop-up publicitaire' },
-  { id: 'sidebar', label: 'Bannière latérale' },
+  { id: 'sidebar', label: 'Bannière latérale — 5$/mois (3x/jour)' },
+  { id: 'popup', label: 'Pop-up — 10$/mois (6x/jour)' },
+  { id: 'hero', label: 'Bannière Hero — 15$/mois (toutes les heures)' },
+  { id: 'between_products', label: 'Entre les produits — 20$/mois (toutes les 30 min)' },
 ] as const;
 
 const frequencies = [
+  { id: 'daily_3', label: '3 fois par jour' },
+  { id: 'daily_6', label: '6 fois par jour' },
   { id: 'hourly', label: 'Toutes les heures' },
-  { id: 'daily_5', label: '5 fois par jour' },
-  { id: 'daily_10', label: '10 fois par jour' },
-  { id: 'daily_20', label: '20 fois par jour' },
+  { id: 'every_30min', label: 'Toutes les 30 minutes' },
 ] as const;
 
 export default function AdForm({ onClose }: AdFormProps) {
   const { user } = useAuth();
-  const [form, setForm] = useState({ brandName: '', brandWebsite: '', description: '', zone: 'hero', frequency: 'hourly' });
+  const [form, setForm] = useState({ brandName: '', brandWebsite: '', description: '', zone: 'sidebar', frequency: 'daily_3' });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [sent, setSent] = useState(false);
