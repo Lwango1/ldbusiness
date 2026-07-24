@@ -13,7 +13,7 @@ export default async function handler(req: any, res: any) {
   let image = '';
 
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${Number(id)}&select=name,description,images,image`, {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${Number(id)}&select=name,description,images,image_url`, {
       headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
     });
     const products = await r.json();
@@ -21,7 +21,7 @@ export default async function handler(req: any, res: any) {
     if (product) {
       name = product.name || '';
       description = (product.description || '').slice(0, 200);
-      image = product.images?.[0] || product.image || '';
+      image = product.images?.[0] || product.image_url || '';
     }
   } catch {}
 
