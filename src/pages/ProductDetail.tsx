@@ -297,7 +297,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
           </div>
 
           <p className="text-gray-400 leading-relaxed text-lg italic">
-            "Une pièce d'exception signée LDBusiness, conçue pour sublimer votre élégance lors de vos événements les plus prestigieux à Goma."
+            "{product.description}"
           </p>
 
           <div className="space-y-4 pt-4 border-t border-gold/10">
