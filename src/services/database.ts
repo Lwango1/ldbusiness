@@ -29,7 +29,7 @@ export function getAllCategories(): string[] {
 // =========== VENDEURS / PROFILS ===========
 
 export async function getSeller(sellerId: string): Promise<Seller | null> {
-  const { data } = await supabase.from('profiles').select('*').eq('id', sellerId).single();
+  const { data } = await supabase.from('profiles').select('*').eq('id', sellerId).maybeSingle();
   if (!data) return null;
   return {
     id: data.id,
