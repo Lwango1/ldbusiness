@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Store, User, Phone, Mail, FileText, LogIn } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { registerSeller } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';
 
 interface SellerRegistrationProps {
@@ -16,26 +16,29 @@ export default function SellerRegistration({ onRegistered }: SellerRegistrationP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.storeName || !form.ownerName || !form.phone || !user) {
+    setError('');
+    if (!form.storeName || !form.ownerName || !form.phone) {
       setError('Veuillez remplir tous les champs obligatoires.');
       return;
     }
+    if (!user) {
+      setError('Vous devez être connecté. Reconnectez-vous.');
+      return;
+    }
     setLoading(true);
-    setError('');
     try {
-      const { error: dbError } = await supabase.from('profiles').update({
-        role: 'seller',
-        store_name: form.storeName,
-        store_description: form.description || null,
-        full_name: form.ownerName || null,
-        phone: form.phone || null,
-      }).eq('id', user.id);
-      if (dbError) { setError(dbError.message); setLoading(false); return; }
+      await registerSeller(user.id, {
+        storeName: form.storeName,
+        description: form.description,
+        ownerName: form.ownerName,
+        phone: form.phone,
+      });
       onRegistered();
     } catch (err: any) {
-      setError(err.message || 'Erreur inconnue');
+      setError(err.message || 'Erreur lors de la création de la boutique.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

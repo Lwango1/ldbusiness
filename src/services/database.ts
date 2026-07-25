@@ -43,13 +43,14 @@ export async function getSeller(sellerId: string): Promise<Seller | null> {
 }
 
 export async function registerSeller(userId: string, data: { storeName: string; description?: string; ownerName?: string; phone?: string }): Promise<void> {
-  await supabase.from('profiles').update({
+  const { error } = await supabase.from('profiles').update({
     role: 'seller' as UserRole,
     store_name: data.storeName,
     store_description: data.description || null,
     full_name: data.ownerName || null,
     phone: data.phone || null,
   }).eq('id', userId);
+  if (error) throw error;
 }
 
 // =========== PRODUITS ===========
