@@ -120,6 +120,10 @@ export async function getSellerProducts(sellerId: string): Promise<Product[]> {
   return (data || []).map(mapProduct);
 }
 
+export async function incrementProductView(productId: number): Promise<void> {
+  await supabase.rpc('increment_product_views', { p_product_id: productId });
+}
+
 function mapProduct(p: any): Product {
   return {
     id: p.id,
@@ -136,6 +140,7 @@ function mapProduct(p: any): Product {
     stock: p.stock ?? undefined,
     promoCode: p.promo_code || undefined,
     discount: p.discount ?? undefined,
+    views: p.views ?? 0,
   };
 }
 

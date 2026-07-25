@@ -23,6 +23,7 @@ export interface Product {
   stock?: number;
   promoCode?: string;
   discount?: number;
+  views?: number;
 }
 
 export interface CartItem extends Product {

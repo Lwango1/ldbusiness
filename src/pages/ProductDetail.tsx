@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Store, ShieldAlert, MessageCircle, Tag, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
 import { Product, Seller, formatDualPrice } from '../types';
-import { getProducts, getSeller } from '../services/database';
+import { getProducts, getSeller, incrementProductView } from '../services/database';
 import ContactSeller from '../components/ContactSeller';
 
 interface ProductDetailProps {
@@ -53,6 +53,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
           getSeller(p.sellerId).then(s => setSeller(s));
         }
         setLoading(false);
+        if (p) incrementProductView(p.id);
       });
     }
   }, [id]);

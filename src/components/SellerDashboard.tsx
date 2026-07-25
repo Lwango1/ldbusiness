@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, X, Save, Store, Package, LogOut, ShieldAlert, MessageCircle, MessageSquare, CheckCircle, Upload, Image as ImageIcon, Tag, Percent, PackageX } from 'lucide-react';
+import { Plus, Edit3, Trash2, X, Save, Store, Package, LogOut, ShieldAlert, MessageCircle, MessageSquare, CheckCircle, Upload, Image as ImageIcon, Tag, Percent, PackageX, Eye } from 'lucide-react';
 import { Product, Seller, Message, COMMISSION_RATE, formatDualPrice } from '../types';
 import { getSellerProducts, addProduct, updateProduct, deleteProduct, getSellerMessages, markMessageRead, replyToMessage, uploadProductImage } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';
@@ -260,6 +260,9 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                         Stock: {p.stock}
                       </span>
                     )}
+                    <span className="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] rounded-sm flex items-center gap-1">
+                      <Eye size={10} /> {p.views ?? 0}
+                    </span>
                     {p.promoCode && p.stock !== 0 && (
                       <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] rounded-sm flex items-center gap-1">
                         <Tag size={10} /> {p.promoCode}
