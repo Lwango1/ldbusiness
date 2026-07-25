@@ -56,7 +56,7 @@ export async function registerSeller(userId: string, data: { storeName: string; 
 // =========== PRODUITS ===========
 
 export async function getProducts(): Promise<Product[]> {
-  const { data } = await supabase.from('products').select('*').eq('is_active', true);
+  const { data } = await supabase.from('products').select('*, profiles!products_seller_id_fkey(store_name)').eq('is_active', true);
   return (data || []).map(mapProduct);
 }
 
@@ -137,6 +137,7 @@ function mapProduct(p: any): Product {
     sizes: p.sizes || [],
     colors: p.colors || [],
     sellerId: p.seller_id,
+    storeName: p.profiles?.store_name || 'Boutique LDBusiness',
     stock: p.stock ?? undefined,
     promoCode: p.promo_code || undefined,
     discount: p.discount ?? undefined,

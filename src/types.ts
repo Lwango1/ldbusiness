@@ -20,6 +20,7 @@ export interface Product {
   sizes?: string[];
   colors?: string[];
   sellerId?: string;
+  storeName?: string;
   stock?: number;
   promoCode?: string;
   discount?: number;

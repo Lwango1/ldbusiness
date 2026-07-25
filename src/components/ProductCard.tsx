@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Eye, ShoppingBag, Store, Tag } from 'lucide-react';
-import { Product, Seller, formatDualPrice } from '../types';
-import { getSeller } from '../services/database';
+import { Product, formatDualPrice } from '../types';
 import { Link } from 'react-router-dom';
 
 interface ProductCardProps {
@@ -11,16 +10,9 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onView3D, onAddToCart }: ProductCardProps) {
-  const [seller, setSeller] = useState<Seller | null>(null);
   const [cardImage, setCardImage] = useState(0);
 
   const cardImages = product.images?.length ? product.images : [product.image];
-
-  useEffect(() => {
-    if (product.sellerId) {
-      getSeller(product.sellerId).then(setSeller);
-    }
-  }, [product.sellerId]);
 
   useEffect(() => {
     if (cardImages.length <= 1) return;
@@ -87,9 +79,9 @@ export default function ProductCard({ product, onView3D, onAddToCart }: ProductC
               {product.name}
             </h3>
           </Link>
-          {seller && (
+          {product.storeName && (
             <Link to={`/boutique/${product.sellerId}`} className="flex items-center gap-1 text-[11px] text-gold/60 mb-1 hover:text-gold transition-colors">
-              <Store size={10} /> {seller.storeName}
+              <Store size={10} /> {product.storeName}
             </Link>
           )}
           <p className="text-gray-500 text-sm mb-3 line-clamp-2">{product.description}</p>

@@ -261,9 +261,9 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
         <div className="space-y-8">
           <div>
             <span className="text-gold text-[10px] uppercase tracking-[0.4em]">Haute Couture</span>
-            {seller && (
+            {(seller || product.storeName) && (
               <Link to={`/boutique/${product.sellerId}`} className="flex items-center gap-2 text-sm text-gold/70 mt-2 hover:text-gold transition-colors">
-                <Store size={14} /> Vendu par {seller.storeName}
+                <Store size={14} /> Vendu par {seller?.storeName || product.storeName}
               </Link>
             )}
             <h1 className="font-playfair text-4xl md:text-6xl font-bold mt-4">{product.name}</h1>
@@ -326,12 +326,12 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
             Toute transaction en dehors de la plateforme est interdite et non garantie
           </p>
 
-          {seller && (
+          {(seller || product.storeName) && (
             <button
               onClick={() => setShowContact(true)}
               className="w-full py-4 border border-gold/30 text-gold text-xs uppercase tracking-widest rounded-sm hover:bg-gold/10 transition-all flex items-center justify-center gap-2"
             >
-              <MessageCircle size={16} /> Contacter {seller.storeName}
+              <MessageCircle size={16} /> Contacter {seller?.storeName || product.storeName}
             </button>
           )}
 
