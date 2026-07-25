@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Store, ShieldAlert, MessageCircle, Tag, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Store, ShieldAlert, MessageCircle, Tag, ChevronLeft, ChevronRight, Share2, Phone } from 'lucide-react';
 import { Product, Seller, formatDualPrice } from '../types';
 import { getProducts, getSeller, incrementProductView } from '../services/database';
 import ContactSeller from '../components/ContactSeller';
@@ -265,6 +265,14 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
               <Link to={`/boutique/${product.sellerId}`} className="flex items-center gap-2 text-sm text-gold/70 mt-2 hover:text-gold transition-colors">
                 <Store size={14} /> Vendu par {seller?.storeName || product.storeName}
               </Link>
+            )}
+            {seller?.description && (
+              <p className="text-gray-500 text-xs mt-1 italic">{seller.description}</p>
+            )}
+            {seller?.phone && (
+              <a href={`tel:${seller.phone}`} className="flex items-center gap-1 text-xs text-gold/50 mt-1 hover:text-gold transition-colors">
+                <Phone size={12} /> {seller.phone}
+              </a>
             )}
             <h1 className="font-playfair text-4xl md:text-6xl font-bold mt-4">{product.name}</h1>
             <div className="flex items-center gap-3 mt-4">

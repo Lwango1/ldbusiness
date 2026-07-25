@@ -49,7 +49,7 @@ export default function ContactSeller({ product, onClose, onSent }: ContactSelle
               </div>
               <div>
                 <h2 className="font-playfair text-lg text-white font-bold">Contacter le vendeur</h2>
-                <p className="text-gray-500 text-xs">{seller?.storeName || 'LDBusiness'}</p>
+                <p className="text-gray-500 text-xs">{product.storeName || 'LDBusiness'}</p>
               </div>
             </div>
 
