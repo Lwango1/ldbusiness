@@ -2,3 +2,7 @@ node_modules/
 dist/
 .venv/
 .env
+__pycache__/
+*.pyc
+scripts/ad_generator/output/
+scripts/ad_generator/__pycache__/
