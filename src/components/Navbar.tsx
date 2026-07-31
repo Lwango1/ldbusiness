@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { Crown, ShoppingBag, Menu, X, User, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getActiveLives } from '../services/database';
+import { useTranslation } from '../i18n';
+import LanguageSwitcher from './LanguageSwitcher';
 
 interface NavbarProps {
   cartCount: number;
@@ -16,6 +18,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ cartCount, onCartClick, isMobileMenuOpen, onMobileMenuToggle, onMobileMenuClose, showAuth, onAuthOpen, onAuthClose }: NavbarProps) {
+  const { t } = useTranslation();
   const { user, isAuthenticated, role, signOut } = useAuth();
   const location = useLocation();
   const [hasActiveLive, setHasActiveLive] = useState(false);
@@ -41,15 +44,15 @@ export default function Navbar({ cartCount, onCartClick, isMobileMenuOpen, onMob
   }, [location.pathname]);
 
   const navItems = [
-    { label: 'Accueil', path: '/' },
-    { label: 'Produits', path: '/produits' },
-    { label: 'À Propos', path: '/a-propos' },
-    { label: 'Live', path: '/live' },
-    { label: 'Contact', path: '/contact' },
-    { label: 'Vendre', path: '/vendre' },
-    { label: 'Abonnement', path: '/abonnement', icon: Crown },
-    ...(isAuthenticated ? [{ label: 'Mes Commandes', path: '/mes-commandes' }] : []),
-    ...(role === 'admin' ? [{ label: 'Admin', path: '/admin' }] : []),
+    { label: t('nav.home'), path: '/' },
+    { label: t('nav.products'), path: '/produits' },
+    { label: t('nav.about'), path: '/a-propos' },
+    { label: t('nav.live'), path: '/live' },
+    { label: t('nav.contact'), path: '/contact' },
+    { label: t('nav.sell'), path: '/vendre' },
+    { label: t('nav.subscription'), path: '/abonnement', icon: Crown },
+    ...(isAuthenticated ? [{ label: t('nav.myOrders'), path: '/mes-commandes' }] : []),
+    ...(role === 'admin' ? [{ label: t('nav.admin'), path: '/admin' }] : []),
   ];
 
   return (
@@ -73,7 +76,7 @@ export default function Navbar({ cartCount, onCartClick, isMobileMenuOpen, onMob
                   {item.path === '/live' && hasActiveLive && (
                     <span className="ml-1.5 inline-flex items-center gap-1 bg-red-600 px-1.5 py-0.5 rounded-sm">
                       <span className="w-1 h-1 bg-white rounded-full animate-ping" />
-                      <span className="text-white text-[8px] font-black">LIVE</span>
+                      <span className="text-white text-[8px] font-black">{t('nav.liveBadge')}</span>
                     </span>
                   )}
                 </Link>
@@ -83,13 +86,14 @@ export default function Navbar({ cartCount, onCartClick, isMobileMenuOpen, onMob
           <div className="flex items-center gap-2">
             {isAuthenticated ? (
               <button onClick={signOut} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-red-400 uppercase tracking-widest border border-gray-700/50 rounded-sm hover:border-red-500/30 transition-all">
-                <LogOut size={12} /> {user?.user_metadata?.full_name?.split(' ')[0] || 'Quitter'}
+                <LogOut size={12} /> {user?.user_metadata?.full_name?.split(' ')[0] || t('nav.logout')}
               </button>
             ) : (
               <button onClick={onAuthOpen} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gold uppercase tracking-widest border border-gold/30 rounded-sm hover:bg-gold/10 transition-all">
-                <User size={12} /> Connexion
+                <User size={12} /> {t('nav.login')}
               </button>
             )}
+            <LanguageSwitcher />
             <button onClick={onCartClick} className="relative p-2 text-gold">
               <ShoppingBag size={22} />
               {cartCount > 0 && (

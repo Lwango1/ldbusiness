@@ -1,7 +1,9 @@
 import * as LucideIcons from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from '../i18n';
 
 export default function Footer() {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
 
   // Fonction de sécurité pour l'affichage des icônes
@@ -30,29 +32,29 @@ export default function Footer() {
           {/* Navigation */}
           <div>
              <h4 className="text-white font-bold text-xs uppercase tracking-widest mb-6 flex items-center gap-2">
-               <Icon name="Compass" size={14} /> Navigation
+                <Icon name="Compass" size={14} /> {t('footer.navigation')}
              </h4>
-             <Link to="/" className="text-gray-500 text-xs hover:text-gold transition-colors block">Accueil</Link>
-             <Link to="/produits" className="text-gray-500 text-xs hover:text-gold transition-colors block mt-2">Produits</Link>
-             <Link to="/a-propos" className="text-gray-500 text-xs hover:text-gold transition-colors block mt-2">À Propos</Link>
-             <Link to="/live" className="text-gray-500 text-xs hover:text-gold transition-colors block mt-2">Showroom Live</Link>
-             <Link to="/contact" className="text-gray-500 text-xs hover:text-gold transition-colors block mt-2">Contact</Link>
+             <Link to="/" className="text-gray-500 text-xs hover:text-gold transition-colors block">{t('footer.home')}</Link>
+             <Link to="/produits" className="text-gray-500 text-xs hover:text-gold transition-colors block mt-2">{t('footer.products')}</Link>
+             <Link to="/a-propos" className="text-gray-500 text-xs hover:text-gold transition-colors block mt-2">{t('footer.about')}</Link>
+             <Link to="/live" className="text-gray-500 text-xs hover:text-gold transition-colors block mt-2">{t('footer.live')}</Link>
+             <Link to="/contact" className="text-gray-500 text-xs hover:text-gold transition-colors block mt-2">{t('footer.contact')}</Link>
           </div>
 
           <div>
              <h4 className="text-white font-bold text-xs uppercase tracking-widest mb-6 flex items-center gap-2">
-               <Icon name="MapPin" size={14} /> Adresse
+                <Icon name="MapPin" size={14} /> {t('footer.address')}
              </h4>
-             <p className="text-gray-500 text-xs">Goma, Nord-Kivu, RDC</p>
+             <p className="text-gray-500 text-xs">{t('footer.addressValue')}</p>
           </div>
 
           <div>
              <h4 className="text-white font-bold text-xs uppercase tracking-widest mb-6 flex items-center gap-2">
-               <Icon name="Shield" size={14} /> Plateforme
+                <Icon name="Shield" size={14} /> {t('footer.platform')}
              </h4>
-              <Link to="/vendre" className="text-gray-500 text-xs hover:text-gold transition-colors block">Devenir vendeur</Link>
-              <Link to="/admin" className="text-gray-500 text-xs hover:text-gold transition-colors block mt-2">Administration</Link>
-              <Link to="/publicite" className="text-gray-500 text-xs hover:text-gold transition-colors block mt-2">Publicité</Link>
+               <Link to="/vendre" className="text-gray-500 text-xs hover:text-gold transition-colors block">{t('footer.becomeSeller')}</Link>
+               <Link to="/admin" className="text-gray-500 text-xs hover:text-gold transition-colors block mt-2">{t('footer.administration')}</Link>
+               <Link to="/publicite" className="text-gray-500 text-xs hover:text-gold transition-colors block mt-2">{t('footer.advertising')}</Link>
           </div>
 
         </div>

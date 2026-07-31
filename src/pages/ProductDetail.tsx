@@ -4,12 +4,14 @@ import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, Store, ShieldAlert, Message
 import { Product, Seller, formatDualPrice } from '../types';
 import { getProducts, getSeller, incrementProductView } from '../services/database';
 import ContactSeller from '../components/ContactSeller';
+import { useTranslation } from '../i18n';
 
 interface ProductDetailProps {
   onAddToCart: (product: Product) => void;
 }
 
 export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [showContact, setShowContact] = useState(false);
@@ -138,14 +140,14 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-white"><p className="text-gray-500">Chargement...</p></div>;
+    return <div className="min-h-screen flex items-center justify-center text-white"><p className="text-gray-500">{t('product.loading')}</p></div>;
   }
 
   if (!product) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white">
-        <p>Produit non trouvé</p>
-        <button onClick={() => navigate('/')} className="text-gold ml-4">Retour</button>
+        <p>{t('product.notFound')}</p>
+        <button onClick={() => navigate('/')} className="text-gold ml-4">{t('product.back')}</button>
       </div>
     );
   }
@@ -156,7 +158,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-gold/60 hover:text-gold mb-8 transition-colors uppercase text-xs tracking-widest"
       >
-        <ArrowLeft size={16} /> Retour à la collection
+        <ArrowLeft size={16} /> {t('product.backToCollection')}
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -260,10 +262,10 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
         {/* Détails du produit */}
         <div className="space-y-8">
           <div>
-            <span className="text-gold text-[10px] uppercase tracking-[0.4em]">Haute Couture</span>
+            <span className="text-gold text-[10px] uppercase tracking-[0.4em]">{t('product.hauteCouture')}</span>
             {(seller || product.storeName) && (
               <Link to={`/boutique/${product.sellerId}`} className="flex items-center gap-2 text-sm text-gold/70 mt-2 hover:text-gold transition-colors">
-                <Store size={14} /> Vendu par {seller?.storeName || product.storeName}
+                <Store size={14} /> {t('product.soldBy')} {seller?.storeName || product.storeName}
               </Link>
             )}
             {seller?.description && (
@@ -292,14 +294,14 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
             {product.stock !== undefined && (
               <div className="flex items-center gap-2 mt-3">
                 <span className={`text-xs font-bold uppercase tracking-widest ${product.stock > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {product.stock > 0 ? `${product.stock} en stock` : 'Rupture de stock'}
+                  {product.stock > 0 ? `${product.stock} ${t('product.inStock')}` : t('product.outOfStock')}
                 </span>
               </div>
             )}
             {product.promoCode && product.stock !== 0 && (
               <div className="flex items-center gap-1 mt-2 text-blue-400 text-xs">
-                <Tag size={12} /> Code promo: <span className="font-bold">{product.promoCode}</span>
-                {product.discount && <span> ({product.discount}% de réduction)</span>}
+                <Tag size={12} /> {t('product.promoCode')} <span className="font-bold">{product.promoCode}</span>
+                {product.discount && <span> {t('product.discount').replace('X', `${product.discount}`)}</span>}
               </div>
             )}
           </div>
@@ -311,11 +313,11 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
           <div className="space-y-4 pt-4 border-t border-gold/10">
             <div className="flex items-center gap-4 text-sm text-gray-300">
               <ShieldCheck className="text-gold" size={20} />
-              <span>Qualité Premium & Finition Artisanale</span>
+              <span>{t('product.premiumQuality')}</span>
             </div>
             <div className="flex items-center gap-4 text-sm text-gray-300">
               <Truck className="text-gold" size={20} />
-              <span>Livraison disponible partout à Goma</span>
+              <span>{t('product.deliveryGoma')}</span>
             </div>
           </div>
 
@@ -323,15 +325,15 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
             onClick={() => onAddToCart(product)}
             className="w-full py-5 bg-gold text-black font-black uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all flex items-center justify-center gap-3 shadow-2xl shadow-gold/10"
           >
-            <ShoppingBag size={20} /> Ajouter au Panier
+            <ShoppingBag size={20} /> {t('product.addToCart')}
           </button>
 
           <div className="flex items-center gap-2 justify-center text-[10px] text-gold/50 uppercase tracking-widest pt-2">
             <ShieldAlert size={12} />
-            <span>Achat sécurisé • Transaction via LDBusiness uniquement</span>
+            <span>{t('product.securePurchase')}</span>
           </div>
           <p className="text-[8px] text-red-500/40 text-center uppercase tracking-widest">
-            Toute transaction en dehors de la plateforme est interdite et non garantie
+            {t('product.noOffPlatform')}
           </p>
 
           {(seller || product.storeName) && (
@@ -339,7 +341,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
               onClick={() => setShowContact(true)}
               className="w-full py-4 border border-gold/30 text-gold text-xs uppercase tracking-widest rounded-sm hover:bg-gold/10 transition-all flex items-center justify-center gap-2"
             >
-              <MessageCircle size={16} /> Contacter {seller?.storeName || product.storeName}
+              <MessageCircle size={16} /> {t('product.contact')} {seller?.storeName || product.storeName}
             </button>
           )}
 
@@ -347,7 +349,7 @@ export default function ProductDetail({ onAddToCart }: ProductDetailProps) {
             onClick={handleShare}
             className="w-full py-4 border border-gold/10 text-gray-400 text-xs uppercase tracking-widest rounded-sm hover:border-gold/30 hover:text-gold transition-all flex items-center justify-center gap-2"
           >
-            <Share2 size={16} /> Partager sur WhatsApp / Telegram
+            <Share2 size={16} /> {t('product.share')}
           </button>
         </div>
       </div>

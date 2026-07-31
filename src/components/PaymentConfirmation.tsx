@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, CheckCircle, Upload, Image as ImageIcon, Hash } from 'lucide-react';
 import { submitPaymentProof, uploadProductImage } from '../services/database';
+import { useTranslation } from '../i18n';
 
 interface PaymentConfirmationProps {
   transactionId: string;
@@ -10,6 +11,7 @@ interface PaymentConfirmationProps {
 }
 
 export default function PaymentConfirmation({ transactionId, invoiceNumber, total, onClose }: PaymentConfirmationProps) {
+  const { t } = useTranslation();
   const [txnId, setTxnId] = useState('');
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -18,7 +20,7 @@ export default function PaymentConfirmation({ transactionId, invoiceNumber, tota
 
   const handleSubmit = async () => {
     if (!txnId.trim()) {
-      setError('Veuillez entrer l\'ID de la transaction');
+      setError(t('payment.enterIdRequired'));
       return;
     }
     setUploading(true);
@@ -35,7 +37,7 @@ export default function PaymentConfirmation({ transactionId, invoiceNumber, tota
     if (ok) {
       setSubmitted(true);
     } else {
-      setError('Erreur lors de l\'envoi. Réessayez.');
+      setError(t('payment.error'));
     }
   };
 
@@ -53,15 +55,15 @@ export default function PaymentConfirmation({ transactionId, invoiceNumber, tota
               <div className="w-14 h-14 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-3">
                 <CheckCircle size={24} className="text-gold" />
               </div>
-              <h2 className="font-playfair text-xl text-white font-bold">Confirmer le paiement</h2>
-              <p className="text-gray-500 text-xs mt-1">Facture {invoiceNumber}</p>
+              <h2 className="font-playfair text-xl text-white font-bold">{t('payment.title')}</h2>
+              <p className="text-gray-500 text-xs mt-1">{t('payment.invoice')} {invoiceNumber}</p>
               <p className="text-gold font-bold text-lg mt-2">{total.toLocaleString()} CDF</p>
             </div>
 
             <div className="space-y-4">
               <div>
                 <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">
-                  ID de la transaction (reçu Airtel Money / M-Pesa) *
+                  {t('payment.transactionId')}
                 </label>
                 <div className="relative">
                   <Hash size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gold/40" />
@@ -69,7 +71,7 @@ export default function PaymentConfirmation({ transactionId, invoiceNumber, tota
                     type="text"
                     value={txnId}
                     onChange={e => setTxnId(e.target.value)}
-                    placeholder="Ex: AT2507ABC123"
+                    placeholder={t('payment.transactionIdPlaceholder')}
                     className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm"
                   />
                 </div>
@@ -77,7 +79,7 @@ export default function PaymentConfirmation({ transactionId, invoiceNumber, tota
 
               <div>
                 <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">
-                  Capture d'écran du paiement (optionnel)
+                  {t('payment.screenshot')}
                 </label>
                 <label className="flex flex-col items-center justify-center h-28 bg-black border-2 border-dashed border-gold/20 rounded-sm cursor-pointer hover:border-gold/50 transition-all">
                   {screenshot ? (
@@ -88,7 +90,7 @@ export default function PaymentConfirmation({ transactionId, invoiceNumber, tota
                   ) : (
                     <div className="flex flex-col items-center gap-2 text-gray-500">
                       <Upload size={20} />
-                      <span className="text-[10px]">Toucher pour ajouter une photo</span>
+                      <span className="text-[10px]">{t('payment.touchToAdd')}</span>
                     </div>
                   )}
                   <input
@@ -107,15 +109,15 @@ export default function PaymentConfirmation({ transactionId, invoiceNumber, tota
                 disabled={uploading || !txnId.trim()}
                 className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-2"
               >
-                {uploading ? (
-                  <><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Envoi...</>
+                  {uploading ? (
+                  <><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> {t('payment.sending')}</>
                 ) : (
-                  <><CheckCircle size={16} /> Confirmer le paiement</>
+                  <><CheckCircle size={16} /> {t('payment.confirm')}</>
                 )}
               </button>
 
               <p className="text-gray-600 text-[10px] text-center">
-                L'équipe LDBusiness vérifiera votre paiement et mettra à jour votre commande.
+                {t('payment.info')}
               </p>
             </div>
           </>
@@ -124,12 +126,12 @@ export default function PaymentConfirmation({ transactionId, invoiceNumber, tota
             <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
               <CheckCircle size={28} className="text-green-400" />
             </div>
-            <h3 className="font-playfair text-xl text-white font-bold mb-2">Paiement signalé !</h3>
+            <h3 className="font-playfair text-xl text-white font-bold mb-2">{t('payment.successTitle')}</h3>
             <p className="text-gray-400 text-sm mb-6">
-              Notre équipe vérifie votre transaction. Vous recevrez une confirmation sous 24h.
+              {t('payment.successMessage')}
             </p>
             <button onClick={onClose} className="px-6 py-3 border border-gold/30 text-gold text-xs uppercase tracking-widest rounded-sm hover:bg-gold/10 transition-all">
-              Retour aux achats
+              {t('payment.backToShopping')}
             </button>
           </div>
         )}

@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Crown, AlertTriangle, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getMySubscriptions } from '../services/database';
+import { useTranslation } from '../i18n';
 
 export default function SubscriptionAlert() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [alert, setAlert] = useState<{ type: 'expiring' | 'expired'; endDate: Date } | null>(null);
@@ -56,8 +58,8 @@ export default function SubscriptionAlert() {
         )}
         <span className={`text-xs ${alert.type === 'expired' ? 'text-red-300' : 'text-yellow-300'}`}>
           {alert.type === 'expired'
-            ? `Votre abonnement a expiré le ${alert.endDate.toLocaleDateString('fr-FR')}. Renouvelez pour continuer à utiliser le live et la publicité.`
-            : `Votre abonnement expire le ${alert.endDate.toLocaleDateString('fr-FR')} (dans ${Math.ceil((alert.endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))} jour${Math.ceil((alert.endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) > 1 ? 's' : ''}). Renouvelez dès maintenant.`
+            ? t('subscriptionAlert.expired').replace('X', alert.endDate.toLocaleDateString('fr-FR'))
+            : t('subscriptionAlert.expiring').replace('X', alert.endDate.toLocaleDateString('fr-FR')).replace('Y', `${Math.ceil((alert.endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))}`)
           }
         </span>
       </div>
@@ -70,7 +72,7 @@ export default function SubscriptionAlert() {
               : 'bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30'
           }`}
         >
-          Renouveler
+          {t('subscriptionAlert.renew')}
         </button>
         <button onClick={() => setAlert(null)} className="text-gray-500 hover:text-white p-1">
           <X size={14} />

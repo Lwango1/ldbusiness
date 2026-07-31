@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Plus, Minus, Trash2, ShoppingBag, Tag } from 'lucide-react';
 import { CartItem, formatDualPrice } from '../types';
+import { useTranslation } from '../i18n';
 
 interface CartProps {
   items: CartItem[];
@@ -12,6 +13,7 @@ interface CartProps {
 }
 
 export default function Cart({ items, isOpen, onClose, onUpdateQuantity, onRemoveItem, onCheckout }: CartProps) {
+  const { t } = useTranslation();
   const [promoInput, setPromoInput] = useState('');
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
   const [promoError, setPromoError] = useState('');
@@ -30,7 +32,7 @@ export default function Cart({ items, isOpen, onClose, onUpdateQuantity, onRemov
       setAppliedPromo(code);
       setPromoError('');
     } else {
-      setPromoError('Code promo invalide pour ces articles');
+      setPromoError(t('cart.invalidPromo'));
     }
   };
 
@@ -51,7 +53,7 @@ export default function Cart({ items, isOpen, onClose, onUpdateQuantity, onRemov
         <div className="p-6 border-b border-gold/10 flex items-center justify-between bg-luxury-dark/50">
           <div className="flex items-center gap-3">
             <ShoppingBag size={20} className="text-gold" />
-            <h2 className="font-playfair text-xl font-bold text-white uppercase tracking-widest">Mon Panier</h2>
+            <h2 className="font-playfair text-xl font-bold text-white uppercase tracking-widest">{t('cart.title')}</h2>
           </div>
           <button onClick={onClose} className="p-2 bg-white/5 rounded-full text-gray-400 hover:text-white transition-all">
             <X size={20} />
@@ -65,12 +67,12 @@ export default function Cart({ items, isOpen, onClose, onUpdateQuantity, onRemov
               <div className="w-24 h-24 mx-auto bg-luxury-gray/30 rounded-full flex items-center justify-center mb-6 border border-gold/5">
                 <ShoppingBag size={40} className="text-gold/20" />
               </div>
-              <p className="text-gray-400 font-playfair text-lg italic">Votre sélection est vide</p>
+              <p className="text-gray-400 font-playfair text-lg italic">{t('cart.empty')}</p>
               <button
                 onClick={onClose}
                 className="mt-6 text-gold text-xs uppercase tracking-[0.2em] font-bold underline underline-offset-8"
               >
-                Continuer le shopping
+                {t('cart.continueShopping')}
               </button>
             </div>
           ) : (
@@ -138,29 +140,29 @@ export default function Cart({ items, isOpen, onClose, onUpdateQuantity, onRemov
           <div className="p-8 bg-luxury-dark border-t border-gold/20 space-y-4">
             <div className="space-y-2">
               <div className="flex justify-between text-xs tracking-widest text-gray-500">
-                <span>SOUS-TOTAL</span>
+                <span>{t('cart.subtotal')}</span>
                 <span className="text-white">{subtotal.toLocaleString()} CDF</span>
               </div>
               <div className="flex justify-between text-xs tracking-widest text-gray-500">
-                <span>TVA (16%)</span>
+                <span>{t('cart.tax')}</span>
                 <span className="text-white">{tax.toLocaleString()} CDF</span>
               </div>
               <div className="flex justify-between text-lg font-black border-t border-gold/10 pt-4 mt-2">
-                <span className="text-white font-playfair italic">Total</span>
+                <span className="text-white font-playfair italic">{t('cart.total')}</span>
                 <span className="text-gold">{total.toLocaleString()} CDF</span>
               </div>
             </div>
 
             <div className="space-y-2">
               <label className="text-[9px] text-gold/60 uppercase tracking-widest flex items-center gap-1">
-                <Tag size={12} /> Code promo
+                <Tag size={12} /> {t('cart.promoCode')}
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={promoInput}
                   onChange={e => { setPromoInput(e.target.value); setPromoError(''); }}
-                  placeholder="Ex: PROMO10"
+                  placeholder={t('cart.promoPlaceholder')}
                   className="flex-1 px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-xs uppercase"
                 />
                 <button
@@ -168,24 +170,24 @@ export default function Cart({ items, isOpen, onClose, onUpdateQuantity, onRemov
                   disabled={!promoInput.trim() || !!appliedPromo}
                   className="px-4 py-3 bg-gold/20 text-gold text-xs rounded-sm border border-gold/30 hover:bg-gold/30 transition-all disabled:opacity-30"
                 >
-                  Appliquer
+                  {t('cart.apply')}
                 </button>
               </div>
               {promoError && <p className="text-red-500 text-[9px]">{promoError}</p>}
-              {appliedPromo && <p className="text-green-400 text-[9px] flex items-center gap-1">✓ Code {appliedPromo} appliqué</p>}
+              {appliedPromo && <p className="text-green-400 text-[9px] flex items-center gap-1">{t('cart.promoApplied').replace('X', appliedPromo)}</p>}
             </div>
 
             <button
               onClick={onCheckout}
               className="w-full py-5 bg-gold text-black font-black uppercase tracking-widest text-[10px] rounded-sm shadow-xl shadow-gold/10 transition-all active:scale-[0.98] hover:bg-gold-light"
             >
-              Passer à la Facturation
+              {t('cart.checkout')}
             </button>
             <p className="text-[9px] text-gray-600 text-center uppercase tracking-tighter">
-              Paiement sécurisé via M-Pesa, Airtel Money & Crypto
+              {t('cart.securePayment')}
             </p>
             <p className="text-[7px] text-red-500/30 text-center uppercase tracking-widest">
-              ⚠ Toute transaction hors plateforme est frauduleuse
+              {t('cart.fraudWarning')}
             </p>
           </div>
         )}

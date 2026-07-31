@@ -5,22 +5,23 @@ import mespeakConfig from 'mespeak/src/mespeak_config.json';
 import frVoice from 'mespeak/voices/fr.json';
 import { useAuth } from '../contexts/AuthContext';
 import { webmToMp4 } from '../lib/convertToMp4';
+import { useTranslation } from '../i18n';
 
 type AdFormat = 'hero' | 'popup' | 'square' | 'landscape';
 type AdTemplate = 'luxury' | 'modern' | 'sale' | 'social';
 
-const FORMATS: Record<AdFormat, { width: number; height: number; label: string }> = {
-  hero: { width: 1400, height: 600, label: 'Hero' },
-  popup: { width: 600, height: 800, label: 'Popup' },
-  square: { width: 1080, height: 1080, label: 'Carré' },
-  landscape: { width: 1200, height: 630, label: 'Paysage' },
+const FORMATS: Record<AdFormat, { width: number; height: number; labelKey: string }> = {
+  hero: { width: 1400, height: 600, labelKey: 'adGenerator.hero' },
+  popup: { width: 600, height: 800, labelKey: 'adGenerator.popup' },
+  square: { width: 1080, height: 1080, labelKey: 'adGenerator.square' },
+  landscape: { width: 1200, height: 630, labelKey: 'adGenerator.landscape' },
 };
 
 const TEMPLATES = [
-  { id: 'luxury' as const, label: 'Luxe', desc: 'Sombre & doré' },
-  { id: 'modern' as const, label: 'Moderne', desc: 'Lignes épurées' },
-  { id: 'sale' as const, label: 'Promo', desc: 'Badge -X%' },
-  { id: 'social' as const, label: 'Social', desc: 'Pour réseaux' },
+  { id: 'luxury' as const, labelKey: 'adGenerator.luxe', descKey: 'adGenerator.luxeDesc' },
+  { id: 'modern' as const, labelKey: 'adGenerator.modern', descKey: 'adGenerator.modernDesc' },
+  { id: 'sale' as const, labelKey: 'adGenerator.promo', descKey: 'adGenerator.promoDesc' },
+  { id: 'social' as const, labelKey: 'adGenerator.social', descKey: 'adGenerator.socialDesc' },
 ];
 
 const GOLD = '#d4af37'; const GOLD_LIGHT = '#e6c85a'; const DARK = '#121218'; const BLACK = '#0a0a0a'; const WHITE = '#ffffff';
@@ -28,6 +29,7 @@ const GOLD = '#d4af37'; const GOLD_LIGHT = '#e6c85a'; const DARK = '#121218'; co
 interface ImageFile { id: string; file: File; dataUrl: string; }
 
 export default function AdGeneratorCanvas() {
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const musicRef = useRef<HTMLInputElement>(null);
@@ -36,8 +38,8 @@ export default function AdGeneratorCanvas() {
   const [images, setImages] = useState<ImageFile[]>([]);
   const [format, setFormat] = useState<AdFormat>('hero');
   const [template, setTemplate] = useState<AdTemplate>('luxury');
-  const [brand, setBrand] = useState('LDBusiness');
-  const [tagline, setTagline] = useState("L'Élégance Africaine");
+  const [brand, setBrand] = useState(t('adGenerator.defaultBrand'));
+  const [tagline, setTagline] = useState(t('adGenerator.defaultTagline'));
   const [secPerImg, setSecPerImg] = useState(3);
   const [voiceText, setVoiceText] = useState('');
   const [musicFile, setMusicFile] = useState<File | null>(null);
@@ -96,7 +98,7 @@ export default function AdGeneratorCanvas() {
         s.getTracks().forEach(t => t.stop());
       };
       recRef.current = r; r.start(); setIsRecording(true);
-    } catch { alert('Autorisez le micro'); }
+    } catch { alert(t('adGenerator.micDenied')); }
   };
 
   const wordsRef = useRef<string[]>([]);
@@ -211,7 +213,7 @@ export default function AdGeneratorCanvas() {
         ttsCache.current[text] = dataUrl;
         return dataUrl;
       }
-      throw new Error('TTS indisponible');
+      throw new Error(t('adGenerator.errorTTS'));
     }
   };
 
@@ -305,7 +307,7 @@ export default function AdGeneratorCanvas() {
     const frameMs = 1000 / fps;
 
     setExporting(true);
-    setProgress('Préparation...');
+    setProgress(t('adGenerator.preparing'));
 
     try {
       const preloaded = await Promise.all(images.map(img => new Promise<HTMLImageElement>((res, rej) => {
@@ -325,11 +327,11 @@ export default function AdGeneratorCanvas() {
       try {
         let voiceUrl = recordedUrl;
         if (!voiceUrl && voiceText.trim()) {
-          setProgress('Génération voix off...');
+          setProgress(t('adGenerator.generatingVoice'));
           voiceUrl = await generateTtsBlob(voiceText);
         }
         if (voiceUrl) {
-          setProgress('Voix off...');
+          setProgress(t('adGenerator.voiceover'));
           const el = new Audio(voiceUrl);
           el.style.display = 'none';
           document.body.appendChild(el);
@@ -345,7 +347,7 @@ export default function AdGeneratorCanvas() {
           }
         }
         if (musicUrl) {
-          setProgress('Musique...');
+          setProgress(t('adGenerator.musicGenerating'));
           const el = new Audio(musicUrl); el.loop = true;
           el.style.display = 'none';
           document.body.appendChild(el);
@@ -369,7 +371,7 @@ export default function AdGeneratorCanvas() {
           for (const t of dest.stream.getAudioTracks()) videoStream.addTrack(t);
         }
       } catch (e: any) {
-        setVideoError('Erreur audio: ' + (e?.message || 'vérifie le format audio')); setExporting(false);
+        setVideoError(t('adGenerator.errorAudio').replace('...', e?.message || 'vérifie le format audio')); setExporting(false);
         audioEls.forEach(el => el.remove());
         if (silentCtx) silentCtx.close();
         return;
@@ -389,11 +391,11 @@ export default function AdGeneratorCanvas() {
         audioEls.forEach(el => el.remove());
         if (silentCtx) silentCtx.close();
         const b = new Blob(chunks, { type: 'video/webm' });
-        if (b.size === 0) { setVideoError('Fichier vide — codec non supporté'); setExporting(false); return; }
+        if (b.size === 0) { setVideoError(t('adGenerator.errorEmptyFile')); setExporting(false); return; }
         setVideoUrl(URL.createObjectURL(b));
         setExporting(false); setProgress('');
       };
-      rec.onerror = () => { setVideoError('Erreur encodage'); stopRec(); audioEls.forEach(el => el.remove()); if (silentCtx) silentCtx.close(); setExporting(false); };
+      rec.onerror = () => { setVideoError(t('adGenerator.errorEncoding')); stopRec(); audioEls.forEach(el => el.remove()); if (silentCtx) silentCtx.close(); setExporting(false); };
 
       rec.start(500);
       const t0 = performance.now();
@@ -413,12 +415,12 @@ export default function AdGeneratorCanvas() {
           const hIdx = wordDur < Infinity ? Math.min(Math.floor(elapsed / wordDur), words.length - 1) : undefined;
           drawScene(ctx, w, h, preloaded[idx], voiceText || undefined, hIdx);
           if (idx !== prevImgIdx) { prevImgIdx = idx; setProgress(`Image ${idx + 1}/${preloaded.length}`); }
-        } catch (e: any) { setVideoError('Erreur: ' + (e?.message || 'inconnue')); stopped = true; stopRec(); setExporting(false); return; }
+        } catch (e: any) { setVideoError(t('adGenerator.errorGeneric').replace('...', e?.message || 'inconnue')); stopped = true; stopRec(); setExporting(false); return; }
         timerRef.current = window.setTimeout(tick, frameMs);
       };
 
       tick();
-      setTimeout(() => { if (!stopped && !videoUrl) { setVideoError('Délai dépassé'); stopRec(); setExporting(false); } }, (totalDur + 8) * 1000);
+      setTimeout(() => { if (!stopped && !videoUrl) { setVideoError(t('adGenerator.errorTimeout')); stopRec(); setExporting(false); } }, (totalDur + 8) * 1000);
 
     } catch (err: any) {
       setVideoError(err?.message || 'Erreur inconnue');
@@ -448,17 +450,17 @@ export default function AdGeneratorCanvas() {
           <div className="flex gap-2">
             <a href={videoUrl} download={`pub_${template}_${format}.webm`}
               className="flex-1 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all flex items-center justify-center gap-2">
-              <Download size={16} /> Télécharger
+              <Download size={16} /> {t('adGenerator.download')}
             </a>
             {tiktokConnected && (
               <button onClick={publishToTikTok} disabled={publishing}
                 className="py-3 px-4 border border-gold/30 text-gold text-xs uppercase tracking-widest rounded-sm hover:bg-gold/10 transition-all disabled:opacity-30 flex items-center gap-1.5">
-                <Share2 size={14} /> {publishing ? '...' : 'TikTok'}
+                <Share2 size={14} /> {publishing ? '...' : t('adGenerator.tiktokPublish')}
               </button>
             )}
             <button onClick={reset}
               className="py-3 px-6 border border-gold/30 text-gold text-xs uppercase tracking-widest rounded-sm hover:bg-gold/10 transition-all">
-              Refaire
+              {t('adGenerator.redo')}
             </button>
           </div>
           {publishStatus && (
@@ -470,26 +472,26 @@ export default function AdGeneratorCanvas() {
       ) : exporting ? (
         <div className="flex flex-col items-center justify-center gap-4 py-16 bg-black border border-gold/20 rounded-lg">
           <RefreshCw size={32} className="text-gold animate-spin" />
-          <span className="text-gold text-sm font-bold">Génération... {progress}</span>
+          <span className="text-gold text-sm font-bold">{t('adGenerator.generating').replace('{progress}', progress)}</span>
         </div>
       ) : (
         <div className="space-y-4">
           <canvas ref={canvasRef} className="w-full max-h-[65vh] rounded-lg border border-gold/10 bg-black object-contain" style={{ aspectRatio: `${fmt.width}/${fmt.height}` }} />
           <button onClick={generate} disabled={images.length === 0}
             className="w-full py-4 bg-gold text-black font-bold text-sm uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-3">
-            <Film size={20} /> Générer la vidéo ({images.length} image{images.length > 1 ? 's' : ''})
+            <Film size={20} /> {t('adGenerator.export').replace('X', String(images.length))}
           </button>
         </div>
       )}
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-black border border-gold/10 rounded-lg p-4 space-y-3">
-          <h3 className="text-gold text-xs font-bold uppercase tracking-widest">Audio & Sous-titres</h3>
+          <h3 className="text-gold text-xs font-bold uppercase tracking-widest">{t('adGenerator.audio')}</h3>
           <div>
-            <label className="text-[10px] text-gray-500 block mb-1">Texte lu dans la vidéo</label>
+            <label className="text-[10px] text-gray-500 block mb-1">{t('adGenerator.audioText')}</label>
             <div className="flex gap-2">
               <textarea value={voiceText} onChange={e => setVoiceText(e.target.value)}
-                placeholder="Texte de la voix off..."
+                placeholder={t('adGenerator.audioPlaceholder')}
                 rows={2} className="flex-1 px-3 py-2 bg-luxury-dark border border-gold/10 rounded-sm text-white text-xs focus:border-gold outline-none resize-none" />
               <button onClick={speakWithHighlight}
                 className={`px-3 py-2 rounded-sm text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 shrink-0 ${isSpeaking ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20'}`}>
@@ -500,23 +502,23 @@ export default function AdGeneratorCanvas() {
           <div className="grid grid-cols-2 gap-2">
             <button onClick={isRecording ? () => { recRef.current?.stop(); setIsRecording(false); } : startMic}
               className={`py-2.5 rounded-sm text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 ${isRecording ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' : 'bg-black border border-gold/10 text-gray-400 hover:border-gold/30'}`}>
-              <Mic size={12} /> {isRecording ? 'Arrêter' : recordedBlob ? 'Micro ✓' : 'Micro'}
+              <Mic size={12} /> {isRecording ? t('adGenerator.microphoneStop') : recordedBlob ? t('adGenerator.microphoneOn') : t('adGenerator.microphone')}
             </button>
             <button onClick={() => musicRef.current?.click()}
               className={`py-2.5 rounded-sm text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 ${musicFile ? 'bg-gold/10 text-gold border border-gold/30' : 'bg-black border border-gold/10 text-gray-400 hover:border-gold/30'}`}>
-              <Music size={12} /> {musicFile ? 'Musique ✓' : 'Musique'}
+              <Music size={12} /> {musicFile ? t('adGenerator.musicOn') : t('adGenerator.music')}
             </button>
           </div>
           {voiceText.trim() && !recordedBlob && (
             <p className="text-[9px] text-gray-500 italic pt-1">
-              Pas d'enregistrement ? La voix synthétique sera utilisée
+              {t('adGenerator.noRecording')}
             </p>
           )}
           {(recordedBlob || musicFile) && (
             <div className="space-y-2 pt-1">
               {recordedBlob && (
                 <div>
-                  <label className="text-[9px] text-gray-500 uppercase tracking-widest">Volume voix</label>
+                  <label className="text-[9px] text-gray-500 uppercase tracking-widest">{t('adGenerator.voiceVolume')}</label>
                   <div className="flex items-center gap-2">
                     <button onClick={() => { setVoiceMuted(!voiceMuted); if (recordedAudioRef.current) recordedAudioRef.current.muted = !voiceMuted; }} className="text-gray-400 hover:text-white shrink-0">
                       {voiceMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
@@ -529,7 +531,7 @@ export default function AdGeneratorCanvas() {
               )}
               {musicFile && (
                 <div>
-                  <label className="text-[9px] text-gray-500 uppercase tracking-widest">Volume musique</label>
+                  <label className="text-[9px] text-gray-500 uppercase tracking-widest">{t('adGenerator.musicVolume')}</label>
                   <div className="flex items-center gap-2">
                     <button onClick={() => { setMusicMuted(!musicMuted); if (musicAudioRef.current) musicAudioRef.current.muted = !musicMuted; }} className="text-gray-400 hover:text-white shrink-0">
                       {musicMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
@@ -545,7 +547,7 @@ export default function AdGeneratorCanvas() {
         </div>
 
         <div className="bg-black border border-gold/10 rounded-lg p-4 space-y-3">
-          <h3 className="text-gold text-xs font-bold uppercase tracking-widest">Images ({images.length})</h3>
+          <h3 className="text-gold text-xs font-bold uppercase tracking-widest">{t('adGenerator.images').replace('0', String(images.length))}</h3>
           {images.length > 0 ? (
             <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
               {images.map(img => (
@@ -558,48 +560,48 @@ export default function AdGeneratorCanvas() {
             </div>
           ) : (
             <button onClick={() => fileRef.current?.click()} className="w-full py-6 bg-luxury-dark border border-dashed border-gold/20 rounded-sm text-gold/40 text-xs hover:border-gold/50 flex flex-col items-center gap-2">
-              <Upload size={20} /><span>Ajouter des images</span>
+              <Upload size={20} /><span>{t('adGenerator.addImages')}</span>
             </button>
           )}
-          <button onClick={() => fileRef.current?.click()} className="w-full py-2 bg-luxury-dark border border-dashed border-gold/10 rounded-sm text-gold/40 text-[10px] hover:border-gold/30">+ Ajouter</button>
+          <button onClick={() => fileRef.current?.click()} className="w-full py-2 bg-luxury-dark border border-dashed border-gold/10 rounded-sm text-gold/40 text-[10px] hover:border-gold/30">{t('adGenerator.add')}</button>
         </div>
 
         <div className="space-y-3">
           <div className="bg-black border border-gold/10 rounded-lg p-4">
-            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-2">Marque</label>
+            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-2">{t('adGenerator.brand')}</label>
             <input type="text" value={brand} onChange={e => setBrand(e.target.value)} className="w-full px-3 py-2.5 bg-luxury-dark border border-gold/10 rounded-sm text-white focus:border-gold outline-none text-sm" />
           </div>
           <div className="bg-black border border-gold/10 rounded-lg p-4">
-            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-2">Tagline</label>
+            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-2">{t('adGenerator.tagline')}</label>
             <input type="text" value={tagline} onChange={e => setTagline(e.target.value)} className="w-full px-3 py-2.5 bg-luxury-dark border border-gold/10 rounded-sm text-white focus:border-gold outline-none text-sm" />
           </div>
           <div className="bg-black border border-gold/10 rounded-lg p-4">
-            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-2">Durée par image</label>
+            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-2">{t('adGenerator.durationPerImage')}</label>
             <div className="flex items-center gap-3">
               <input type="range" min="1" max="10" value={secPerImg} onChange={e => setSecPerImg(Number(e.target.value))} className="flex-1 accent-gold" />
               <span className="text-gold text-sm font-bold w-8 text-right">{secPerImg}s</span>
             </div>
-            <p className="text-gray-600 text-[10px] mt-1">Total ~{images.length * secPerImg}s</p>
+            <p className="text-gray-600 text-[10px] mt-1">{t('adGenerator.totalDuration').replace('X', String(images.length * secPerImg))}</p>
           </div>
           <div className="bg-black border border-gold/10 rounded-lg p-4">
-            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-2">Template</label>
+            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-2">{t('adGenerator.template')}</label>
             <div className="grid grid-cols-2 gap-2">
-              {TEMPLATES.map(t => (
-                <button key={t.id} onClick={() => setTemplate(t.id)}
-                  className={`px-3 py-2.5 rounded-sm text-xs text-left transition-all ${template === t.id ? 'bg-gold text-black font-bold' : 'bg-luxury-dark border border-gold/10 text-gray-400 hover:border-gold/30'}`}>
-                  <div className="font-bold">{t.label}</div>
-                  <div className="text-[9px] opacity-70">{t.desc}</div>
+              {TEMPLATES.map(tpl => (
+                <button key={tpl.id} onClick={() => setTemplate(tpl.id)}
+                  className={`px-3 py-2.5 rounded-sm text-xs text-left transition-all ${template === tpl.id ? 'bg-gold text-black font-bold' : 'bg-luxury-dark border border-gold/10 text-gray-400 hover:border-gold/30'}`}>
+                  <div className="font-bold">{t(tpl.labelKey)}</div>
+                  <div className="text-[9px] opacity-70">{t(tpl.descKey)}</div>
                 </button>
               ))}
             </div>
           </div>
           <div className="bg-black border border-gold/10 rounded-lg p-4">
-            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-2">Format</label>
+            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-2">{t('adGenerator.format')}</label>
             <div className="grid grid-cols-2 gap-2">
               {(Object.entries(FORMATS) as [AdFormat, typeof FORMATS[AdFormat]][]).map(([key, f]) => (
                 <button key={key} onClick={() => setFormat(key)}
                   className={`px-3 py-2.5 rounded-sm text-xs text-left transition-all ${format === key ? 'bg-gold text-black font-bold' : 'bg-luxury-dark border border-gold/10 text-gray-400 hover:border-gold/30'}`}>
-                  <div className="font-bold">{f.label}</div>
+                  <div className="font-bold">{t(f.labelKey)}</div>
                   <div className="text-[9px] opacity-70">{f.width}x{f.height}</div>
                 </button>
               ))}
@@ -612,16 +614,16 @@ export default function AdGeneratorCanvas() {
         <div className="mt-4 bg-black border border-gold/10 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">TikTok</label>
+              <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('adGenerator.tiktok')}</label>
               {tiktokConnected ? (
-                <p className="text-green-400 text-xs">Connecté en tant que {tiktokUsername}</p>
+                <p className="text-green-400 text-xs">{t('adGenerator.tiktokConnectedAs')} {tiktokUsername}</p>
               ) : (
-                <p className="text-gray-500 text-xs">Connecte ton compte pour publier directement</p>
+                <p className="text-gray-500 text-xs">{t('adGenerator.tiktokConnectPrompt')}</p>
               )}
             </div>
             <a href={`/api/tiktok/auth?userId=${user.id}`}
               className={`py-2 px-4 rounded-sm text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${tiktokConnected ? 'bg-green-500/10 text-green-400 border border-green-500/30' : 'bg-black border border-gold/10 text-gray-400 hover:border-gold/30'}`}>
-              <Share2 size={12} /> {tiktokConnected ? 'Reconnecter' : 'Connecter TikTok'}
+              <Share2 size={12} /> {tiktokConnected ? t('adGenerator.tiktokReconnect') : t('adGenerator.tiktokConnect')}
             </a>
           </div>
         </div>

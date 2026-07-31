@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Eye, ShoppingBag, Store, Tag } from 'lucide-react';
 import { Product, formatDualPrice } from '../types';
 import { Link } from 'react-router-dom';
+import { useTranslation } from '../i18n';
 
 interface ProductCardProps {
   product: Product;
@@ -10,6 +11,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, onView3D, onAddToCart }: ProductCardProps) {
+  const { t } = useTranslation();
   const [cardImage, setCardImage] = useState(0);
 
   const cardImages = product.images?.length ? product.images : [product.image];
@@ -48,7 +50,7 @@ export default function ProductCard({ product, onView3D, onAddToCart }: ProductC
           )}
           {product.stock !== undefined && product.stock === 0 && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-              <span className="text-red-400 text-sm font-bold uppercase tracking-widest">Rupture de stock</span>
+              <span className="text-red-400 text-sm font-bold uppercase tracking-widest">{t('product.outOfStock')}</span>
             </div>
           )}
         </Link>
@@ -59,7 +61,7 @@ export default function ProductCard({ product, onView3D, onAddToCart }: ProductC
             onClick={() => onView3D(product)}
             className="flex-1 py-3 bg-gold/90 text-luxury-black font-semibold text-xs rounded-sm flex items-center justify-center gap-2 hover:bg-gold transition-colors uppercase tracking-wider"
           >
-            <Eye size={14} /> Vue 3D
+            <Eye size={14} /> {t('product.view3D')}
           </button>
           <button
             onClick={(e) => {
@@ -102,12 +104,12 @@ export default function ProductCard({ product, onView3D, onAddToCart }: ProductC
             })()}
             {product.stock !== undefined && product.stock > 0 && (
               <span className="text-green-500 text-xs flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full" /> {product.stock} en stock
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full" /> {product.stock} {t('product.inStock')}
               </span>
             )}
             {product.stock !== undefined && product.stock === 0 && (
               <span className="text-red-500 text-xs flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-red-500 rounded-full" /> Rupture
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full" /> {t('product.outOfStockShort')}
               </span>
             )}
             {product.promoCode && product.stock !== 0 && (
@@ -118,7 +120,7 @@ export default function ProductCard({ product, onView3D, onAddToCart }: ProductC
           </div>
           {product.promoCode && product.stock !== 0 && !product.discount && (
             <div className="flex items-center gap-1 text-blue-400 text-[10px]">
-              <Tag size={10} /> Code: {product.promoCode}
+              <Tag size={10} /> {t('product.code')} {product.promoCode}
             </div>
           )}
         </div>

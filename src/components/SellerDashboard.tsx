@@ -4,6 +4,7 @@ import { Product, Seller, Message, COMMISSION_RATE, formatDualPrice } from '../t
 import { getSellerProducts, addProduct, updateProduct, deleteProduct, getSellerMessages, markMessageRead, replyToMessage, uploadProductImage } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdminAuthenticated, clearAdminAuth } from './AdminGuard';
+import { useTranslation } from '../i18n';
 
 interface SellerDashboardProps {
   seller: Seller;
@@ -18,6 +19,7 @@ const emptyProduct = {
 const categoryOptions = ['Robes de Soirée', 'Costumes Homme', 'Mariage', 'Traditionnel', 'Vêtement', 'Événements', 'Accessoires', 'Cryptomonnaie', 'Automobile', 'Électronique', 'Électroménager', 'Maison', 'Autre'];
 
 export default function SellerDashboard({ seller }: SellerDashboardProps) {
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const adminAuthed = isAdminAuthenticated();
   const effectiveUserId = user?.id || seller.id;
@@ -53,7 +55,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm('Supprimer ce produit ?') && effectiveUserId) {
+    if (confirm(t('dashboard.deleteConfirm')) && effectiveUserId) {
       await deleteProduct(id, effectiveUserId);
       refresh();
     }
@@ -63,18 +65,18 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
     setSaveError('');
     setSaveSuccess(false);
     if (!editing || !editing.name || !editing.price || !editing.category || !effectiveUserId) {
-      setSaveError('Remplissez tous les champs obligatoires.');
+      setSaveError(t('dashboard.fillRequired'));
       return;
     }
     if (!editing.image && !editing.images?.length && !editing.id) {
-      setSaveError('Ajoutez au moins une image.');
+      setSaveError(t('dashboard.addImage'));
       return;
     }
     const ok = editing.id
       ? await updateProduct(editing.id, editing, effectiveUserId)
       : !!(await addProduct(editing as Omit<Product, 'id'>, effectiveUserId));
     if (!ok) {
-      setSaveError('Erreur lors de la sauvegarde. Vérifiez votre connexion.');
+      setSaveError(t('dashboard.saveError'));
       return;
     }
     setSaveSuccess(true);
@@ -98,14 +100,14 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
               <Store size={20} className="text-gold" />
               <h1 className="font-playfair text-3xl font-bold text-white">{seller.storeName}</h1>
             </div>
-            <p className="text-gray-500 text-sm ml-9">Bienvenue, {seller.ownerName}</p>
+            <p className="text-gray-500 text-sm ml-9">{t('dashboard.welcome')}, {seller.ownerName}</p>
           </div>
           <div className="flex gap-3">
             <button onClick={handleAdd} className="flex items-center gap-2 px-5 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all">
-              <Plus size={16} /> Ajouter un produit
+              <Plus size={16} /> {t('dashboard.addProduct')}
             </button>
             <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-3 border border-red-500/30 text-red-400 text-xs uppercase tracking-widest rounded-sm hover:bg-red-500/10 transition-all">
-              <LogOut size={14} /> Quitter
+              <LogOut size={14} /> {t('dashboard.logout')}
             </button>
           </div>
         </div>
@@ -115,7 +117,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
           <div className="bg-luxury-dark border border-gold/10 rounded-xl p-6">
             <Package size={24} className="text-gold mb-2" />
             <div className="text-3xl font-bold text-white">{products.length}</div>
-            <div className="text-gray-500 text-xs uppercase tracking-widest">Produits</div>
+            <div className="text-gray-500 text-xs uppercase tracking-widest">{t('dashboard.products')}</div>
           </div>
           <div className="bg-luxury-dark border border-gold/10 rounded-xl p-6">
             <Store size={24} className="text-gold mb-2" />
@@ -124,7 +126,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
           </div>
           <div className="bg-luxury-dark border border-gold/10 rounded-xl p-6">
             <div className="text-gold text-2xl mb-2 font-bold">Boutique</div>
-            <div className="text-gray-500 text-xs uppercase tracking-widest">Active</div>
+            <div className="text-gray-500 text-xs uppercase tracking-widest">{t('dashboard.active')}</div>
           </div>
         </div>
 
@@ -133,12 +135,9 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
           <div className="flex items-start gap-3">
             <ShieldAlert size={18} className="text-red-400 mt-0.5 shrink-0" />
             <div>
-              <h3 className="text-red-400 text-xs font-bold uppercase tracking-widest mb-1">Règles de la plateforme</h3>
+              <h3 className="text-red-400 text-xs font-bold uppercase tracking-widest mb-1">{t('dashboard.rules')}</h3>
               <p className="text-red-300/60 text-[11px] leading-relaxed">
-                Toute vente doit obligatoirement passer par le système de facturation LDBusiness.
-                Les transactions en dehors de la plateforme sont strictement interdites.
-                Tout vendeur pris à contourner le système sera immédiatement exclu de la plateforme.
-                La commission de {COMMISSION_RATE * 100}% est déduite automatiquement sur chaque vente.
+                {t('dashboard.rulesText', { commissionRate: COMMISSION_RATE * 100 })}
               </p>
             </div>
           </div>
@@ -147,10 +146,10 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
         {/* Tabs */}
         <div className="flex gap-1 mb-8 bg-luxury-dark/50 border border-gold/10 rounded-lg p-1 w-fit">
           <button onClick={() => setTab('products')} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${tab === 'products' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
-            <Package size={14} className="inline mr-2" /> Produits
+            <Package size={14} className="inline mr-2" /> {t('dashboard.products')}
           </button>
           <button onClick={() => setTab('messages')} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all relative ${tab === 'messages' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
-            <MessageCircle size={14} className="inline mr-2" /> Messages
+            <MessageCircle size={14} className="inline mr-2" /> {t('dashboard.messages')}
             {unreadCount > 0 && <span className="ml-2 w-5 h-5 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center inline-flex">{unreadCount}</span>}
           </button>
         </div>
@@ -161,7 +160,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
             {messages.length === 0 ? (
               <div className="text-center py-16 border border-dashed border-gold/10 rounded-xl">
                 <MessageCircle size={40} className="mx-auto text-gold/20 mb-3" />
-                <p className="text-gray-500 font-playfair italic text-sm">Aucun message pour le moment.</p>
+                <p className="text-gray-500 font-playfair italic text-sm">{t('dashboard.noMessages')}</p>
               </div>
             ) : (
               messages.map(msg => (
@@ -178,32 +177,32 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                   </div>
 
                   <div className="mb-3 p-3 bg-black/40 border border-gold/5 rounded-lg">
-                    <p className="text-[10px] text-gold/50 uppercase tracking-widest mb-1">Produit: {msg.productName}</p>
+                    <p className="text-[10px] text-gold/50 uppercase tracking-widest mb-1">{t('dashboard.productLabel')}: {msg.productName}</p>
                     <p className="text-gray-300 text-sm">{msg.content}</p>
                   </div>
 
                   {msg.reply && (
                     <div className="p-3 bg-green-500/5 border border-green-500/20 rounded-lg mb-3">
-                      <p className="text-[10px] text-green-500/70 uppercase tracking-widest mb-1">Votre réponse</p>
+                      <p className="text-[10px] text-green-500/70 uppercase tracking-widest mb-1">{t('dashboard.yourReply')}</p>
                       <p className="text-green-300 text-sm">{msg.reply}</p>
                     </div>
                   )}
 
                   {!msg.replied && replyingTo !== msg.id && (
                     <button onClick={async () => { await markMessageRead(msg.id); setReplyingTo(msg.id); refreshMessages(); }} className="px-4 py-2 bg-gold/10 border border-gold/30 text-gold text-[10px] uppercase tracking-widest rounded-sm hover:bg-gold/20 transition-all">
-                      <MessageSquare size={12} className="inline mr-1" /> Répondre
+                      <MessageSquare size={12} className="inline mr-1" /> {t('dashboard.reply')}
                     </button>
                   )}
 
                   {replyingTo === msg.id && (
                     <div className="space-y-2">
-                      <textarea value={replyText} onChange={e => setReplyText(e.target.value)} rows={2} placeholder="Écrivez votre réponse..." className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
+                      <textarea value={replyText} onChange={e => setReplyText(e.target.value)} rows={2} placeholder={t('dashboard.replyPlaceholder')} className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
                       <div className="flex gap-2">
                         <button onClick={async () => { if (replyText.trim()) { await replyToMessage(msg.id, replyText); setReplyText(''); setReplyingTo(null); refreshMessages(); } }} className="px-5 py-2 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm">
-                          Envoyer
+                          {t('dashboard.send')}
                         </button>
                         <button onClick={() => setReplyingTo(null)} className="px-4 py-2 border border-gray-500/30 text-gray-400 text-xs rounded-sm">
-                          Annuler
+                          {t('dashboard.cancel')}
                         </button>
                       </div>
                     </div>
@@ -219,9 +218,9 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
           products.length === 0 && !showForm ? (
           <div className="text-center py-20 border border-dashed border-gold/10 rounded-xl">
             <Package size={48} className="mx-auto text-gold/20 mb-4" />
-            <p className="text-gray-500 font-playfair italic text-lg mb-4">Vous n'avez pas encore de produits.</p>
+            <p className="text-gray-500 font-playfair italic text-lg mb-4">{t('dashboard.noProducts')}</p>
             <button onClick={handleAdd} className="px-6 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm">
-              Ajouter mon premier produit
+              {t('dashboard.addFirstProduct')}
             </button>
           </div>
         ) : (
@@ -232,7 +231,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                   <img src={p.image} alt={p.name} className="w-24 h-24 object-contain rounded-lg border border-gold/10 bg-black" />
                   {p.stock !== undefined && p.stock === 0 && (
                     <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
-                      <span className="text-red-400 text-[9px] font-bold uppercase tracking-widest -rotate-45">Rupture</span>
+                      <span className="text-red-400 text-[9px] font-bold uppercase tracking-widest -rotate-45">{t('dashboard.outOfStock')}</span>
                     </div>
                   )}
                   {p.discount && p.discount > 0 && p.stock !== 0 && (
@@ -257,7 +256,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                     <span className="px-2 py-0.5 bg-gold/10 text-gold text-[10px] rounded-sm">{p.category}</span>
                     {p.stock !== undefined && (
                       <span className={`px-2 py-0.5 text-[10px] rounded-sm ${p.stock > 0 ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                        Stock: {p.stock}
+                        {t('dashboard.stockLabel')}: {p.stock}
                       </span>
                     )}
                     <span className="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] rounded-sm flex items-center gap-1">
@@ -288,7 +287,7 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
           <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-luxury-dark border border-gold/20 rounded-xl p-8 max-w-lg w-full my-8 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="font-playfair text-xl text-white font-bold">{editing.id ? 'Modifier' : 'Nouveau'} Produit</h2>
+                <h2 className="font-playfair text-xl text-white font-bold">{editing.id ? t('dashboard.editProduct') : t('dashboard.newProduct')}</h2>
                 <button onClick={() => setShowForm(false)} className="p-2 text-gray-500 hover:text-white transition-all">
                   <X size={20} />
                 </button>
@@ -296,64 +295,64 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Nom du produit *</label>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('dashboard.productName')}</label>
                   <input type="text" value={editing.name || ''} onChange={e => setEditing({...editing, name: e.target.value})} className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none" />
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Description</label>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('dashboard.productDescription')}</label>
                   <textarea value={editing.description || ''} onChange={e => setEditing({...editing, description: e.target.value})} rows={3} className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none" />
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-2">
-                    <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Prix ({editing.currency || 'CDF'}) *</label>
+                    <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('dashboard.price')} ({editing.currency || 'CDF'}) *</label>
                     <input type="number" value={editing.price || ''} onChange={e => setEditing({...editing, price: Number(e.target.value)})} className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Catégorie *</label>
+                    <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('dashboard.category')}</label>
                     <select value={editing.category || ''} onChange={e => setEditing({...editing, category: e.target.value})} className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none">
-                      <option value="">Choisir</option>
+                      <option value="">{t('dashboard.choose')}</option>
                       {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Devise</label>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('dashboard.currency')}</label>
                   <select value={editing.currency || 'CDF'} onChange={e => setEditing({...editing, currency: e.target.value})} className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none">
-                    <option value="CDF">CDF (Franc Congolais)</option>
-                    <option value="USD">USD (Dollar)</option>
+                    <option value="CDF">{t('dashboard.currencyCDF')}</option>
+                    <option value="USD">{t('dashboard.currencyUSD')}</option>
                   </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Stock *</label>
+                    <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('dashboard.stock')}</label>
                     <div className="relative">
                       <PackageX size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gold/40" />
-                      <input type="number" min="0" value={editing.stock ?? ''} onChange={e => setEditing({...editing, stock: e.target.value ? Number(e.target.value) : undefined})} placeholder="Quantité" className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none" />
+                      <input type="number" min="0" value={editing.stock ?? ''} onChange={e => setEditing({...editing, stock: e.target.value ? Number(e.target.value) : undefined})} placeholder={t('dashboard.quantity')} className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none" />
                     </div>
                   </div>
                   <div>
-                    <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Prix promo (optionnel)</label>
+                    <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('dashboard.promoPrice')}</label>
                     <div className="relative">
                       <Percent size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gold/40" />
-                      <input type="number" min="0" max="100" value={editing.discount ?? ''} onChange={e => setEditing({...editing, discount: e.target.value ? Number(e.target.value) : undefined})} placeholder="Ex: 10 pour 10%" className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none" />
+                      <input type="number" min="0" max="100" value={editing.discount ?? ''} onChange={e => setEditing({...editing, discount: e.target.value ? Number(e.target.value) : undefined})} placeholder={t('dashboard.promoPriceHint')} className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white focus:border-gold outline-none" />
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Code promo (optionnel)</label>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('dashboard.promoCode')}</label>
                   <div className="relative">
                     <Tag size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gold/40" />
-                    <input type="text" value={editing.promoCode || ''} onChange={e => setEditing({...editing, promoCode: e.target.value})} placeholder="Ex: PROMO10" className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none" />
+                    <input type="text" value={editing.promoCode || ''} onChange={e => setEditing({...editing, promoCode: e.target.value})} placeholder={t('dashboard.promoCodeHint')} className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Images du produit * (6 max)</label>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('dashboard.images')}</label>
                   <div className="grid grid-cols-3 gap-2">
                     {(editing.images || []).concat(Array(Math.max(0, 6 - (editing.images || []).length)).fill(null)).slice(0, 6).map((img, i) => (
                       <div key={i} className="relative aspect-square bg-black border-2 border-dashed border-gold/20 rounded-sm hover:border-gold/50 transition-all">
@@ -396,13 +395,13 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                   {uploading && (
                     <div className="flex items-center gap-2 mt-2 text-gold text-[10px]">
                       <div className="w-4 h-4 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
-                      Upload en cours...
+                      {t('dashboard.uploading')}
                     </div>
                   )}
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Tailles (optionnel)</label>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('dashboard.sizes')}</label>
                   <div className="flex gap-2 flex-wrap mb-2">
                     {(editing.sizes || []).map(s => (
                       <span key={s} className="px-3 py-1 bg-gold/10 text-gold text-xs rounded-sm flex items-center gap-1">
@@ -412,13 +411,13 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                     ))}
                   </div>
                   <div className="flex gap-2">
-                    <input type="text" value={sizeInput} onChange={e => setSizeInput(e.target.value)} placeholder="Ex: M, L, XL" className="flex-1 px-4 py-2 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
+                    <input type="text" value={sizeInput} onChange={e => setSizeInput(e.target.value)} placeholder={t('dashboard.sizesHint')} className="flex-1 px-4 py-2 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
                     <button onClick={() => { if (sizeInput.trim()) { setEditing({...editing, sizes: [...(editing.sizes || []), sizeInput.trim()]}); setSizeInput(''); } }} className="px-3 py-2 bg-gold/20 text-gold rounded-sm text-xs">+</button>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Couleurs (optionnel)</label>
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('dashboard.colors')}</label>
                   <div className="flex gap-2 flex-wrap mb-2">
                     {(editing.colors || []).map(c => (
                       <span key={c} className="px-3 py-1 bg-gold/10 text-gold text-xs rounded-sm flex items-center gap-1">
@@ -428,16 +427,16 @@ export default function SellerDashboard({ seller }: SellerDashboardProps) {
                     ))}
                   </div>
                   <div className="flex gap-2">
-                    <input type="text" value={colorInput} onChange={e => setColorInput(e.target.value)} placeholder="Ex: Rouge, Bleu" className="flex-1 px-4 py-2 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
+                    <input type="text" value={colorInput} onChange={e => setColorInput(e.target.value)} placeholder={t('dashboard.colorsHint')} className="flex-1 px-4 py-2 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
                     <button onClick={() => { if (colorInput.trim()) { setEditing({...editing, colors: [...(editing.colors || []), colorInput.trim()]}); setColorInput(''); } }} className="px-3 py-2 bg-gold/20 text-gold rounded-sm text-xs">+</button>
                   </div>
                 </div>
 
                 {saveError && <p className="text-red-500 text-xs text-center">{saveError}</p>}
-                {saveSuccess && <p className="text-green-500 text-xs text-center">✓ Produit enregistré</p>}
+                {saveSuccess && <p className="text-green-500 text-xs text-center">{t('dashboard.saved')}</p>}
 
                 <button onClick={handleSave} className="w-full py-4 bg-gold text-black font-bold uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all flex items-center justify-center gap-2">
-                  <Save size={16} /> {editing.id ? 'Enregistrer' : 'Publier le produit'}
+                  <Save size={16} /> {editing.id ? t('dashboard.save') : t('dashboard.publish')}
                 </button>
               </div>
             </div>

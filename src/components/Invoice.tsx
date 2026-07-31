@@ -4,6 +4,7 @@ import { CartItem } from '../types';
 import { createTransaction, updateProductStock } from '../services/database';
 import { useAuth } from '../contexts/AuthContext';
 import PaymentConfirmation from './PaymentConfirmation';
+import { useTranslation } from '../i18n';
 
 interface InvoiceProps {
   items: CartItem[];
@@ -14,6 +15,7 @@ interface InvoiceProps {
 type PaymentMethod = 'airtel_money' | 'mpesa' | 'crypto' | null;
 
 export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'info' | 'payment' | 'confirm'>('info');
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
@@ -59,7 +61,7 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
   const paymentMethods = [
     {
       id: 'airtel_money' as PaymentMethod,
-      name: 'Airtel Money',
+      name: t('invoice.airtelMoney'),
       icon: <Smartphone size={24} />,
       color: 'from-red-600 to-red-700',
       details: 'Numéro: +243 99 000 000',
@@ -67,7 +69,7 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
     },
     {
       id: 'mpesa' as PaymentMethod,
-      name: 'M-Pesa',
+      name: t('invoice.mpesa'),
       icon: <CreditCard size={24} />,
       color: 'from-green-600 to-green-700',
       details: 'Numéro: +243 81 000 000',
@@ -75,7 +77,7 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
     },
     {
       id: 'crypto' as PaymentMethod,
-      name: 'Crypto (USDT/BTC)',
+      name: t('invoice.crypto'),
       icon: <Bitcoin size={24} />,
       color: 'from-orange-500 to-yellow-600',
       details: 'Réseau TRC20 / BTC Mainnet',
@@ -99,7 +101,7 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                  <ArrowLeft size={20} />
                </button>
              )}
-             <h2 className="font-playfair text-xl font-bold text-white tracking-tight">Facturation Luxe</h2>
+             <h2 className="font-playfair text-xl font-bold text-white tracking-tight">{t('invoice.title')}</h2>
           </div>
           <button onClick={onClose} className="p-2 bg-white/5 rounded-full text-gray-400 hover:text-white">
             <X size={20} />
@@ -110,52 +112,52 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
           {step === 'info' && (
             <div className="p-6 md:p-8 space-y-6">
               <div className="bg-gold/5 p-4 rounded-lg border border-gold/10 mb-6">
-                <p className="text-gold text-xs text-center uppercase tracking-widest font-bold">Étape 1: Vos Coordonnées</p>
+                <p className="text-gold text-xs text-center uppercase tracking-widest font-bold">{t('invoice.step1')}</p>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs text-gold/60 uppercase tracking-widest mb-2 block font-semibold">Nom & Prénom</label>
+                  <label className="text-xs text-gold/60 uppercase tracking-widest mb-2 block font-semibold">{t('invoice.fullName')}</label>
                   <input
                     type="text"
                     value={customerInfo.name}
                     onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
                     className="w-full px-5 py-4 bg-black border border-gold/20 rounded-sm text-white focus:border-gold outline-none transition-all"
-                    placeholder="Ex: Daniel Lwango"
+                    placeholder={t('invoice.fullNamePlaceholder')}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs text-gold/60 uppercase tracking-widest mb-2 block font-semibold">Téléphone (WhatsApp)</label>
+                    <label className="text-xs text-gold/60 uppercase tracking-widest mb-2 block font-semibold">{t('invoice.phone')}</label>
                     <input
                       type="tel"
                       value={customerInfo.phone}
                       onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
                       className="w-full px-5 py-4 bg-black border border-gold/20 rounded-sm text-white focus:border-gold outline-none transition-all"
-                      placeholder="+243..."
+                      placeholder={t('invoice.phonePlaceholder')}
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-gold/60 uppercase tracking-widest mb-2 block font-semibold">Email (Optionnel)</label>
+                    <label className="text-xs text-gold/60 uppercase tracking-widest mb-2 block font-semibold">{t('invoice.email')}</label>
                     <input
                       type="email"
                       value={customerInfo.email}
                       onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
                       className="w-full px-5 py-4 bg-black border border-gold/20 rounded-sm text-white focus:border-gold outline-none transition-all"
-                      placeholder="votre@email.com"
+                      placeholder={t('invoice.emailPlaceholder')}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs text-gold/60 uppercase tracking-widest mb-2 block font-semibold">Lieu de livraison à Goma</label>
+                  <label className="text-xs text-gold/60 uppercase tracking-widest mb-2 block font-semibold">{t('invoice.deliveryAddress')}</label>
                   <textarea
                     value={customerInfo.address}
                     onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
                     rows={2}
                     className="w-full px-5 py-4 bg-black border border-gold/20 rounded-sm text-white focus:border-gold outline-none transition-all"
-                    placeholder="Commune, Quartier, Avenue, N°"
+                    placeholder={t('invoice.addressPlaceholder')}
                   />
                 </div>
               </div>
@@ -165,14 +167,14 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                 disabled={!customerInfo.name || !customerInfo.phone}
                 className="w-full py-5 bg-gold text-black font-black uppercase tracking-widest text-xs rounded-sm shadow-xl shadow-gold/20 disabled:opacity-20 transition-all active:scale-95"
               >
-                Continuer vers le Paiement
+                {t('invoice.continueToPayment')}
               </button>
             </div>
           )}
 
           {step === 'payment' && (
             <div className="p-6 md:p-8">
-              <p className="text-gray-500 text-xs uppercase tracking-widest text-center mb-8">Choisissez votre mode de règlement</p>
+              <p className="text-gray-500 text-xs uppercase tracking-widest text-center mb-8">{t('invoice.step2')}</p>
 
               <div className="space-y-4">
                 {paymentMethods.map(method => (
@@ -199,7 +201,7 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
 
               {paymentMethod && (
                 <div className="mt-8 p-5 bg-black border-l-2 border-gold rounded-r-lg">
-                  <h4 className="text-gold text-xs font-bold uppercase mb-2">Instructions Directes :</h4>
+                  <h4 className="text-gold text-xs font-bold uppercase mb-2">{t('invoice.directInstructions')}</h4>
                   <p className="text-gray-400 text-xs leading-relaxed">
                     {paymentMethods.find(m => m.id === paymentMethod)?.instruction}
                   </p>
@@ -211,7 +213,7 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                 disabled={!paymentMethod}
                 className="w-full mt-8 py-5 bg-gold text-black font-black uppercase tracking-widest text-xs rounded-sm shadow-xl shadow-gold/20 disabled:opacity-20 transition-all active:scale-95"
               >
-                Générer ma Facture
+                {t('invoice.generate')}
               </button>
             </div>
           )}
@@ -222,26 +224,26 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
               <div className="bg-white text-black p-6 md:p-10 rounded-sm shadow-2xl space-y-8">
                 <div className="flex justify-between items-start border-b-2 border-black pb-6">
                   <div>
-                    <h1 className="font-playfair text-3xl font-black italic">LEVINE MANDE</h1>
-                    <p className="text-[10px] uppercase tracking-[0.3em] font-bold">L'Élégance Redéfinie</p>
+                    <h1 className="font-playfair text-3xl font-black italic">{t('invoice.brand')}</h1>
+                    <p className="text-[10px] uppercase tracking-[0.3em] font-bold">{t('invoice.tagline')}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-bold uppercase">Facture N°</p>
+                    <p className="text-xs font-bold uppercase">{t('invoice.number')}</p>
                     <p className="text-lg font-mono font-black">{invoiceNumber}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-8 text-[11px]">
                   <div>
-                    <p className="font-bold uppercase text-gray-500 mb-2 underline">Destinataire</p>
+                    <p className="font-bold uppercase text-gray-500 mb-2 underline">{t('invoice.recipient')}</p>
                     <p className="font-black text-sm uppercase">{customerInfo.name}</p>
                     <p>{customerInfo.phone}</p>
                     <p className="italic">{customerInfo.address}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold uppercase text-gray-500 mb-2 underline">Détails</p>
-                    <p>Date : {today}</p>
-                    <p>Paiement : <strong>{paymentMethod?.toUpperCase()}</strong></p>
+                    <p className="font-bold uppercase text-gray-500 mb-2 underline">{t('invoice.details')}</p>
+                    <p>{t('invoice.date')} {today}</p>
+                    <p>{t('invoice.payment')} <strong>{paymentMethod?.toUpperCase()}</strong></p>
                   </div>
                 </div>
 
@@ -249,9 +251,9 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                 <table className="w-full text-[11px]">
                   <thead>
                     <tr className="border-y border-black">
-                      <th className="py-2 text-left uppercase">Article</th>
-                      <th className="py-2 text-center uppercase">Qté</th>
-                      <th className="py-2 text-right uppercase">Prix</th>
+                      <th className="py-2 text-left uppercase">{t('invoice.article')}</th>
+                      <th className="py-2 text-center uppercase">{t('invoice.qty')}</th>
+                      <th className="py-2 text-right uppercase">{t('invoice.price')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -281,24 +283,24 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                 <div className="flex justify-end pt-4">
                   <div className="w-48 space-y-2">
                     <div className="flex justify-between text-[11px]">
-                      <span>SOUS-TOTAL</span>
+                      <span>{t('invoice.subtotal')}</span>
                       <span>{subtotal.toLocaleString()} CDF</span>
                     </div>
                     <div className="flex justify-between text-[11px]">
-                      <span>TVA (16%)</span>
+                      <span>{t('invoice.tax')}</span>
                       <span>{tax.toLocaleString()} CDF</span>
                     </div>
                     <div className="flex justify-between text-base font-black border-t-2 border-black pt-2">
-                      <span>TOTAL</span>
+                      <span>{t('invoice.total')}</span>
                       <span>{total.toLocaleString()} CDF</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-gray-50 p-4 border border-dashed border-gray-300 text-[10px] space-y-1">
-                  <p className="font-bold">REFERENCE DE PAIEMENT : {invoiceNumber}</p>
-                  <p>Veuillez envoyer une capture d'écran du transfert sur notre WhatsApp après le règlement pour validation.</p>
-                  <p className="text-red-600 font-bold mt-2">⚠ Toute transaction hors plateforme est frauduleuse. LDBusiness n'est pas responsable des paiements effectués en dehors du système officiel.</p>
+                  <p className="font-bold">{t('invoice.reference')} {invoiceNumber}</p>
+                  <p>{t('invoice.screenshotInstruction')}</p>
+                  <p className="text-red-600 font-bold mt-2">{t('invoice.fraudWarning')}</p>
                 </div>
               </div>
 
@@ -307,13 +309,13 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                   onClick={handlePrint}
                   className="flex-1 py-4 border border-gold text-gold font-bold text-[10px] uppercase tracking-widest rounded-sm hover:bg-gold hover:text-black transition-all"
                 >
-                  <Printer size={16} className="inline mr-2" /> Imprimer
+                  <Printer size={16} className="inline mr-2" /> {t('invoice.print')}
                 </button>
                 <button
                   onClick={handlePrint}
                   className="flex-1 py-4 bg-gold text-black font-bold text-[10px] uppercase tracking-widest rounded-sm shadow-lg shadow-gold/20"
                 >
-                  <Download size={16} className="inline mr-2" /> PDF
+                  <Download size={16} className="inline mr-2" /> {t('invoice.pdf')}
                 </button>
               </div>
 
@@ -344,19 +346,19 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                   }}
                   className="w-full mt-4 py-4 bg-green-600 text-white font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-green-500 transition-all flex items-center justify-center gap-2"
                 >
-                  <Shield size={16} /> Confirmer la Vente
+                  <Shield size={16} /> {t('invoice.confirmSale')}
                 </button>
               ) : (
                 <div className="space-y-3 mt-4">
                   <div className="w-full py-4 bg-green-600/20 border border-green-500/30 text-green-400 font-bold text-xs uppercase tracking-widest rounded-sm flex items-center justify-center gap-2">
-                    <CheckCircle size={16} /> Vente enregistrée
+                    <CheckCircle size={16} /> {t('invoice.saleRecorded')}
                   </div>
                   {txnId && !showPaymentConfirm && (
                     <button
                       onClick={() => setShowPaymentConfirm(true)}
                       className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all flex items-center justify-center gap-2"
                     >
-                      <Shield size={16} /> J'ai effectué le paiement
+                      <Shield size={16} /> {t('invoice.paymentDone')}
                     </button>
                   )}
                 </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Send, MessageCircle, Shield } from 'lucide-react';
 import { Product, formatDualPrice } from '../types';
 import { sendMessage } from '../services/database';
+import { useTranslation } from '../i18n';
 
 interface ContactSellerProps {
   product: Product;
@@ -10,6 +11,7 @@ interface ContactSellerProps {
 }
 
 export default function ContactSeller({ product, onClose, onSent }: ContactSellerProps) {
+  const { t } = useTranslation();
   const [form, setForm] = useState({ name: '', phone: '', email: '', question: '' });
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -17,7 +19,7 @@ export default function ContactSeller({ product, onClose, onSent }: ContactSelle
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.phone || !form.question) {
-      setError('Veuillez remplir les champs obligatoires.');
+      setError(t('contactSeller.fillRequired'));
       return;
     }
     await sendMessage({
@@ -48,7 +50,7 @@ export default function ContactSeller({ product, onClose, onSent }: ContactSelle
                 <MessageCircle size={22} className="text-gold" />
               </div>
               <div>
-                <h2 className="font-playfair text-lg text-white font-bold">Contacter le vendeur</h2>
+                <h2 className="font-playfair text-lg text-white font-bold">{t('contactSeller.title')}</h2>
                 <p className="text-gray-500 text-xs">{product.storeName || 'LDBusiness'}</p>
               </div>
             </div>
@@ -63,33 +65,33 @@ export default function ContactSeller({ product, onClose, onSent }: ContactSelle
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Votre nom *</label>
-                <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Ex: Daniel Lwango" className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
+                <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('contactSeller.yourName')}</label>
+                <input type="text" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder={t('contactSeller.namePlaceholder')} className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Téléphone *</label>
-                  <input type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+243..." className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('contactSeller.phone')}</label>
+                  <input type="tel" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder={t('contactSeller.phonePlaceholder')} className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
                 </div>
                 <div>
-                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Email</label>
-                  <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="email@exemple.com" className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
+                  <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('contactSeller.email')}</label>
+                  <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder={t('contactSeller.emailPlaceholder')} className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
                 </div>
               </div>
               <div>
-                <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Votre question *</label>
-                <textarea value={form.question} onChange={e => setForm({...form, question: e.target.value})} rows={3} placeholder="Ex: Quelle est la composition du tissu ? Pouvez-vous livrer à..." className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
+                <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('contactSeller.question')}</label>
+                <textarea value={form.question} onChange={e => setForm({...form, question: e.target.value})} rows={3} placeholder={t('contactSeller.questionPlaceholder')} className="w-full px-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
               </div>
 
               {error && <p className="text-red-500 text-xs">{error}</p>}
 
               <div className="flex items-center gap-2 text-[10px] text-gold/40 mb-2">
                 <Shield size={12} />
-                <span>Votre message sera transmis via la plateforme. Le vendeur vous répondra dans son tableau de bord.</span>
+                <span>{t('contactSeller.info')}</span>
               </div>
 
               <button type="submit" className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all flex items-center justify-center gap-2">
-                <Send size={16} /> Envoyer la question
+                <Send size={16} /> {t('contactSeller.send')}
               </button>
             </form>
           </>
@@ -98,10 +100,10 @@ export default function ContactSeller({ product, onClose, onSent }: ContactSelle
             <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
               <Send size={28} className="text-green-400" />
             </div>
-            <h3 className="font-playfair text-xl text-white font-bold mb-2">Message envoyé !</h3>
-            <p className="text-gray-400 text-sm mb-6">Le vendeur a reçu votre question et vous répondra sous 24h.</p>
+            <h3 className="font-playfair text-xl text-white font-bold mb-2">{t('contactSeller.successTitle')}</h3>
+            <p className="text-gray-400 text-sm mb-6">{t('contactSeller.successMessage')}</p>
             <button onClick={onClose} className="px-6 py-3 border border-gold/30 text-gold text-xs uppercase tracking-widest rounded-sm hover:bg-gold/10 transition-all">
-              Continuer mes achats
+              {t('contactSeller.continue')}
             </button>
           </div>
         )}

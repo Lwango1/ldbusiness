@@ -1,11 +1,13 @@
 import { Sparkles, Store, ShoppingBag, Radio, Megaphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '../i18n';
 
 interface HeroProps {
   onNavigate: (path: string) => void;
 }
 
 export default function Hero({ onNavigate }: HeroProps) {
+  const { t } = useTranslation();
   return (
     <section id="hero" className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden bg-luxury-black">
       <div className="absolute inset-0">
@@ -29,44 +31,44 @@ export default function Hero({ onNavigate }: HeroProps) {
         </div>
 
         <h1 className="font-playfair text-4xl sm:text-5xl md:text-7xl font-bold mb-4 leading-tight">
-          <span className="gold-shimmer block">LDBusiness</span>
-          <span className="text-white">Marketplace</span>
+          <span className="gold-shimmer block">{t('hero.title')}</span>
+          <span className="text-white">{t('hero.subtitle')}</span>
         </h1>
 
         <p className="font-poppins text-gray-400 text-sm md:text-lg max-w-2xl mx-auto mb-6 leading-relaxed">
-          La plateforme <span className="text-gold">multi-usage</span> qui connecte acheteurs, vendeurs et créateurs à Goma et partout en RDC.
+          {t('hero.description')}
         </p>
 
         {/* Badges des fonctionnalités */}
         <div className="flex flex-wrap justify-center gap-3 mb-8">
           <span className="px-4 py-2 bg-gold/10 border border-gold/20 rounded-full text-gold text-[10px] uppercase tracking-widest font-bold flex items-center gap-1.5">
-            <ShoppingBag size={12} /> Acheter & Vendre
+            <ShoppingBag size={12} /> {t('hero.badgeBuySell')}
           </span>
           <span className="px-4 py-2 bg-gold/10 border border-gold/20 rounded-full text-gold text-[10px] uppercase tracking-widest font-bold flex items-center gap-1.5">
-            <Radio size={12} /> Live Streaming
+            <Radio size={12} /> {t('hero.badgeLive')}
           </span>
           <span className="px-4 py-2 bg-gold/10 border border-gold/20 rounded-full text-gold text-[10px] uppercase tracking-widest font-bold flex items-center gap-1.5">
-            <Megaphone size={12} /> Publicité
+            <Megaphone size={12} /> {t('hero.badgeAd')}
           </span>
           <span className="px-4 py-2 bg-gold/10 border border-gold/20 rounded-full text-gold text-[10px] uppercase tracking-widest font-bold flex items-center gap-1.5">
-            <Store size={12} /> Boutiques Multiples
+            <Store size={12} /> {t('hero.badgeStores')}
           </span>
         </div>
 
         <p className="text-gray-500 text-xs md:text-sm max-w-xl mx-auto mb-10">
-          +100 vendeurs · +300 produits · Mode, Artisanat, Services · Expérience sécurisée
+          {t('hero.stats')}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <button onClick={() => onNavigate('/produits')} className="w-full sm:w-auto px-10 py-4 bg-gold text-black font-black rounded-sm tracking-widest uppercase text-[11px] shadow-2xl shadow-gold/10 active:scale-95 transition-all">
-            Découvrir les produits
+            {t('hero.discoverProducts')}
           </button>
           <button onClick={() => onNavigate('/vendre')} className="w-full sm:w-auto px-10 py-4 border border-gold/40 text-gold font-bold rounded-sm tracking-widest uppercase text-[11px] backdrop-blur-md hover:bg-gold/10 active:scale-95 transition-all">
-            Ouvrir ma boutique
+            {t('hero.openStore')}
           </button>
           <button onClick={() => onNavigate('/live')} className="w-full sm:w-auto px-10 py-4 border border-gold/40 text-gold font-bold rounded-sm tracking-widest uppercase text-[11px] backdrop-blur-md hover:bg-gold/10 active:scale-95 transition-all flex items-center justify-center gap-2">
             <span className="w-2 h-2 bg-red-600 rounded-full animate-ping" />
-            Live Streaming
+            {t('hero.goLive')}
           </button>
         </div>
       </div>

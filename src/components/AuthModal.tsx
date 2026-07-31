@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '../i18n';
 import { X, Phone, Lock, User, Store, Shield, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { signUp, signIn, UserRole } from '../services/auth';
 import { sha256, ADMIN_HASH, STORAGE_KEY } from './AdminGuard';
@@ -21,6 +22,8 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   const [adminMode, setAdminMode] = useState(false);
   const [adminPin, setAdminPin] = useState(Array(6).fill(''));
 
+  const { t } = useTranslation();
+
   const handlePinDigit = (idx: number, val: string) => {
     if (val.length > 1) return;
     const newPin = [...adminPin];
@@ -41,12 +44,12 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
   const handleAdminLogin = async () => {
     const fullPin = adminPin.join('');
-    if (fullPin.length !== 6) { setError('Code à 6 chiffres requis'); return; }
+    if (fullPin.length !== 6) { setError(t('auth.adminCodeRequired')); return; }
     setLoading(true);
     setError('');
     const hash = await sha256(fullPin);
     if (hash !== ADMIN_HASH) {
-      setError('Code secret incorrect');
+      setError(t('auth.wrongAdminCode'));
       setAdminPin(Array(6).fill(''));
       document.getElementById('ap-0')?.focus();
       setLoading(false);
@@ -73,7 +76,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     try {
       if (mode === 'register') {
         if (!fullName || !phone || !password) {
-          setError('Tous les champs sont obligatoires');
+          setError(t('auth.requiredFields'));
           setLoading(false);
           return;
         }
@@ -83,7 +86,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
         }
       } else {
         if (!phone || !password) {
-          setError('Téléphone et mot de passe requis');
+          setError(t('auth.phonePasswordRequired'));
           setLoading(false);
           return;
         }
@@ -91,7 +94,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
       }
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue');
+      setError(err.message || t('auth.error'));
     } finally {
       setLoading(false);
     }
@@ -110,9 +113,9 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
             {mode === 'login' ? <Lock size={24} className="text-gold" /> : <User size={24} className="text-gold" />}
           </div>
           <h2 className="font-playfair text-xl text-white font-bold">
-            {mode === 'login' ? 'Connexion' : 'Créer un compte'}
+            {mode === 'login' ? t('auth.login') : t('auth.register')}
           </h2>
-          <p className="text-gray-500 text-xs mt-1">Utilisez votre numéro de téléphone</p>
+          <p className="text-gray-500 text-xs mt-1">{t('auth.usePhone')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -120,7 +123,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
             <div className="space-y-4">
               <div className="text-center mb-2">
                 <Shield size={32} className="mx-auto text-gold mb-2" />
-                <p className="text-gray-400 text-xs">Code secret admin</p>
+                <p className="text-gray-400 text-xs">{t('auth.adminCode')}</p>
               </div>
               <div className="flex justify-center gap-2">
                 {adminPin.map((d, i) => (
@@ -141,37 +144,37 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
                 ))}
               </div>
               <button type="button" onClick={handleAdminLogin} disabled={loading || adminPin.join('').length !== 6} className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-2">
-                {loading ? 'Connexion...' : <><KeyRound size={16} /> Connexion Admin</>}
+                {loading ? t('auth.loggingIn') : <><KeyRound size={16} /> {t('auth.adminLogin')}</>}
               </button>
               <button type="button" onClick={() => { setAdminMode(false); setError(''); setAdminPin(Array(6).fill('')); }} className="w-full py-2 text-gray-500 text-xs hover:text-gold transition-all">
-                Retour à la connexion normale
+                {t('auth.backToNormal')}
               </button>
             </div>
           ) : (
             <>
           {mode === 'register' && (
             <div>
-              <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Nom complet</label>
+              <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('auth.fullName')}</label>
               <div className="relative">
                 <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gold/40" />
-                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Ex: Daniel Lwango" className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
+                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder={t('auth.fullNamePlaceholder')} className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
               </div>
             </div>
           )}
 
           <div>
-            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Téléphone</label>
+            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('auth.phone')}</label>
             <div className="relative">
               <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gold/40" />
-              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+243 XX XXX XXXX" className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder={t('auth.phonePlaceholder')} className="w-full pl-12 pr-4 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
             </div>
           </div>
 
           <div>
-            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Mot de passe</label>
+            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('auth.password')}</label>
             <div className="relative">
               <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gold/40" />
-              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="w-full pl-12 pr-12 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
+              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder={t('auth.passwordPlaceholder')} className="w-full pl-12 pr-12 py-3 bg-black border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold outline-none text-sm" />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gold">
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -180,13 +183,13 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
           {mode === 'register' && (
             <div>
-              <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">Je suis</label>
+              <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('auth.role')}</label>
               <div className="grid grid-cols-2 gap-2">
                 <button type="button" onClick={() => setRole('buyer')} className={`py-3 px-4 text-xs rounded-sm border transition-all flex items-center justify-center gap-2 ${role === 'buyer' ? 'bg-gold text-black border-gold' : 'border-gold/20 text-gray-400 hover:border-gold/40'}`}>
-                  <User size={14} /> Acheteur
+                  <User size={14} /> {t('auth.buyer')}
                 </button>
                 <button type="button" onClick={() => setRole('seller')} className={`py-3 px-4 text-xs rounded-sm border transition-all flex items-center justify-center gap-2 ${role === 'seller' ? 'bg-gold text-black border-gold' : 'border-gold/20 text-gray-400 hover:border-gold/40'}`}>
-                  <Store size={14} /> Vendeur
+                  <Store size={14} /> {t('auth.seller')}
                 </button>
               </div>
             </div>
@@ -195,7 +198,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
           {mode === 'login' && (
             <div className="text-center">
               <button type="button" onClick={() => setAdminMode(true)} className="text-gold text-xs hover:underline flex items-center justify-center gap-1 mx-auto">
-                <Shield size={12} /> Connexion Admin
+                <Shield size={12} /> {t('auth.adminLogin')}
               </button>
             </div>
           )}
@@ -206,15 +209,15 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
           {!(mode === 'login' && adminMode) && (
           <button type="submit" disabled={loading} className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30">
-            {loading ? 'Chargement...' : mode === 'login' ? 'Se connecter' : 'Créer mon compte'}
+            {loading ? t('auth.loading') : mode === 'login' ? t('auth.loginButton') : t('auth.registerButton')}
           </button>
           )}
         </form>
 
         <p className="text-center mt-6 text-gray-500 text-xs">
-          {mode === 'login' ? "Pas encore de compte ? " : "Déjà un compte ? "}
+          {mode === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}
           <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }} className="text-gold hover:underline">
-            {mode === 'login' ? 'S\'inscrire' : 'Se connecter'}
+            {mode === 'login' ? t('auth.signUp') : t('auth.signIn')}
           </button>
         </p>
       </div>

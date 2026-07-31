@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from '../i18n';
 import { Video, VideoOff, Mic, MicOff, ScreenShare, Users, Send, Radio, ArrowLeft, Camera, MessageCircle, X, Loader, RefreshCw, Volume2, VolumeX } from 'lucide-react';
 import { Room, type RemoteParticipant, type RemoteTrack } from 'livekit-client';
 import { getLiveById, sendLiveChatMessage, incrementViewers, stopLive } from '../services/database';
@@ -11,6 +12,7 @@ export default function LiveRoom() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [live, setLive] = useState<LiveStream | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [room] = useState(() => new Room());
@@ -151,7 +153,7 @@ export default function LiveRoom() {
         });
       } catch (err: any) {
         console.error('LiveKit connection error:', err);
-        setError(err.message || 'Erreur de connexion au live');
+        setError(err.message || t('room.errorConnection'));
       }
     })();
     return () => { room.disconnect(); setHasRemoteVideo(false); setCameraStarted(false); };
@@ -184,10 +186,10 @@ export default function LiveRoom() {
       setIsMicOn(true);
     } catch (err: any) {
       console.error('Camera start error:', err);
-      setError(err.message || 'Impossible d\'accéder à la caméra');
+      setError(err.message || t('room.errorCamera'));
     }
     setStartingCamera(false);
-  }, [room, facingMode]);
+  }, [room, facingMode, t]);
 
   const flipCamera = useCallback(async () => {
     const newMode = facingMode === 'user' ? 'environment' : 'user';
@@ -210,9 +212,9 @@ export default function LiveRoom() {
       setFacingMode(newMode);
     } catch (err) {
       console.error('Flip camera error:', err);
-      setError('Impossible de changer de caméra');
+      setError(t('room.errorSwitchCamera'));
     }
-  }, [facingMode, room]);
+  }, [facingMode, room, t]);
 
   const toggleCamera = useCallback(async () => {
     if (isCameraOn) {
@@ -238,10 +240,10 @@ export default function LiveRoom() {
         setIsCameraOn(true);
       } catch (err) {
         console.error(err);
-        setError('Impossible d\'accéder à la caméra');
+        setError(t('room.errorCamera'));
       }
     }
-  }, [isCameraOn, room]);
+  }, [isCameraOn, room, t]);
 
   const toggleMic = useCallback(async () => {
     if (isMicOn) {
@@ -263,10 +265,10 @@ export default function LiveRoom() {
         setIsMicOn(true);
       } catch (err) {
         console.error(err);
-        setError('Impossible d\'accéder au microphone');
+        setError(t('room.errorMicrophone'));
       }
     }
-  }, [isMicOn, room]);
+  }, [isMicOn, room, t]);
 
   const toggleScreenShare = useCallback(async () => {
     if (isScreenSharing) {
@@ -341,8 +343,8 @@ export default function LiveRoom() {
     return (
       <div className="min-h-screen pt-28 px-6 bg-luxury-black flex flex-col items-center justify-center">
         <Radio size={48} className="text-gold/30 mb-4" />
-        <p className="text-gray-400 font-playfair text-lg">Live introuvable</p>
-        <button onClick={() => navigate('/live')} className="mt-4 text-gold text-xs uppercase tracking-widest">Retour aux lives</button>
+        <p className="text-gray-400 font-playfair text-lg">{t('room.notFound')}</p>
+        <button onClick={() => navigate('/live')} className="mt-4 text-gold text-xs uppercase tracking-widest">{t('room.backToLives')}</button>
       </div>
     );
   }
@@ -361,16 +363,16 @@ export default function LiveRoom() {
                   {!cameraStarted ? (
                     <>
                       <Camera size={48} className="text-gold/40 mx-auto mb-4" />
-                      <p className="text-gray-400 text-sm mb-4">Prêt à diffuser ?</p>
+                      <p className="text-gray-400 text-sm mb-4">{t('room.readyToStream')}</p>
                       <button onClick={startCamera} disabled={startingCamera} className="px-8 py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center gap-2 mx-auto">
-                        {startingCamera ? <><Loader size={16} className="animate-spin" /> Caméra...</> : <><Video size={16} /> Démarrer la caméra</>}
+                        {startingCamera ? <><Loader size={16} className="animate-spin" /> {t('room.cameraStarting')}</> : <><Video size={16} /> {t('room.startCamera')}</>}
                       </button>
                       {error && <p className="text-red-500 text-xs mt-3">{error}</p>}
                     </>
                   ) : (
                     <>
                       <Camera size={40} className="text-gold/50 mx-auto mb-2" />
-                      <p className="text-gray-500">Caméra désactivée</p>
+                      <p className="text-gray-500">{t('room.cameraOff')}</p>
                     </>
                   )}
                 </div>
@@ -386,7 +388,7 @@ export default function LiveRoom() {
                   <div className="w-20 h-20 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-4">
                     <Radio size={36} className="text-gold" />
                   </div>
-                  <p className="text-gold font-playfair text-lg">En direct</p>
+                  <p className="text-gold font-playfair text-lg">{t('room.live')}</p>
                   <p className="text-gray-500 text-xs mt-1">{live.hostName}</p>
                   {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
                 </div>
@@ -399,11 +401,11 @@ export default function LiveRoom() {
       {/* Top bar */}
       <div className="absolute top-0 inset-x-0 p-4 flex items-center justify-between z-10 pointer-events-none">
         <button onClick={() => navigate('/live')} className="pointer-events-auto flex items-center gap-2 text-white/80 hover:text-white text-xs uppercase tracking-widest transition-all">
-          <ArrowLeft size={16} /> Quitter
+          <ArrowLeft size={16} /> {t('room.leave')}
         </button>
         <div className="flex items-center gap-2 bg-red-600 px-3 py-1 rounded-sm shadow-lg">
           <span className="w-2 h-2 bg-white rounded-full animate-ping" />
-          <span className="text-white text-[10px] font-black">LIVE</span>
+          <span className="text-white text-[10px] font-black">{t('room.liveBadge')}</span>
         </div>
         <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full">
           <Users size={12} className="text-gold" />
@@ -446,7 +448,7 @@ export default function LiveRoom() {
                 </div>
               )}
               <button onClick={() => setConfirmEnd(true)} className={`px-4 py-3 font-bold text-[10px] rounded-full uppercase tracking-widest transition-all whitespace-nowrap ${cameraStarted ? 'bg-white/90 text-black hover:bg-red-500 hover:text-white' : 'bg-red-600/80 text-white border border-red-400'}`}>
-                Terminer
+                {t('room.end')}
               </button>
             </>
           )}
@@ -466,22 +468,22 @@ export default function LiveRoom() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => !endingLive && setConfirmEnd(false)} />
           <div className="relative bg-luxury-dark border border-red-500/30 rounded-xl p-6 w-full max-w-sm mx-4 shadow-2xl text-center">
-            <p className="text-white font-bold text-lg mb-2">Terminer le live ?</p>
-            <p className="text-gray-400 text-sm mb-6">Le direct sera arrêté pour tous les spectateurs.</p>
+            <p className="text-white font-bold text-lg mb-2">{t('room.endConfirm')}</p>
+            <p className="text-gray-400 text-sm mb-6">{t('room.endWarning')}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmEnd(false)}
                 disabled={endingLive}
                 className="flex-1 py-3 bg-white/10 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-white/20 transition-all disabled:opacity-30"
               >
-                Annuler
+                {t('room.cancel')}
               </button>
               <button
                 onClick={handleStopLive}
                 disabled={endingLive}
                 className="flex-1 py-3 bg-red-600 text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-red-700 transition-all disabled:opacity-30 flex items-center justify-center gap-2"
               >
-                {endingLive ? <><Loader size={16} className="animate-spin" /> Arrêt...</> : 'Terminer'}
+                {endingLive ? <><Loader size={16} className="animate-spin" /> {t('room.stopping')}</> : t('room.end')}
               </button>
             </div>
           </div>
@@ -498,15 +500,15 @@ export default function LiveRoom() {
                 <button onClick={() => setShowChat(false)} className="text-gray-500 hover:text-white">
                   <X size={18} />
                 </button>
-                <span className="text-white font-bold text-xs uppercase tracking-widest">Chat</span>
-                <span className="text-gray-500 text-[10px]">{chatMessages.length} messages</span>
+                <span className="text-white font-bold text-xs uppercase tracking-widest">{t('room.chat')}</span>
+                <span className="text-gray-500 text-[10px]">{chatMessages.length} {t('room.messages')}</span>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setChatTab('messages')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest py-2 rounded-sm transition-all ${chatTab === 'messages' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
-                  Messages
+                  {t('room.messagesCap')}
                 </button>
                 <button onClick={() => setChatTab('participants')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest py-2 rounded-sm transition-all ${chatTab === 'participants' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
-                  Participants ({participants.length})
+                  {t('room.participants')} ({participants.length})
                 </button>
               </div>
             </div>
@@ -515,7 +517,7 @@ export default function LiveRoom() {
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {chatMessages.length === 0 && (
                   <div className="text-center py-8">
-                    <p className="text-gray-600 text-sm italic">Soyez le premier à écrire !</p>
+                    <p className="text-gray-600 text-sm italic">{t('room.firstMessage')}</p>
                   </div>
                 )}
                 {chatMessages.map((msg, i) => (
@@ -539,7 +541,7 @@ export default function LiveRoom() {
               <div className="flex-1 overflow-y-auto p-4 space-y-2">
                 {participants.length === 0 && (
                   <div className="text-center py-8">
-                    <p className="text-gray-600 text-sm italic">Aucun participant</p>
+                    <p className="text-gray-600 text-sm italic">{t('room.noParticipants')}</p>
                   </div>
                 )}
                 {participants.map((p, i) => (
@@ -549,9 +551,9 @@ export default function LiveRoom() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-white text-sm font-medium truncate">{p.name}</p>
-                      <p className="text-[9px] text-gray-600">{p.isHost ? 'Hôte' : 'Spectateur'}</p>
+                      <p className="text-[9px] text-gray-600">{p.isHost ? t('room.host') : t('room.viewer')}</p>
                     </div>
-                    {p.isHost && <span className="ml-auto text-[9px] text-gold font-bold uppercase tracking-widest">Host</span>}
+                    {p.isHost && <span className="ml-auto text-[9px] text-gold font-bold uppercase tracking-widest">{t('room.hostEn')}</span>}
                   </div>
                 ))}
               </div>
@@ -562,7 +564,7 @@ export default function LiveRoom() {
                 <input
                   ref={chatInputRef}
                   type="text"
-                  placeholder="Écrivez un message..."
+                  placeholder={t('room.messagePlaceholder')}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}

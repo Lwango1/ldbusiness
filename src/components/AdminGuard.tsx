@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Shield, Lock, KeyRound } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../i18n';
 
 export const ADMIN_HASH = '628c7389fd25ae26a3c81380d330cbabd0f22163e1b402960b58e6767745cec2'; // SHA-256 de "151191"
 export const STORAGE_KEY = 'ldbusiness_admin_auth';
@@ -24,6 +25,7 @@ export function clearAdminAuth(): void {
 const PIN_LENGTH = 6;
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const { role } = useAuth();
   const [pin, setPin] = useState(Array(PIN_LENGTH).fill(''));
   const [error, setError] = useState('');
@@ -54,7 +56,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
   const handleSubmit = async () => {
     const fullPin = pin.join('');
     if (fullPin.length !== PIN_LENGTH) {
-      setError(`Code à ${PIN_LENGTH} chiffres requis`);
+      setError(t('adminGuard.codeRequired'));
       return;
     }
     setLoading(true);
@@ -63,7 +65,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
       sessionStorage.setItem(STORAGE_KEY, 'true');
       setVerified(true);
     } else {
-      setError('Code incorrect');
+      setError(t('adminGuard.wrongCode'));
       setPin(['', '', '', '']);
       document.getElementById('pin-0')?.focus();
     }
@@ -79,8 +81,8 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
           <div className="w-20 h-20 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-5">
             <Shield size={36} className="text-gold" />
           </div>
-          <h1 className="font-playfair text-3xl font-bold text-white mb-2">Accès Admin</h1>
-          <p className="text-gray-500 text-sm">Entrez le code secret à {PIN_LENGTH} chiffres</p>
+          <h1 className="font-playfair text-3xl font-bold text-white mb-2">{t('adminGuard.title')}</h1>
+          <p className="text-gray-500 text-sm">{t('adminGuard.instruction')}</p>
         </div>
 
         <div className="bg-luxury-dark border border-gold/10 rounded-xl p-8">
@@ -115,9 +117,9 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
             className="w-full py-4 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-2"
           >
             {loading ? (
-              <><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Vérification...</>
+              <><div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> {t('adminGuard.verifying')}</>
             ) : (
-              <><KeyRound size={16} /> Déverrouiller</>
+              <><KeyRound size={16} /> {t('adminGuard.unlock')}</>
             )}
           </button>
         </div>

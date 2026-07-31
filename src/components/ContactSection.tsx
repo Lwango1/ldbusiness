@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import * as Lucide from 'lucide-react';
+import { useTranslation } from '../i18n';
 
 export default function ContactSection() {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
 
@@ -19,7 +21,7 @@ export default function ContactSection() {
     <section id="contact" className="py-20 px-6 bg-black">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-white">Prendre Rendez-vous</h2>
+          <h2 className="text-4xl font-bold text-white">{t('contact.title')}</h2>
           <div className="w-20 h-1 bg-[#C9A94E] mx-auto mt-4" />
         </div>
 
@@ -28,27 +30,27 @@ export default function ContactSection() {
           <div className="space-y-8">
             <div className="flex gap-4 items-center">
               <Lucide.MapPin className="text-[#C9A94E]" />
-              <span className="text-gray-400">Goma, Nord-Kivu, RDC</span>
+              <span className="text-gray-400">{t('contact.address')}</span>
             </div>
             <button onClick={openWhatsApp} className="flex items-center gap-2 text-green-500 border border-green-500/30 p-4 rounded">
-              <Lucide.MessageCircle size={20} /> Discuter sur WhatsApp
+              <Lucide.MessageCircle size={20} /> {t('contact.whatsapp')}
             </button>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="bg-[#1A1A1A] p-8 border border-white/10">
             {submitted ? (
-              <div className="text-center text-[#C9A94E]">Merci Daniel, message envoyé !</div>
+              <div className="text-center text-[#C9A94E]">{t('contact.success')}</div>
             ) : (
               <div className="space-y-4">
                 <input
                   type="text"
-                  placeholder="Nom"
+                  placeholder={t('contact.name')}
                   className="w-full bg-black border-b border-white/20 py-2 text-white outline-none"
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                 />
                 <button type="submit" className="w-full bg-[#C9A94E] py-3 font-bold uppercase">
-                  Envoyer
+                  {t('contact.send')}
                 </button>
               </div>
             )}

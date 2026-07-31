@@ -1,11 +1,13 @@
+import { useTranslation } from '../i18n';
 import { Shield, Users, TrendingUp, Globe, Radio, Megaphone, Store, ShoppingBag } from 'lucide-react';
 
 export default function AboutSection() {
+  const { t } = useTranslation();
   const values = [
-    { icon: <Store className="text-gold" size={24} />, title: 'Multiples Boutiques', desc: 'Une marketplace qui regroupe vendeurs, artisans et créateurs en un seul endroit.' },
-    { icon: <ShoppingBag className="text-gold" size={24} />, title: 'Achat & Vente', desc: 'Achetez et vendez en toute sécurité avec notre système de facturation intégré.' },
-    { icon: <Radio className="text-gold" size={24} />, title: 'Showroom Live', desc: 'Présentez vos produits en direct et interagissez avec vos clients en temps réel.' },
-    { icon: <Megaphone className="text-gold" size={24} />, title: 'Publicité Intégrée', desc: 'Promouvez votre marque avec nos espaces publicitaires (Hero, Pop-up, Carrousel, Sidebar).' },
+    { icon: <Store className="text-gold" size={24} />, title: t('about.multiStores'), desc: t('about.multiStoresDesc') },
+    { icon: <ShoppingBag className="text-gold" size={24} />, title: t('about.buySell'), desc: t('about.buySellDesc') },
+    { icon: <Radio className="text-gold" size={24} />, title: t('about.liveShowroom'), desc: t('about.liveShowroomDesc') },
+    { icon: <Megaphone className="text-gold" size={24} />, title: t('about.adIntegrated'), desc: t('about.adIntegratedDesc') },
   ];
 
   return (
@@ -27,7 +29,7 @@ export default function AboutSection() {
                 <img src="/images/logo.png" alt="LDBusiness" className="h-24 md:h-32 mx-auto mb-6 drop-shadow-[0_0_15px_rgba(201,169,78,0.4)]" />
                 <div className="w-12 h-[1px] bg-gold/50 mx-auto mb-4" />
                 <p className="font-playfair text-gold text-sm italic leading-relaxed">
-                  "La plateforme qui connecte <br />vendeurs et acheteurs à Goma"
+                  {t('about.quote')}
                 </p>
                 <p className="text-gray-600 text-[10px] uppercase tracking-widest mt-4">— LDBusiness Marketplace</p>
               </div>
@@ -40,31 +42,23 @@ export default function AboutSection() {
           {/* Droite - Texte & Valeurs */}
           <div className="space-y-8">
             <div>
-              <span className="text-gold text-[10px] uppercase tracking-[0.5em] font-bold">À Propos</span>
+              <span className="text-gold text-[10px] uppercase tracking-[0.5em] font-bold">{t('about.title')}</span>
               <h2 className="font-playfair text-4xl md:text-6xl font-bold mt-4 leading-tight">
-                <span className="gold-shimmer">Une plateforme</span>
+                <span className="gold-shimmer">{t('about.platform')}</span>
                 <br />
-                <span className="text-white">tout-en-un</span>
+                <span className="text-white">{t('about.allInOne')}</span>
               </h2>
             </div>
 
             <div className="space-y-4 text-gray-400 text-sm md:text-base leading-relaxed font-light">
               <p>
-                <span className="text-white font-semibold">LDBusiness</span> est une <span className="text-gold">marketplace multi-usage</span> basée à Goma, Nord-Kivu.
-                Contrairement aux plateformes classiques, nous ne nous limitons pas à l'achat et à la vente.
-                Nous offrons un écosystème complet qui permet aux vendeurs de <span className="text-white">diffuser en direct</span> leurs produits,
-                de <span className="text-white">promouvoir leur marque</span> via des espaces publicitaires intégrés,
-                et de <span className="text-white">gérer leur boutique</span> en toute autonomie.
+                <span className="text-white font-semibold">LDBusiness</span> {t('about.descP1')}
               </p>
               <p>
-                Pour l'acheteur, c'est la garantie d'une <span className="text-white">expérience fluide et sécurisée</span> :
-                catalogue varié de produits de mode, artisanat et services,
-                live streaming pour voir les produits en action,
-                paiement via Airtel Money, et livraison assurée partout en RDC.
+                {t('about.descP2')}
               </p>
               <p>
-                Notre mission est simple : <span className="text-white">faciliter le commerce local</span> en donnant aux entrepreneurs congolais les outils
-                (boutique en ligne, live, publicité) pour développer leur activité et toucher plus de clients.
+                {t('about.descP3')}
               </p>
             </div>
 
@@ -83,22 +77,22 @@ export default function AboutSection() {
             <div className="flex justify-between items-center pt-8 border-t border-gold/10">
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">100+</div>
-                <div className="text-[9px] text-gold uppercase tracking-tighter">Vendeurs</div>
+                <div className="text-[9px] text-gold uppercase tracking-tighter">{t('about.statsSellers')}</div>
               </div>
               <div className="w-px h-8 bg-gold/20" />
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">300+</div>
-                <div className="text-[9px] text-gold uppercase tracking-tighter">Produits</div>
+                <div className="text-[9px] text-gold uppercase tracking-tighter">{t('about.statsProducts')}</div>
               </div>
               <div className="w-px h-8 bg-gold/20" />
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">Live</div>
-                <div className="text-[9px] text-gold uppercase tracking-tighter">Showroom</div>
+                <div className="text-[9px] text-gold uppercase tracking-tighter">{t('about.statsLive')}</div>
               </div>
               <div className="w-px h-8 bg-gold/20" />
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">Pub</div>
-                <div className="text-[9px] text-gold uppercase tracking-tighter">4 Zones</div>
+                <div className="text-[9px] text-gold uppercase tracking-tighter">{t('about.statsAd')}</div>
               </div>
             </div>
           </div>

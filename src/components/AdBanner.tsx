@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from '../i18n';
 import { Ad } from '../types';
 import { getAds, incrementAdImpression } from '../services/database';
 
@@ -27,6 +28,7 @@ function AdMedia({ src, alt, className }: { src: string; alt: string; className?
 }
 
 export default function AdBanner({ zone }: AdBannerProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [ads, setAds] = useState<Ad[]>([]);
   const [index, setIndex] = useState(0);
@@ -105,7 +107,7 @@ export default function AdBanner({ zone }: AdBannerProps) {
             {ad.description && <p className="text-gray-400 text-xs mt-1">{ad.description}</p>}
             <div className="flex gap-2 mt-3">
               <button onClick={handlePopupVisit} className="flex-1 py-2.5 bg-gold text-black font-bold text-[10px] uppercase tracking-widest rounded-sm text-center hover:bg-gold-light transition-all flex items-center justify-center gap-1">
-                Voir la boutique
+                {t('ad.visitStore')}
               </button>
               <button onClick={() => setDismissed(true)} className="px-4 py-2.5 border border-gray-500/30 text-gray-400 text-[10px] rounded-sm hover:border-gray-500/50 transition-all">
                 <X size={12} />

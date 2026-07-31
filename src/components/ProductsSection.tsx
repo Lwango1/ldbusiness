@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { Product } from '../types';
 import { getProducts, getAllCategories } from '../services/database';
+import { useTranslation } from '../i18n';
 import ProductCard from './ProductCard';
 
 interface ProductsSectionProps {
@@ -10,6 +11,7 @@ interface ProductsSectionProps {
 }
 
 export default function ProductsSection({ onView3D, onAddToCart }: ProductsSectionProps) {
+  const { t } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState('Tous');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('default');
@@ -42,9 +44,9 @@ export default function ProductsSection({ onView3D, onAddToCart }: ProductsSecti
 
         {/* Header de section */}
         <div className="text-center mb-16">
-          <span className="text-gold text-[10px] uppercase tracking-[0.5em] font-bold">La Collection</span>
+          <span className="text-gold text-[10px] uppercase tracking-[0.5em] font-bold">{t('products.collection')}</span>
           <h2 className="font-playfair text-4xl md:text-6xl font-bold mt-4 mb-6">
-            <span className="gold-shimmer">Prêt-à-Porter & Sur Mesure</span>
+            <span className="gold-shimmer">{t('products.subtitle')}</span>
           </h2>
           <div className="w-24 h-[1px] bg-gold/30 mx-auto" />
         </div>
@@ -56,7 +58,7 @@ export default function ProductsSection({ onView3D, onAddToCart }: ProductsSecti
             <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gold/40 group-focus-within:text-gold transition-colors" />
             <input
               type="text"
-              placeholder="Rechercher une robe, un costume..."
+              placeholder={t('products.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-14 pr-6 py-4 bg-luxury-dark/50 border border-gold/10 rounded-sm text-white placeholder:text-gray-600 focus:border-gold/40 focus:bg-luxury-dark outline-none transition-all"
@@ -71,9 +73,9 @@ export default function ProductsSection({ onView3D, onAddToCart }: ProductsSecti
               onChange={(e) => setSortBy(e.target.value)}
               className="w-full pl-14 pr-10 py-4 bg-luxury-dark/50 border border-gold/10 rounded-sm text-white appearance-none cursor-pointer outline-none focus:border-gold/40 transition-all text-sm font-medium"
             >
-              <option value="default">Trier par : Récent</option>
-              <option value="price-asc">Prix : Croissant</option>
-              <option value="price-desc">Prix : Décroissant</option>
+              <option value="default">{t('products.sortRecent')}</option>
+              <option value="price-asc">{t('products.sortPriceAsc')}</option>
+              <option value="price-desc">{t('products.sortPriceDesc')}</option>
             </select>
             <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-gold/40 pointer-events-none" />
           </div>
@@ -113,12 +115,12 @@ export default function ProductsSection({ onView3D, onAddToCart }: ProductsSecti
         {filteredProducts.length === 0 && (
           <div className="text-center py-32 border border-dashed border-gold/10 rounded-sm">
             <Search size={48} className="mx-auto text-gold/10 mb-4" />
-            <p className="text-gray-500 font-playfair italic text-lg">Aucune création ne correspond à votre sélection.</p>
+            <p className="text-gray-500 font-playfair italic text-lg">{t('products.empty')}</p>
             <button
               onClick={() => {setSelectedCategory('Tous'); setSearchQuery('');}}
               className="mt-4 text-gold text-xs uppercase tracking-widest font-bold"
             >
-              Réinitialiser les filtres
+              {t('products.resetFilters')}
             </button>
           </div>
         )}

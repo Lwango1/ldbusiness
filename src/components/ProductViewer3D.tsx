@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { X, ZoomIn, ZoomOut, RotateCcw, Maximize2, ShoppingBag } from 'lucide-react';
 import { Product, formatDualPrice } from '../types';
+import { useTranslation } from '../i18n';
 
 interface ProductViewer3DProps {
   product: Product;
@@ -9,6 +10,7 @@ interface ProductViewer3DProps {
 }
 
 export default function ProductViewer3D({ product, onClose, onAddToCart }: ProductViewer3DProps) {
+  const { t } = useTranslation();
   const [rotateX, setRotateX] = useState(0);
   const [rotateY, setRotateY] = useState(0);
   const [zoom, setZoom] = useState(1);
@@ -176,7 +178,7 @@ export default function ProductViewer3D({ product, onClose, onAddToCart }: Produ
             )}
 
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-gold/80 bg-black/80 backdrop-blur-md px-4 py-2 rounded-full border border-gold/20 uppercase tracking-[0.2em] whitespace-nowrap">
-              {showZoomLens ? 'Déplacez pour zoomer' : 'Faites glisser pour pivoter'}
+              {showZoomLens ? t('productViewer.zoom') : t('productViewer.drag')}
             </div>
           </div>
         </div>
@@ -199,7 +201,7 @@ export default function ProductViewer3D({ product, onClose, onAddToCart }: Produ
             <div className="h-6 w-[1px] bg-gold/20" />
             <span className="text-green-500 text-sm flex items-center gap-2">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
-              Disponible immédiatement
+              {t('productViewer.available')}
             </span>
           </div>
 
@@ -210,7 +212,7 @@ export default function ProductViewer3D({ product, onClose, onAddToCart }: Produ
           {/* Options de tailles */}
           {product.sizes && (
             <div className="mb-8">
-              <span className="text-xs text-gold/50 uppercase tracking-widest block mb-3">Choisir la taille</span>
+              <span className="text-xs text-gold/50 uppercase tracking-widest block mb-3">{t('productViewer.chooseSize')}</span>
               <div className="flex gap-3 flex-wrap">
                 {product.sizes.map(size => (
                   <button key={size} className="w-12 h-12 border border-gold/20 flex items-center justify-center text-sm text-gray-300 hover:border-gold hover:text-gold transition-all rounded-sm">
@@ -228,13 +230,13 @@ export default function ProductViewer3D({ product, onClose, onAddToCart }: Produ
           >
             <div className="relative z-10 flex items-center justify-center gap-3 text-luxury-black font-bold uppercase tracking-widest">
               <ShoppingBag size={20} />
-              Ajouter au panier
+              {t('productViewer.addToCart')}
             </div>
             <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300 opacity-20" />
           </button>
 
           <p className="text-[10px] text-center text-gray-500 mt-6 uppercase tracking-widest">
-            ✨ Service Prestige LDBusiness • Goma Nord-Kivu
+            {t('productViewer.prestige')}
           </p>
         </div>
       </div>

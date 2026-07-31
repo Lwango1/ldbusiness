@@ -6,8 +6,10 @@ import { supabase } from '../lib/supabase';
 import SellerRegistration from '../components/SellerRegistration';
 import SellerDashboard from '../components/SellerDashboard';
 import AuthModal from '../components/AuthModal';
+import { useTranslation } from '../i18n';
 
 export default function SellerPage() {
+  const { t } = useTranslation();
   const { user, role } = useAuth();
   const [seller, setSeller] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -43,10 +45,10 @@ export default function SellerPage() {
       <div className="min-h-screen pt-28 pb-20 px-6 bg-luxury-black flex items-start justify-center">
         <div className="max-w-sm w-full mt-20 text-center">
           <Store size={48} className="mx-auto text-gold/30 mb-4" />
-          <h1 className="font-playfair text-2xl font-bold text-white mb-2">Connexion requise</h1>
-          <p className="text-gray-500 text-sm mb-6">Connectez-vous pour accéder à votre espace vendeur.</p>
+          <h1 className="font-playfair text-2xl font-bold text-white mb-2">{t('sellerPage.loginTitle')}</h1>
+          <p className="text-gray-500 text-sm mb-6">{t('sellerPage.loginRequired')}</p>
           <button onClick={() => setShowAuth(true)} className="px-6 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm">
-            Se connecter
+            {t('sellerPage.login')}
           </button>
         </div>
         {showAuth && <AuthModal onClose={() => setShowAuth(false)} onSuccess={handleAuthSuccess} />}
@@ -59,8 +61,8 @@ export default function SellerPage() {
       <div className="min-h-screen pt-28 pb-20 px-6 bg-luxury-black flex items-start justify-center">
         <div className="max-w-sm w-full mt-20 text-center">
           <Shield size={48} className="mx-auto text-red-500/40 mb-4" />
-          <h1 className="font-playfair text-2xl font-bold text-white mb-2">Accès refusé</h1>
-          <p className="text-gray-500 text-sm">Vous êtes inscrit en tant qu'acheteur. Créez un compte vendeur pour accéder à cet espace.</p>
+          <h1 className="font-playfair text-2xl font-bold text-white mb-2">{t('sellerPage.accessDenied')}</h1>
+          <p className="text-gray-500 text-sm">{t('sellerPage.buyerAccount')}</p>
         </div>
       </div>
     );

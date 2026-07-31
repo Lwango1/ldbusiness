@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { X, Download, Smartphone, Share2 } from 'lucide-react';
+import { useTranslation } from '../i18n';
 
 export default function InstallBanner() {
+  const { t } = useTranslation();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showBanner, setShowBanner] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -55,15 +57,15 @@ export default function InstallBanner() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-white font-bold text-sm">LDBusiness</h3>
+              <h3 className="text-white font-bold text-sm">{t('install.title')}</h3>
               <button onClick={() => setShowBanner(false)} className="p-1 text-gray-500 hover:text-white">
                 <X size={16} />
               </button>
             </div>
-            <p className="text-gray-400 text-[11px]">Installez l'application pour une meilleure expérience</p>
+            <p className="text-gray-400 text-[11px]">{t('install.description')}</p>
             <div className="flex gap-2 mt-3">
               <button onClick={handleInstall} className="flex-1 py-2.5 bg-gold text-black font-bold text-[10px] uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all flex items-center justify-center gap-1.5">
-                <Download size={14} /> Installer
+                <Download size={14} /> {t('install.button')}
               </button>
               <button onClick={handleShare} className="px-3 py-2.5 border border-gold/30 text-gold text-[10px] rounded-sm hover:bg-gold/10 transition-all">
                 <Share2 size={14} />
