@@ -1,4 +1,12 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Permissions-Policy", "value": "unload=(self)" }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/produit/(.*)", "destination": "/api/produit/$1" },
     { "source": "/tiktok/(.*)", "destination": "/api/tiktok/$1" },

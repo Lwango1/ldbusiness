@@ -9,7 +9,7 @@ export default function InstallBanner() {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    const handler = (e: Event) => {
+    const handler = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowBanner(true);
@@ -20,18 +20,24 @@ export default function InstallBanner() {
       setIsInstalled(true);
     }
 
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
   }, []);
 
-  const handleInstall = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
+  const handleInstall = () => {
+    if (!deferredPrompt) {
       setShowBanner(false);
-      setIsInstalled(true);
+      return;
     }
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(({ outcome }: { outcome: string }) => {
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+        setShowBanner(false);
+        setIsInstalled(true);
+      }
+    });
   };
 
   const handleShare = async () => {
