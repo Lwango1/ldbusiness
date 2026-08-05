@@ -1,14 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
-import { RefreshCw, Upload, Trash2, Play, Square, Mic, Music, Film, Download, Volume2, VolumeX, Share2 } from 'lucide-react';
+import { RefreshCw, Upload, Trash2, Play, Square, Mic, Music, Film, Download, Volume2, VolumeX, Share2, Sparkles, MessageCircle } from 'lucide-react';
 import meSpeak from 'mespeak';
 import mespeakConfig from 'mespeak/src/mespeak_config.json';
 import frVoice from 'mespeak/voices/fr.json';
+import enVoice from 'mespeak/voices/en/en.json';
 import { useAuth } from '../contexts/AuthContext';
 import { webmToMp4 } from '../lib/convertToMp4';
 import { useTranslation } from '../i18n';
+import type { Language } from '../i18n/context';
 
 type AdFormat = 'hero' | 'popup' | 'square' | 'landscape';
 type AdTemplate = 'luxury' | 'modern' | 'sale' | 'social';
+type HostType = 'mascot' | 'woman' | 'man' | 'none';
 
 const FORMATS: Record<AdFormat, { width: number; height: number; labelKey: string }> = {
   hero: { width: 1400, height: 600, labelKey: 'adGenerator.hero' },
@@ -26,10 +29,73 @@ const TEMPLATES = [
 
 const GOLD = '#d4af37'; const GOLD_LIGHT = '#e6c85a'; const DARK = '#121218'; const BLACK = '#0a0a0a'; const WHITE = '#ffffff';
 
+type MelodyStyle = 'soft' | 'elegant' | 'dynamic' | 'pop';
+
+type Wave = 'sine' | 'triangle' | 'square';
+
+const MELODY_STYLES: Record<MelodyStyle, {
+  labelKey: string;
+  bpm: number;
+  base: number;
+  chords: number[][];        // scale degrees as frequencies at octave 1
+  padVol: number;
+  noteVol: number;
+  stepsPerBar: number;
+  noteMul: number;           // pitch multiplier for the pluck melody
+  wave: Wave;
+}> = {
+  soft: {
+    labelKey: 'adGenerator.styleSoft', bpm: 70, base: 130.8 /* C3 */,
+    chords: [
+      [1, 1.25, 1.5],        // C  (root, major third, fifth)
+      [0.944, 1.18, 1.5],    // A min-ish
+      [0.833, 1.05, 1.25],   // F
+      [0.75, 0.944, 1.25],   // G
+    ],
+    padVol: 0.3, noteVol: 0.18, stepsPerBar: 2, noteMul: 1, wave: 'sine',
+  },
+  elegant: {
+    labelKey: 'adGenerator.styleElegant', bpm: 82, base: 174.6 /* F3 */,
+    chords: [
+      [1, 1.2, 1.5],         // F minor-ish
+      [1.125, 1.5, 1.78],    // G#
+      [0.944, 1.25, 1.5],    // D#
+      [0.833, 1.125, 1.5],   // C#
+    ],
+    padVol: 0.26, noteVol: 0.14, stepsPerBar: 3, noteMul: 2, wave: 'triangle',
+  },
+  dynamic: {
+    labelKey: 'adGenerator.styleDynamic', bpm: 128, base: 98.0 /* G2 */,
+    chords: [
+      [1, 1.189, 1.498],     // G minor power
+      [1, 1.189, 1.498],
+      [0.833, 1, 1.259],     // F
+      [0.833, 1, 1.259],
+    ],
+    padVol: 0.14, noteVol: 0.22, stepsPerBar: 6, noteMul: 1, wave: 'square',
+  },
+  pop: {
+    labelKey: 'adGenerator.stylePop', bpm: 118, base: 146.8 /* D3 */,
+    chords: [
+      [1, 1.259, 1.498],     // D major
+      [0.833, 1.05, 1.259],  // Bm
+      [0.667, 0.833, 1],     // A
+      [0.75, 0.944, 1.189],  // G
+    ],
+    padVol: 0.2, noteVol: 0.2, stepsPerBar: 4, noteMul: 2, wave: 'triangle',
+  },
+};
+
+const LANG_CONFIG: Record<Language, { tts: string; speak: string; meSpeakVoice: string; loadVoice: typeof frVoice | null }> = {
+  fr: { tts: 'fr', speak: 'fr-FR', meSpeakVoice: 'fr', loadVoice: frVoice },
+  en: { tts: 'en', speak: 'en-US', meSpeakVoice: 'en', loadVoice: enVoice },
+  sw: { tts: 'sw', speak: 'sw', meSpeakVoice: '', loadVoice: null },
+};
+
 interface ImageFile { id: string; file: File; dataUrl: string; }
 
 export default function AdGeneratorCanvas() {
-  const { t } = useTranslation();
+  const { t, lang: activeLang } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const musicRef = useRef<HTMLInputElement>(null);
@@ -44,6 +110,9 @@ export default function AdGeneratorCanvas() {
   const [voiceText, setVoiceText] = useState('');
   const [musicFile, setMusicFile] = useState<File | null>(null);
   const [musicUrl, setMusicUrl] = useState<string | null>(null);
+  const [melodyActive, setMelodyActive] = useState(false);
+  const [generatingMelody, setGeneratingMelody] = useState(false);
+  const [melodyStyle, setMelodyStyle] = useState<MelodyStyle>('soft');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -56,10 +125,15 @@ export default function AdGeneratorCanvas() {
   const [tiktokUsername, setTiktokUsername] = useState('');
   const [publishing, setPublishing] = useState(false);
   const [publishStatus, setPublishStatus] = useState('');
-  const [musicVolume, setMusicVolume] = useState(25);
+  const [musicVolume, setMusicVolume] = useState(15);
   const [voiceVolume, setVoiceVolume] = useState(100);
   const [voiceMuted, setVoiceMuted] = useState(false);
   const [musicMuted, setMusicMuted] = useState(false);
+  const [productDesc, setProductDesc] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [storeLink, setStoreLink] = useState('');
+  const [scriptStatus, setScriptStatus] = useState('');
+  const [hostType, setHostType] = useState<HostType>('woman');
 
   const recRef = useRef<MediaRecorder | null>(null);
   const micRef = useRef<MediaStream | null>(null);
@@ -76,8 +150,135 @@ export default function AdGeneratorCanvas() {
 
   const pickMusic = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) { setMusicFile(f); if (musicUrl) URL.revokeObjectURL(musicUrl); setMusicUrl(URL.createObjectURL(f)); }
+    if (f) { setMusicFile(f); if (musicUrl) URL.revokeObjectURL(musicUrl); setMusicUrl(URL.createObjectURL(f)); setMelodyActive(false); }
   };
+
+const generateMelody = async () => {
+    if (generatingMelody) return;
+    setGeneratingMelody(true);
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const totalSec = images.length * Math.max(secPerImg, 1) + 4;
+      const duration = Math.min(Math.max(totalSec, 5), 25);
+      const ctx = new AudioCtx({ sampleRate: 22050 });
+      const buffer = ctx.createBuffer(2, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate);
+
+      const style = MELODY_STYLES[melodyStyle];
+      const chords = style.chords;
+      const barLen = Math.floor(ctx.sampleRate * (4 * 60 / style.bpm)); // 4 beats per bar
+      let out = 0;
+
+      for (let c = 0; c < chords.length; c++) {
+        const chord = chords[c];
+        const barEnd = (c + 1) * barLen;
+        // Pad (soft sustained chord, calm sine regardless of style)
+        chord.forEach((m, j) => {
+          const freq = style.base * m;
+          padNote(buffer, out, barEnd, freq, style.padVol * (j / chord.length + 0.4));
+          if (c > 0) padNote(buffer, out, barEnd, freq, style.padVol * (j / chord.length + 0.4), barLen);
+        });
+        // Melody arpeggio with distinctive timbre
+        const pattern = chord.slice();
+        for (let step = 0; step < style.stepsPerBar; step++) {
+          const place = out + Math.floor(step * (barLen / style.stepsPerBar));
+          const m = pattern[step % pattern.length];
+          pluckNote(buffer, place, place + barLen / style.stepsPerBar, style.base * m * style.noteMul, style.noteVol, style.wave);
+        }
+        out = barEnd;
+      }
+
+      // Soft fade in/out
+      const fade = Math.floor(ctx.sampleRate * 0.4);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = buffer.getChannelData(ch);
+        for (let i = 0; i < fade; i++) d[i] *= i / fade;
+        for (let i = buffer.length - fade; i < buffer.length; i++) d[i] *= (buffer.length - i) / fade;
+      }
+
+      // Remaster to a normalized pleasant level
+      let peak = 0;
+      for (let ch = 0; ch < 2; ch++) {
+        const d = buffer.getChannelData(ch);
+        for (let i = 0; i < buffer.length; i++) { const a = Math.abs(d[i]); if (a > peak) peak = a; }
+      }
+      if (peak > 0.9) {
+        const g = 0.9 / peak;
+        for (let ch = 0; ch < 2; ch++) {
+          const d = buffer.getChannelData(ch);
+          for (let i = 0; i < buffer.length; i++) d[i] *= g;
+        }
+      }
+
+      const blob = audioBufferToWav(buffer);
+      ctx.close();
+      const dataUrl = URL.createObjectURL(blob);
+      if (musicUrl) URL.revokeObjectURL(musicUrl);
+      setMusicUrl(dataUrl);
+      setMusicFile(new File([blob], `melody_${melodyStyle}.wav`, { type: 'audio/wav' }));
+      setMelodyActive(true);
+    } catch {
+      setVideoError(t('adGenerator.errorMusicGen'));
+    }
+    setGeneratingMelody(false);
+  };
+
+  function padNote(buf: AudioBuffer, from: number, to: number, freq: number, vol: number, offset = 0) {
+    const sr = buf.sampleRate;
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      for (let i = from + offset; i < to; i++) {
+        const phase = (i - from) * freq / sr;
+        d[i] += Math.sin(phase * 2 * Math.PI) * vol * (0.6 + Math.sin((i - from) * 0.0005) * 0.25);
+      }
+    }
+  }
+  function pluckNote(buf: AudioBuffer, from: number, to: number, freq: number, vol = 0.15, wave: Wave = 'sine') {
+    const sr = buf.sampleRate;
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      for (let i = from; i < to; i++) {
+        const env = Math.pow(1 - (i - from) / (to - from), 2);
+        const t = (i - from) * freq / sr * 2 * Math.PI;
+        let v: number;
+        if (wave === 'square') v = Math.sin(t) >= 0 ? 1 : -1;
+        else if (wave === 'triangle') v = (2 / Math.PI) * Math.asin(Math.sin(t));
+        else v = Math.sin(t);
+        d[i] += v * vol * env;
+      }
+    }
+  }
+  function audioBufferToWav(buffer: AudioBuffer): Blob {
+    const numCh = buffer.numberOfChannels;
+    const length = buffer.length * numCh * 2;
+    const out = new ArrayBuffer(44 + length);
+    const view = new DataView(out);
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + length, true);
+    writeString(view, 8, 'WAVE');
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numCh, true);
+    view.setUint32(24, buffer.sampleRate, true);
+    view.setUint32(28, buffer.sampleRate * numCh * 2, true);
+    view.setUint16(32, numCh * 2, true);
+    view.setUint16(34, 16, true);
+    writeString(view, 36, 'data');
+    view.setUint32(40, length, true);
+    let off = 44;
+    for (let i = 0; i < buffer.length; i++) {
+      for (let ch = 0; ch < numCh; ch++) {
+        const d = buffer.getChannelData(ch);
+        const s = Math.max(-1, Math.min(1, d[i]));
+        view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        off += 2;
+      }
+    }
+    return new Blob([out], { type: 'audio/wav' });
+  }
+  function writeString(view: DataView, offset: number, str: string) {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  }
 
   const startMic = async () => {
     try {
@@ -104,10 +305,14 @@ export default function AdGeneratorCanvas() {
   const wordsRef = useRef<string[]>([]);
   const [currentWordIdx, setCurrentWordIdx] = useState(-1);
 
-  const drawScene = (ctx: CanvasRenderingContext2D, w: number, h: number, img: HTMLImageElement, subtitle?: string, highlightIdx?: number) => {
+  const drawScene = (ctx: CanvasRenderingContext2D, w: number, h: number, img: HTMLImageElement, subtitle?: string, highlightIdx?: number, mascot?: { talking: boolean; t: number }) => {
     ctx.clearRect(0, 0, w, h);
     const fn = template === 'modern' ? drawModern : template === 'sale' ? drawSale : template === 'social' ? drawSocial : drawLuxury;
     fn(ctx, w, h, img, brand, tagline);
+    if (hostType !== 'none' && mascot) {
+      if (hostType === 'mascot') drawMascot(ctx, w, h, mascot.talking, mascot.t);
+      else drawHost(ctx, w, h, mascot.talking, mascot.t, hostType);
+    }
     if (subtitle) {
       const pad = Math.max(w * 0.04, 15);
       const fontSize = Math.max(Math.min(w * 0.028, h * 0.04), 14);
@@ -162,51 +367,195 @@ export default function AdGeneratorCanvas() {
     }
   };
 
-  const speakWithHighlight = () => {
+  const speakWithHighlight = async () => {
     if (!voiceText.trim()) return;
-    if (isSpeaking) { speechSynthesis.cancel(); setIsSpeaking(false); setCurrentWordIdx(-1); return; }
+    if (isSpeaking) { stopPreview(); return; }
     const words = voiceText.split(/\s+/);
     wordsRef.current = words;
-    const u = new SpeechSynthesisUtterance(voiceText);
-    u.lang = 'fr-FR'; u.rate = 0.9;
-    u.onboundary = (e) => {
-      if (e.name === 'word') {
-        const charIdx = e.charIndex;
-        let idx = 0, pos = 0;
-        for (const w of words) { if (pos === charIdx) { setCurrentWordIdx(idx); break; } pos += w.length + 1; idx++; }
-      }
-    };
-    u.onend = () => { setIsSpeaking(false); setCurrentWordIdx(-1); };
-    u.onerror = () => { setIsSpeaking(false); setCurrentWordIdx(-1); };
-    setIsSpeaking(true); speechSynthesis.speak(u);
+    let url: string;
+    try {
+      setScriptStatus(t('adGenerator.generatingVoice'));
+      url = await generateTtsBlob(voiceText);
+      setScriptStatus('');
+    } catch {
+      setScriptStatus(t('adGenerator.errorTTS'));
+      return;
+    }
+    const el = new Audio(url);
+    previewAudioRef.current = el;
+    setIsSpeaking(true);
+    el.addEventListener('loadedmetadata', () => {
+      const dur = el.duration || 3;
+      const per = dur / words.length;
+      let i = 0;
+      previewTimerRef.current = window.setInterval(() => {
+        if (i < words.length) setCurrentWordIdx(i++);
+        else { if (previewTimerRef.current !== null) clearInterval(previewTimerRef.current); }
+      }, per * 1000);
+    });
+    el.onended = () => stopPreview();
+    el.onerror = () => stopPreview();
+    el.play().catch(() => stopPreview());
+  };
+
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previewTimerRef = useRef<number | null>(null);
+  const stopPreview = () => {
+    if (previewTimerRef.current !== null) { clearInterval(previewTimerRef.current); previewTimerRef.current = null; }
+    if (previewAudioRef.current) { previewAudioRef.current.pause(); previewAudioRef.current = null; }
+    setIsSpeaking(false);
+    setCurrentWordIdx(-1);
   };
 
   const ttsReady = useRef(false);
   useEffect(() => {
     if (!ttsReady.current) {
       meSpeak.loadConfig(mespeakConfig);
-      meSpeak.loadVoice(frVoice);
+      const voice = LANG_CONFIG[activeLang].loadVoice;
+      if (voice) meSpeak.loadVoice(voice);
       ttsReady.current = true;
     }
-  }, []);
+  }, [activeLang]);
+
+  const buildMarketingScript = () => {
+    const desc = productDesc.trim();
+    if (!desc) return null;
+    const b = (brand.trim() || t('adGenerator.defaultBrand'));
+    const tgl = (tagline.trim() || '').replace(/\.$/, '');
+    const wa = whatsapp.trim().replace(/[^0-9+]/g, '');
+    const short = desc.replace(/[^a-zàâçéèêëîïôûùüÿñæœA-ZÀ-É\s0-9+%/.,!'?-]/gi, ' ').replace(/\s+/g, ' ').trim();
+    const tglPart = tgl ? `, ${tgl}` : '';
+    const waFr = wa ? `. Commandez dès maintenant sur WhatsApp au ${wa}` : '';
+    const waEn = wa ? `. Order now on WhatsApp at ${wa}` : '';
+    const waSw = wa ? `. Agiza sasa kwenye WhatsApp namba ${wa}` : '';
+    const scripts: Record<Language, string> = {
+      fr: `Découvrez ${b}${tglPart}. ${short}. Qualité exceptionnelle, livraison rapide${waFr}. Retrouvez ce produit sur LDBusiness et commandez en toute sécurité. Offre limitée, ne manquez pas !`,
+      en: `Discover ${b}${tglPart}. ${short}. Exceptional quality, fast delivery${waEn}. Find this product on LDBusiness and order securely. Limited offer, don't miss it!`,
+      sw: `Gundua ${b}${tglPart}. ${short}. Ubora wa kipekee, usafirishaji wa haraka${waSw}. Pata bidhaa hii kwenye LDBusiness na uagize kwa usalama. Ofa ndogo, usikose!`,
+    };
+    return scripts[activeLang];
+  };
+
+  const generateAll = async () => {
+    const script = buildMarketingScript();
+    if (!script) { setScriptStatus(t('adGenerator.aiNeedDesc')); return; }
+    if (isSpeaking) stopPreview();
+    setGeneratingMelody(true);
+    setScriptStatus(t('adGenerator.allGenerating'));
+    try {
+      setVoiceText(script);
+      setScriptStatus(t('adGenerator.generatingVoice'));
+      await generateTtsBlob(script);
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const totalSec = images.length * Math.max(secPerImg, 1) + 4;
+      const duration = Math.min(Math.max(totalSec, 5), 25);
+      const ctx = new AudioCtx({ sampleRate: 22050 });
+      const buffer = ctx.createBuffer(2, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate);
+      const style = MELODY_STYLES[melodyStyle];
+      const barLen = Math.floor(ctx.sampleRate * (4 * 60 / style.bpm));
+      let out = 0;
+      for (let c = 0; c < style.chords.length; c++) {
+        const chord = style.chords[c];
+        const barEnd = (c + 1) * barLen;
+        chord.forEach((m, j) => {
+          const freq = style.base * m;
+          padNote(buffer, out, barEnd, freq, style.padVol * (j / chord.length + 0.4));
+          if (c > 0) padNote(buffer, out, barEnd, freq, style.padVol * (j / chord.length + 0.4), barLen);
+        });
+        const pattern = chord.slice();
+        for (let step = 0; step < style.stepsPerBar; step++) {
+          const place = out + Math.floor(step * (barLen / style.stepsPerBar));
+          const m = pattern[step % pattern.length];
+          pluckNote(buffer, place, place + barLen / style.stepsPerBar, style.base * m * style.noteMul, style.noteVol, style.wave);
+        }
+        out = barEnd;
+      }
+      const fade = Math.floor(ctx.sampleRate * 0.4);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = buffer.getChannelData(ch);
+        for (let i = 0; i < fade; i++) d[i] *= i / fade;
+        for (let i = buffer.length - fade; i < buffer.length; i++) d[i] *= (buffer.length - i) / fade;
+      }
+      const blob = audioBufferToWav(buffer);
+      ctx.close();
+      const dataUrl = URL.createObjectURL(blob);
+      if (musicUrl) URL.revokeObjectURL(musicUrl);
+      setMusicUrl(dataUrl);
+      setMusicFile(new File([blob], `melody_${melodyStyle}.wav`, { type: 'audio/wav' }));
+      setMelodyActive(true);
+      setScriptStatus(t('adGenerator.allDone'));
+    } catch {
+      setScriptStatus(t('adGenerator.aiNeedDesc'));
+    }
+    setGeneratingMelody(false);
+  };
+
+  const generateMarketingScript = () => {
+    const script = buildMarketingScript();
+    if (!script) { setScriptStatus(t('adGenerator.aiNeedDesc')); return; }
+    setVoiceText(script);
+    setScriptStatus(t('adGenerator.aiDone'));
+    if (!isSpeaking) setTimeout(() => speakWithHighlight(), 100);
+  };
+
+  const ctaReady = () => Boolean(whatsapp.trim() || storeLink.trim());
 
   const ttsCache = useRef<Record<string, string>>({});
 
   const generateTtsBlob = async (text: string): Promise<string> => {
     if (ttsCache.current[text]) return ttsCache.current[text];
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
     const maxLen = 180;
-    const chunk = text.length > maxLen ? text.slice(0, text.lastIndexOf(' ', maxLen)) + '...' : text;
+    const raw = text.replace(/\s+/g, ' ').trim();
+    if (!raw) throw new Error(t('adGenerator.errorTTS'));
+
+    const chunks: string[] = [];
+    let start = 0;
+    while (start < raw.length) {
+      let end = Math.min(raw.length, start + maxLen);
+      if (end < raw.length) {
+        const idx = raw.lastIndexOf(' ', end);
+        if (idx > start) end = idx;
+      }
+      chunks.push(raw.slice(start, end).trim());
+      start = end;
+    }
+
+    const tl = LANG_CONFIG[activeLang].tts;
     try {
-      const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=${encodeURIComponent(chunk)}&tl=fr`;
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const blob = await resp.blob();
-      const dataUrl = URL.createObjectURL(blob);
+      const results: ArrayBuffer[] = [];
+      for (const chunk of chunks) {
+        const resp = await fetch(`/api/tts?text=${encodeURIComponent(chunk)}&lang=${tl}`, { mode: 'cors' });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        results.push(await resp.arrayBuffer());
+      }
+
+      const ctx = new AudioCtx();
+      const decoded: AudioBuffer[] = [];
+      for (const ab of results) {
+        try { decoded.push(await ctx.decodeAudioData(ab)); } catch {}
+      }
+      if (decoded.length === 0) throw new Error('TTS');
+
+      const sr = ctx.sampleRate;
+      const total = decoded.reduce((a, b) => a + b.length, 0);
+      const merged = ctx.createBuffer(2, total, sr);
+      let offset = 0;
+      for (const d of decoded) {
+        for (let ch = 0; ch < 2; ch++) {
+          merged.getChannelData(ch).set(d.getChannelData(Math.min(ch, d.numberOfChannels - 1)), offset);
+        }
+        offset += d.length;
+      }
+      const dataUrl = URL.createObjectURL(audioBufferToWav(merged));
+      ctx.close();
       ttsCache.current[text] = dataUrl;
       return dataUrl;
     } catch {
-      const dataUrl = meSpeak.speak(chunk, {
-        rawdata: 'data-url', voice: 'fr', variant: 'f2',
+      const voice = LANG_CONFIG[activeLang].meSpeakVoice;
+      if (!voice) throw new Error(t('adGenerator.errorTTS'));
+      const dataUrl = meSpeak.speak(raw, {
+        rawdata: 'data-url', voice, variant: 'f2',
         speed: 130, pitch: 50, amplitude: 140,
       });
       if (typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
@@ -223,7 +572,7 @@ export default function AdGeneratorCanvas() {
     const canvas = canvasRef.current; const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const fmt = FORMATS[format]; canvas.width = fmt.width; canvas.height = fmt.height;
-    drawScene(ctx, fmt.width, fmt.height, previewImages[0], voiceText || undefined, currentWordIdx);
+    drawScene(ctx, fmt.width, fmt.height, previewImages[0], voiceText || undefined, currentWordIdx, { talking: currentWordIdx >= 0, t: performance.now() });
   }, [currentWordIdx, format, template, brand, tagline, previewImages, voiceText]);
 
   const preloadPreviewImages = () => {
@@ -236,6 +585,8 @@ export default function AdGeneratorCanvas() {
 
   useEffect(() => { if (recordedAudioRef.current) recordedAudioRef.current.volume = voiceVolume / 100; }, [voiceVolume]);
   useEffect(() => { if (musicAudioRef.current) musicAudioRef.current.volume = musicVolume / 100; }, [musicVolume]);
+
+  useEffect(() => () => { stopPreview(); }, []);
 
   const { user } = useAuth();
 
@@ -289,6 +640,7 @@ export default function AdGeneratorCanvas() {
 
   const generate = async () => {
     if (images.length === 0 || !canvasRef.current) return;
+    if (isSpeaking) stopPreview();
     setVideoError('');
     if (videoUrl) { URL.revokeObjectURL(videoUrl); setVideoUrl(null); }
     if (timerRef.current !== null) { clearTimeout(timerRef.current); timerRef.current = null; }
@@ -320,59 +672,66 @@ export default function AdGeneratorCanvas() {
       if (!vt) { setVideoError('Pas de piste vidéo'); return; }
 
       const chunks: BlobPart[] = [];
-      const audioEls: HTMLAudioElement[] = [];
 
       let silentCtx: AudioContext | null = null;
-      let audioOk = false;
+      let finalDur = images.length * spi;
       try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        silentCtx = new AudioCtx();
+        await silentCtx.resume();
+
         let voiceUrl = recordedUrl;
         if (!voiceUrl && voiceText.trim()) {
           setProgress(t('adGenerator.generatingVoice'));
           voiceUrl = await generateTtsBlob(voiceText);
         }
+        let voiceBuf: AudioBuffer | null = null;
         if (voiceUrl) {
           setProgress(t('adGenerator.voiceover'));
-          const el = new Audio(voiceUrl);
-          el.style.display = 'none';
-          document.body.appendChild(el);
-          audioEls.push(el);
-          el.load();
-          await new Promise<void>((res, rej) => { el.oncanplaythrough = () => res(); el.onerror = rej; setTimeout(rej, 5000); });
-          el.muted = false;
-          await el.play();
-          await new Promise(r => setTimeout(r, 300));
-          if ((el as any).captureStream) {
-            const s = (el as any).captureStream();
-            for (const t of s.getAudioTracks()) { t.enabled = true; videoStream.addTrack(t); audioOk = true; }
-          }
+          const arr = await (await fetch(voiceUrl)).arrayBuffer();
+          try { voiceBuf = await silentCtx.decodeAudioData(arr); } catch {}
         }
+        let musicBuf: AudioBuffer | null = null;
         if (musicUrl) {
           setProgress(t('adGenerator.musicGenerating'));
-          const el = new Audio(musicUrl); el.loop = true;
-          el.style.display = 'none';
-          document.body.appendChild(el);
-          audioEls.push(el);
-          el.load();
-          await new Promise<void>((res, rej) => { el.oncanplaythrough = () => res(); el.onerror = rej; setTimeout(rej, 5000); });
-          await el.play();
-          await new Promise(r => setTimeout(r, 300));
-          if ((el as any).captureStream) {
-            const s = (el as any).captureStream();
-            for (const t of s.getAudioTracks()) { t.enabled = true; videoStream.addTrack(t); audioOk = true; }
+          const arr = await (await fetch(musicUrl)).arrayBuffer();
+          try { musicBuf = await silentCtx.decodeAudioData(arr); } catch {}
+        }
+
+        const visDur = images.length * spi;
+        const voiceDur = voiceBuf ? voiceBuf.duration : 0;
+        const dur = Math.max(visDur, voiceDur);
+
+        const ctaLen = ctaReady() ? 3 : 0;
+        const buf = silentCtx.createBuffer(2, Math.max(1, Math.ceil(silentCtx.sampleRate * (dur + ctaLen))), silentCtx.sampleRate);
+        if (voiceBuf) {
+          const vv = (voiceMuted ? 0 : voiceVolume) / 100;
+          if (vv > 0) {
+            for (let ch = 0; ch < 2; ch++) {
+              const d = buf.getChannelData(ch);
+              const v = voiceBuf.getChannelData(Math.min(ch, voiceBuf.numberOfChannels - 1));
+              for (let i = 0; i < voiceBuf.length; i++) d[i] += v[i] * vv;
+            }
           }
         }
-        if (!audioOk) {
-          silentCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-          await silentCtx.resume();
-          const osc = silentCtx.createOscillator(); osc.frequency.value = 0;
-          const g = silentCtx.createGain(); g.gain.value = 0;
-          const dest = silentCtx.createMediaStreamDestination();
-          osc.connect(g); g.connect(dest); osc.start();
-          for (const t of dest.stream.getAudioTracks()) videoStream.addTrack(t);
+        if (musicBuf) {
+          const mv = (musicMuted ? 0 : musicVolume) / 100;
+          if (mv > 0) {
+            for (let ch = 0; ch < 2; ch++) {
+              const d = buf.getChannelData(ch);
+              const m = musicBuf.getChannelData(Math.min(ch, musicBuf.numberOfChannels - 1));
+              for (let i = 0; i < buf.length; i++) d[i] += m[i % musicBuf.length] * mv;
+            }
+          }
         }
+
+        finalDur = dur;
+        const src = silentCtx.createBufferSource(); src.buffer = buf;
+        const dest = silentCtx.createMediaStreamDestination();
+        src.connect(dest); src.start();
+        for (const t of dest.stream.getAudioTracks()) videoStream.addTrack(t);
       } catch (e: any) {
         setVideoError(t('adGenerator.errorAudio').replace('...', e?.message || 'vérifie le format audio')); setExporting(false);
-        audioEls.forEach(el => el.remove());
         if (silentCtx) silentCtx.close();
         return;
       }
@@ -388,39 +747,44 @@ export default function AdGeneratorCanvas() {
       };
 
       rec.onstop = () => {
-        audioEls.forEach(el => el.remove());
         if (silentCtx) silentCtx.close();
         const b = new Blob(chunks, { type: 'video/webm' });
         if (b.size === 0) { setVideoError(t('adGenerator.errorEmptyFile')); setExporting(false); return; }
         setVideoUrl(URL.createObjectURL(b));
         setExporting(false); setProgress('');
       };
-      rec.onerror = () => { setVideoError(t('adGenerator.errorEncoding')); stopRec(); audioEls.forEach(el => el.remove()); if (silentCtx) silentCtx.close(); setExporting(false); };
+      rec.onerror = () => { setVideoError(t('adGenerator.errorEncoding')); stopRec(); if (silentCtx) silentCtx.close(); setExporting(false); };
 
       rec.start(500);
       const t0 = performance.now();
       let prevImgIdx = -1;
       let stopped = false;
 
-      const totalDur = images.length * spi;
+      const totalDur = finalDur;
       const words = voiceText ? voiceText.split(/\s+/) : [];
       const wordDur = words.length > 0 ? totalDur / words.length : Infinity;
+      const ctaDur = ctaReady() ? 3 : 0;
+      const ctaStart = totalDur;
 
       const tick = () => {
         if (stopped) return;
         try {
           const elapsed = (performance.now() - t0) / 1000;
-          if (elapsed >= totalDur + 0.5) { stopped = true; stopRec(); return; }
-          const idx = Math.min(Math.floor(elapsed / spi), preloaded.length - 1);
-          const hIdx = wordDur < Infinity ? Math.min(Math.floor(elapsed / wordDur), words.length - 1) : undefined;
-          drawScene(ctx, w, h, preloaded[idx], voiceText || undefined, hIdx);
-          if (idx !== prevImgIdx) { prevImgIdx = idx; setProgress(`Image ${idx + 1}/${preloaded.length}`); }
+          if (elapsed >= totalDur + ctaDur + 0.5) { stopped = true; stopRec(); return; }
+          if (elapsed >= ctaStart) {
+            drawCtaScene(ctx, w, h, whatsapp, storeLink, t('adGenerator.ctaTitle'), t('adGenerator.ctaWhatsApp'), t('adGenerator.ctaFooter'));
+          } else {
+            const idx = Math.min(Math.floor(elapsed / spi), preloaded.length - 1);
+            const hIdx = wordDur < Infinity ? Math.min(Math.floor(elapsed / wordDur), words.length - 1) : undefined;
+            drawScene(ctx, w, h, preloaded[idx], voiceText || undefined, hIdx, { talking: hIdx !== undefined && hIdx >= 0, t: performance.now() });
+            if (idx !== prevImgIdx) { prevImgIdx = idx; setProgress(`Image ${idx + 1}/${preloaded.length}`); }
+          }
         } catch (e: any) { setVideoError(t('adGenerator.errorGeneric').replace('...', e?.message || 'inconnue')); stopped = true; stopRec(); setExporting(false); return; }
         timerRef.current = window.setTimeout(tick, frameMs);
       };
 
       tick();
-      setTimeout(() => { if (!stopped && !videoUrl) { setVideoError(t('adGenerator.errorTimeout')); stopRec(); setExporting(false); } }, (totalDur + 8) * 1000);
+      setTimeout(() => { if (!stopped && !videoUrl) { setVideoError(t('adGenerator.errorTimeout')); stopRec(); setExporting(false); } }, (totalDur + ctaDur + 8) * 1000);
 
     } catch (err: any) {
       setVideoError(err?.message || 'Erreur inconnue');
@@ -508,6 +872,21 @@ export default function AdGeneratorCanvas() {
               className={`py-2.5 rounded-sm text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 ${musicFile ? 'bg-gold/10 text-gold border border-gold/30' : 'bg-black border border-gold/10 text-gray-400 hover:border-gold/30'}`}>
               <Music size={12} /> {musicFile ? t('adGenerator.musicOn') : t('adGenerator.music')}
             </button>
+            <div className="col-span-2">
+              <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">{t('adGenerator.melodyStyle')}</label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {(Object.keys(MELODY_STYLES) as MelodyStyle[]).map((s) => (
+                  <button key={s} onClick={() => setMelodyStyle(s)}
+                    className={`py-1.5 px-2 rounded-sm text-[10px] font-bold text-center transition-all ${melodyStyle === s ? 'bg-gold text-black' : 'bg-luxury-dark border border-gold/10 text-gray-400 hover:border-gold/30'}`}>
+                    {t(MELODY_STYLES[s].labelKey)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button onClick={generateMelody} disabled={generatingMelody}
+              className="py-2.5 rounded-sm text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 col-span-2 bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20 transition-all disabled:opacity-40">
+              <Music size={12} /> {generatingMelody ? '...' : (melodyActive ? t('adGenerator.melodyOn') : t('adGenerator.melody'))}
+            </button>
           </div>
           {voiceText.trim() && !recordedBlob && (
             <p className="text-[9px] text-gray-500 italic pt-1">
@@ -568,6 +947,36 @@ export default function AdGeneratorCanvas() {
 
         <div className="space-y-3">
           <div className="bg-black border border-gold/10 rounded-lg p-4">
+            <h3 className="text-gold text-xs font-bold uppercase tracking-widest flex items-center gap-2"><Sparkles size={12} /> {t('adGenerator.aiTitle')}</h3>
+            <label className="text-[10px] text-gray-500 block mt-2 mb-1">{t('adGenerator.aiDesc')}</label>
+            <textarea value={productDesc} onChange={e => setProductDesc(e.target.value)}
+              placeholder={t('adGenerator.aiPlaceholder')}
+              rows={3} className="w-full px-3 py-2.5 bg-luxury-dark border border-gold/10 rounded-sm text-white focus:border-gold outline-none text-xs resize-none" />
+            <button onClick={generateAll} disabled={generatingMelody}
+              className="mt-2 w-full py-3 bg-gold text-black text-[11px] font-bold uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all flex items-center justify-center gap-2 disabled:opacity-40">
+              <Sparkles size={14} /> {generatingMelody ? '...' : t('adGenerator.allGenerate')}
+            </button>
+            <button onClick={generateMarketingScript}
+              className="mt-2 w-full py-2.5 bg-gold/10 border border-gold/30 text-gold text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-gold/20 transition-all flex items-center justify-center gap-2">
+              <Sparkles size={13} /> {t('adGenerator.aiGenerate')}
+            </button>
+            {scriptStatus && <p className="text-[10px] text-gold/70 mt-2 text-center">{scriptStatus}</p>}
+            <div className="grid grid-cols-1 gap-2 mt-3">
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">{t('adGenerator.ctaWhatsApp')}</label>
+                <input type="tel" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="+243..."
+                  className="w-full px-3 py-2.5 bg-luxury-dark border border-gold/10 rounded-sm text-white focus:border-gold outline-none text-xs" />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">{t('adGenerator.ctaLink')}</label>
+                <input type="url" value={storeLink} onChange={e => setStoreLink(e.target.value)} placeholder="https://..."
+                  className="w-full px-3 py-2.5 bg-luxury-dark border border-gold/10 rounded-sm text-white focus:border-gold outline-none text-xs" />
+              </div>
+            </div>
+            {ctaReady() && <p className="text-[10px] text-gold/70 mt-2 flex items-center gap-1"><MessageCircle size={11} /> {t('adGenerator.ctaIncluded')}</p>}
+          </div>
+
+          <div className="bg-black border border-gold/10 rounded-lg p-4">
             <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-2">{t('adGenerator.brand')}</label>
             <input type="text" value={brand} onChange={e => setBrand(e.target.value)} className="w-full px-3 py-2.5 bg-luxury-dark border border-gold/10 rounded-sm text-white focus:border-gold outline-none text-sm" />
           </div>
@@ -607,6 +1016,17 @@ export default function AdGeneratorCanvas() {
               ))}
             </div>
           </div>
+          <div className="bg-black border border-gold/10 rounded-lg p-4">
+            <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-2">{t('adGenerator.mascot')}</label>
+            <div className="grid grid-cols-4 gap-1.5">
+              {(['mascot', 'woman', 'man', 'none'] as HostType[]).map((h) => (
+                <button key={h} onClick={() => setHostType(h)}
+                  className={`py-2 rounded-sm text-sm font-bold transition-all ${hostType === h ? 'bg-gold text-black' : 'bg-luxury-dark border border-gold/10 text-gray-400 hover:border-gold/30'}`}>
+                  {h === 'mascot' ? '🐻' : h === 'woman' ? '👩' : h === 'man' ? '👨' : '🙈'}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -632,6 +1052,183 @@ export default function AdGeneratorCanvas() {
   );
 }
 
+
+function drawStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const a = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+    const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath(); ctx.fill();
+}
+
+function drawHost(ctx: CanvasRenderingContext2D, w: number, h: number, talking: boolean, t: number, gender: HostType) {
+  const isTall = h > w;
+  const R = Math.max(Math.min(w, h) * (isTall ? 0.12 : 0.13), 22);
+  const cx = isTall ? Math.max(w * 0.17, 36) : Math.max(w * 0.12, 40);
+  const baseY = isTall ? h * 0.22 : h * 0.74;
+  ctx.save();
+  const bounce = talking ? Math.abs(Math.sin(t / 160)) * R * 0.08 : 0;
+  ctx.translate(0, -bounce);
+
+  const skin = '#eabb90';
+  const bodyW = R * 1.9, bodyH = R * 1.6;
+  const topY = baseY - bodyH * 0.35;
+
+  if (gender === 'female') {
+    ctx.fillStyle = '#7c2d9e';
+    ctx.beginPath();
+    ctx.moveTo(cx - bodyW * 0.4, topY);
+    ctx.quadraticCurveTo(cx - bodyW * 0.62, baseY + bodyH * 0.5, cx - bodyW * 0.9, baseY + bodyH * 0.9);
+    ctx.lineTo(cx + bodyW * 0.9, baseY + bodyH * 0.9);
+    ctx.quadraticCurveTo(cx + bodyW * 0.62, baseY + bodyH * 0.5, cx + bodyW * 0.4, topY);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = GOLD; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, topY + R * 0.1, R * 0.5, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+  } else {
+    ctx.fillStyle = '#1c2b4a';
+    ctx.beginPath();
+    ctx.moveTo(cx - bodyW * 0.42, topY);
+    ctx.quadraticCurveTo(cx - bodyW * 0.55, baseY + bodyH * 0.35, cx - bodyW * 0.6, baseY + bodyH * 0.9);
+    ctx.lineTo(cx + bodyW * 0.6, baseY + bodyH * 0.9);
+    ctx.quadraticCurveTo(cx + bodyW * 0.55, baseY + bodyH * 0.35, cx + bodyW * 0.42, topY);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.moveTo(cx - R * 0.18, topY);
+    ctx.lineTo(cx + R * 0.18, topY);
+    ctx.lineTo(cx + R * 0.1, baseY + R * 0.5);
+    ctx.lineTo(cx - R * 0.1, baseY + R * 0.5);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = GOLD;
+    ctx.beginPath();
+    ctx.moveTo(cx - R * 0.06, topY);
+    ctx.lineTo(cx + R * 0.06, topY);
+    ctx.lineTo(cx + R * 0.12, baseY + R * 0.45);
+    ctx.lineTo(cx - R * 0.12, baseY + R * 0.45);
+    ctx.closePath(); ctx.fill();
+  }
+
+  const neckH = R * 0.35;
+  ctx.fillStyle = skin;
+  ctx.fillRect(cx - R * 0.16, topY - neckH, R * 0.32, neckH);
+
+  const headC = topY - neckH - R * 0.45 + R * 0.15;
+  ctx.fillStyle = skin;
+  ctx.beginPath(); ctx.arc(cx, headC, R, 0, Math.PI * 2); ctx.fill();
+
+  if (gender === 'female') {
+    ctx.fillStyle = '#2b1a10';
+    ctx.beginPath(); ctx.arc(cx, headC - R * 0.1, R * 1.02, Math.PI, 0); ctx.fill();
+    ctx.fillRect(cx - R * 1.0, headC - R * 0.2, R * 0.28, R * 1.1);
+    ctx.fillRect(cx + R * 0.72, headC - R * 0.2, R * 0.28, R * 1.1);
+    ctx.beginPath(); ctx.arc(cx + R * 0.2, headC - R * 0.35, R * 0.3, 0, Math.PI * 2); ctx.fill();
+  } else {
+    ctx.fillStyle = '#1c1c1c';
+    ctx.beginPath(); ctx.arc(cx, headC - R * 0.1, R, Math.PI, 0); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx - R * 0.92, headC - R * 0.05, R * 0.22, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + R * 0.92, headC - R * 0.05, R * 0.22, 0, Math.PI * 2); ctx.fill();
+  }
+
+  const eyeY = headC + R * 0.1;
+  ctx.fillStyle = '#3a2a1a';
+  ctx.beginPath(); ctx.arc(cx - R * 0.3, eyeY, R * 0.09, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + R * 0.3, eyeY, R * 0.09, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,150,120,0.5)';
+  ctx.beginPath(); ctx.arc(cx - R * 0.55, headC + R * 0.28, R * 0.09, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + R * 0.55, headC + R * 0.28, R * 0.09, 0, Math.PI * 2); ctx.fill();
+
+  const mouthY = headC + R * 0.42;
+  if (talking) {
+    const open = (Math.sin(t / 70) + 1) / 2;
+    const mw = R * 0.28, mh = R * 0.05 + open * R * 0.22;
+    ctx.fillStyle = '#6b2418';
+    ctx.beginPath(); ctx.ellipse(cx, mouthY, mw, mh, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ff8585';
+    ctx.beginPath(); ctx.ellipse(cx, mouthY + mh * 0.35, mw * 0.45, mh * 0.35, 0, 0, Math.PI * 2); ctx.fill();
+  } else {
+    ctx.strokeStyle = '#6b2418'; ctx.lineWidth = Math.max(2, R * 0.05);
+    ctx.beginPath(); ctx.arc(cx, headC + R * 0.32, R * 0.2, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
+  }
+
+  if (gender === 'female') {
+    ctx.fillStyle = GOLD;
+    ctx.beginPath(); ctx.arc(cx - R * 0.95, headC + R * 0.4, R * 0.06, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + R * 0.95, headC + R * 0.4, R * 0.06, 0, Math.PI * 2); ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawMascot(ctx: CanvasRenderingContext2D, w: number, h: number, talking: boolean, t: number, label: string) {
+  const isTall = h > w;
+  const R = Math.max(Math.min(w, h) * (isTall ? 0.11 : 0.12), 20);
+  const cx = isTall ? Math.max(w * 0.16, 34) : Math.max(w * 0.11, 36);
+  const cy = isTall ? h * 0.16 : h * 0.66;
+  ctx.save();
+  const bounce = talking ? Math.abs(Math.sin(t / 160)) * R * 0.1 : 0;
+  ctx.translate(0, -bounce);
+
+  ctx.fillStyle = 'rgba(212,175,55,0.22)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + R * 1.1, R * 0.9, R * 0.7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(212,175,55,0.35)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + R * 0.55, R * 0.72, R * 0.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#ffd97a';
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+  ctx.stroke();
+
+  const earY = cy - R * 0.65;
+  ctx.fillStyle = '#ffd97a';
+  ctx.beginPath(); ctx.arc(cx - R * 1.0, earY, R * 0.28, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + R * 1.0, earY, R * 0.28, 0, Math.PI * 2); ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#3a2a1a';
+  const eyeY = cy - R * 0.12;
+  ctx.beginPath(); ctx.arc(cx - R * 0.3, eyeY, R * 0.1, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + R * 0.3, eyeY, R * 0.1, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(cx - R * 0.33, eyeY - R * 0.05, R * 0.035, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + R * 0.27, eyeY - R * 0.05, R * 0.035, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,150,100,0.45)';
+  ctx.beginPath(); ctx.arc(cx - R * 0.58, cy + R * 0.16, R * 0.12, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + R * 0.58, cy + R * 0.16, R * 0.12, 0, Math.PI * 2); ctx.fill();
+
+  const mouthY = cy + R * 0.32;
+  if (talking) {
+    const open = (Math.sin(t / 70) + 1) / 2;
+    const mw = R * 0.34, mh = R * 0.06 + open * R * 0.3;
+    ctx.fillStyle = '#4a1a12';
+    ctx.beginPath();
+    ctx.ellipse(cx, mouthY, mw, mh, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ff6b6b';
+    ctx.beginPath();
+    ctx.ellipse(cx, mouthY + mh * 0.35, mw * 0.5, mh * 0.35, 0, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    ctx.strokeStyle = '#4a1a12'; ctx.lineWidth = Math.max(2, R * 0.06);
+    ctx.beginPath();
+    ctx.arc(cx, cy + R * 0.2, R * 0.26, 0.2 * Math.PI, 0.8 * Math.PI);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = GOLD;
+  drawStar(ctx, cx + R * 0.75, cy - R * 0.85, R * 0.16);
+
+  ctx.restore();
+}
 
 function drawLuxury(ctx: CanvasRenderingContext2D, w: number, h: number, img: HTMLImageElement, name: string, tagline: string) {
   const g = ctx.createLinearGradient(0, 0, 0, h);
@@ -700,8 +1297,43 @@ function drawSocial(ctx: CanvasRenderingContext2D, w: number, h: number, img: HT
   ctx.fillStyle = GOLD; ctx.font = `bold ${h*0.035}px sans-serif`; ctx.fillText(tagline, m, y);
 }
 
-function drawProductImage(ctx: CanvasRenderingContext2D, w: number, h: number, img: HTMLImageElement, pos: 'right' | 'center' | 'left') {
-  if (!img.complete || img.naturalWidth === 0) return;
+function drawCtaScene(ctx: CanvasRenderingContext2D, w: number, h: number, whatsapp: string, storeLink: string, title: string, waLabel: string, footer: string) {
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, BLACK); g.addColorStop(0.5, DARK); g.addColorStop(1, BLACK);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = GOLD; ctx.lineWidth = Math.max(2, h * 0.006);
+  ctx.strokeRect(Math.max(w * 0.05, 20), Math.max(h * 0.05, 15), w - Math.max(w * 0.1, 40), h - Math.max(h * 0.1, 30));
+
+  const cx = w / 2;
+  let y = h * 0.16;
+
+  ctx.fillStyle = WHITE; ctx.font = `bold ${Math.max(h * 0.07, 20)}px sans-serif`;
+  ctx.fillText(title, cx, y); y += h * 0.12;
+
+  const cleanWa = whatsapp.trim().replace(/^0+/, '+243').replace(/\s+/g, '');
+  const waBtn = cleanWa || waLabel;
+  const waW = Math.min(w * 0.7, Math.max(waBtn.length * (h * 0.022), 260));
+  const waH = Math.max(h * 0.075, 34);
+  ctx.fillStyle = '#25D366';
+  ctx.beginPath();
+  ctx.roundRect(cx - waW / 2, y, waW, waH, Math.max(waH / 2, 12));
+  ctx.fill();
+  ctx.fillStyle = BLACK; ctx.font = `bold ${Math.max(h * 0.035, 13)}px sans-serif`;
+  ctx.fillText(cleanWa ? `${waLabel} ${cleanWa}` : waLabel, cx, y + waH / 2);
+  y += waH + h * 0.05;
+
+  if (storeLink.trim()) {
+    const link = storeLink.trim();
+    ctx.fillStyle = GOLD_LIGHT; ctx.font = `bold ${Math.max(h * 0.03, 12)}px sans-serif`;
+    const disp = link.length > 42 ? link.slice(0, 39) + '...' : link;
+    ctx.fillText(disp, cx, y); y += h * 0.07;
+  }
+
+  ctx.fillStyle = 'rgba(212,175,55,0.85)'; ctx.font = `bold ${Math.max(h * 0.03, 12)}px sans-serif`;
+  ctx.fillText(footer, cx, y);
+}
+
+function drawProductImage(ctx: CanvasRenderingContext2D, w: number, h: number, img: HTMLImageElement, pos: 'right' | 'center' | 'left') {  if (!img.complete || img.naturalWidth === 0) return;
   const size = Math.max(w*0.55, h*0.55);
   const scale = size / Math.max(img.width, img.height);
   const iw = img.width * scale, ih = img.height * scale;
