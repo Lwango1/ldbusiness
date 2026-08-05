@@ -24,12 +24,18 @@ export default async function handler(req: any, res: any) {
     sw: 'Andika kwa Kiswahili, kwa lugha ya utangazaji na kitaalamu.',
   };
 
-  const prompt = `Tu es un expert en rédaction publicitaire. Analyse le produit décrit et rédige un script publicitaire vidéo court (3 à 4 phrases max, adapté à une voix off de 15 à 20 secondes).
+  const prompt = `Tu es un expert en rédaction publicitaire professionnelle. Analyse le produit décrit et rédige un script publicitaire vidéo COMPLET et structuré, en 5 à 8 phrases fluides adaptées à une voix off de 25 à 40 secondes.
+Structure obligatoire du script:
+1. Une accroche percutante qui capte l'attention dès la première phrase.
+2. Présentation du produit et de sa valeur (bénéfice principal pour le client).
+3. 2 à 3 arguments de vente concrets (qualité, prix, disponibilité, livraison, garantie...).
+4. Un élément d'urgence ou d'exclusivité (offre limitée, stock limité).
+5. Une incitation claire à commander.
 ${langPrompt[language] || langPrompt.fr}
 Marque: ${b}
 ${tgl ? `Accroche/Slogan: ${tgl}` : ''}
 Description du produit: ${desc}${waLine}
-Contraintes: pas de guillemets, phrases courtes, rythme fluide, une accroche percutante au début, une incitation à commander à la fin. Ne mentionne pas le mot "script".`;
+Contraintes: pas de guillemets ni de puces, phrases complètes et bien rédigées, ton vendeur et convaincant mais crédible, chaque phrase commence par une majuscule et se termine par un point. Ne mentionne pas le mot "script" ni "voix off". Réponds uniquement avec le texte du script.`;
 
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -38,7 +44,7 @@ Contraintes: pas de guillemets, phrases courtes, rythme fluide, une accroche per
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.8, maxOutputTokens: 300 },
+        generationConfig: { temperature: 0.8, maxOutputTokens: 800 },
       }),
     });
     if (!upstream.ok) {
