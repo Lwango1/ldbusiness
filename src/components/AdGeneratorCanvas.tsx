@@ -1,11 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { RefreshCw, Upload, Trash2, Play, Square, Mic, Music, Film, Download, Volume2, VolumeX, Share2, Sparkles, MessageCircle } from 'lucide-react';
+import { RefreshCw, Upload, Trash2, Play, Square, Mic, Music, Film, Download, Volume2, VolumeX, Sparkles, MessageCircle } from 'lucide-react';
 import meSpeak from 'mespeak';
 import mespeakConfig from 'mespeak/src/mespeak_config.json';
 import frVoice from 'mespeak/voices/fr.json';
 import enVoice from 'mespeak/voices/en/en.json';
-import { useAuth } from '../contexts/AuthContext';
-import { webmToMp4 } from '../lib/convertToMp4';
 import { useTranslation } from '../i18n';
 import type { Language } from '../i18n/context';
 
@@ -121,10 +119,6 @@ export default function AdGeneratorCanvas() {
   const [progress, setProgress] = useState('');
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoError, setVideoError] = useState('');
-  const [tiktokConnected, setTiktokConnected] = useState(false);
-  const [tiktokUsername, setTiktokUsername] = useState('');
-  const [publishing, setPublishing] = useState(false);
-  const [publishStatus, setPublishStatus] = useState('');
   const [musicVolume, setMusicVolume] = useState(15);
   const [voiceVolume, setVoiceVolume] = useState(100);
   const [voiceMuted, setVoiceMuted] = useState(false);
@@ -588,56 +582,6 @@ const generateMelody = async () => {
 
   useEffect(() => () => { stopPreview(); }, []);
 
-  const { user } = useAuth();
-
-  useEffect(() => {
-    (async () => {
-      if (!user) return;
-      try {
-        const r = await fetch(`/api/tiktok/status?userId=${user.id}`);
-        const d = await r.json();
-        setTiktokConnected(d.connected);
-        setTiktokUsername(d.username || '');
-      } catch {}
-    })();
-  }, [user]);
-
-  const publishToTikTok = async () => {
-    if (!videoUrl || !user) return;
-    setPublishing(true); setPublishStatus('Conversion MP4...');
-    try {
-      const blobResp = await fetch(videoUrl);
-      const webmBlob = await blobResp.blob();
-      if (webmBlob.size === 0) { setPublishStatus('Vidéo vide'); setPublishing(false); return; }
-
-      const mp4Blob = await webmToMp4(webmBlob);
-
-      setPublishStatus('Initialisation upload TikTok...');
-      const initR = await fetch('/tiktok/init-upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, fileSize: mp4Blob.size, description: voiceText, title: brand + ' - ' + tagline }),
-      });
-      const initD = await initR.json();
-      if (!initD.upload_url) { setPublishStatus('Erreur init: ' + JSON.stringify(initD)); setPublishing(false); return; }
-
-      setPublishStatus('Upload vidéo vers TikTok...');
-      const uploadR = await fetch(initD.upload_url, { method: 'PUT', body: mp4Blob, mode: 'cors' });
-      if (!uploadR.ok) { setPublishStatus('Erreur upload: ' + uploadR.status); setPublishing(false); return; }
-
-      setPublishStatus('Publication...');
-      const pubR = await fetch('/tiktok/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, video_id: initD.video_id, description: voiceText, title: brand + ' - ' + tagline }),
-      });
-      const pubD = await pubR.json();
-      if (pubD.success) { setPublishStatus('Publié sur TikTok ✓'); }
-      else { setPublishStatus('Erreur: ' + (pubD.error || JSON.stringify(pubD))); }
-    } catch (e: any) { setPublishStatus('Erreur: ' + (e.message || 'réseau')); }
-    setPublishing(false);
-  };
-
   const generate = async () => {
     if (images.length === 0 || !canvasRef.current) return;
     if (isSpeaking) stopPreview();
@@ -816,22 +760,11 @@ const generateMelody = async () => {
               className="flex-1 py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all flex items-center justify-center gap-2">
               <Download size={16} /> {t('adGenerator.download')}
             </a>
-            {tiktokConnected && (
-              <button onClick={publishToTikTok} disabled={publishing}
-                className="py-3 px-4 border border-gold/30 text-gold text-xs uppercase tracking-widest rounded-sm hover:bg-gold/10 transition-all disabled:opacity-30 flex items-center gap-1.5">
-                <Share2 size={14} /> {publishing ? '...' : t('adGenerator.tiktokPublish')}
-              </button>
-            )}
             <button onClick={reset}
               className="py-3 px-6 border border-gold/30 text-gold text-xs uppercase tracking-widest rounded-sm hover:bg-gold/10 transition-all">
               {t('adGenerator.redo')}
             </button>
           </div>
-          {publishStatus && (
-            <div className={`text-center text-xs font-bold ${publishStatus.includes('✓') ? 'text-green-400' : 'text-red-400'}`}>
-              {publishStatus}
-            </div>
-          )}
         </div>
       ) : exporting ? (
         <div className="flex flex-col items-center justify-center gap-4 py-16 bg-black border border-gold/20 rounded-lg">
@@ -1029,25 +962,6 @@ const generateMelody = async () => {
           </div>
         </div>
       </div>
-
-      {user && (
-        <div className="mt-4 bg-black border border-gold/10 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="text-[10px] text-gold/60 uppercase tracking-widest block mb-1">{t('adGenerator.tiktok')}</label>
-              {tiktokConnected ? (
-                <p className="text-green-400 text-xs">{t('adGenerator.tiktokConnectedAs')} {tiktokUsername}</p>
-              ) : (
-                <p className="text-gray-500 text-xs">{t('adGenerator.tiktokConnectPrompt')}</p>
-              )}
-            </div>
-            <a href={`/api/tiktok/auth?userId=${user.id}`}
-              className={`py-2 px-4 rounded-sm text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${tiktokConnected ? 'bg-green-500/10 text-green-400 border border-green-500/30' : 'bg-black border border-gold/10 text-gray-400 hover:border-gold/30'}`}>
-              <Share2 size={12} /> {tiktokConnected ? t('adGenerator.tiktokReconnect') : t('adGenerator.tiktokConnect')}
-            </a>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -1304,6 +1218,9 @@ function drawCtaScene(ctx: CanvasRenderingContext2D, w: number, h: number, whats
   ctx.strokeStyle = GOLD; ctx.lineWidth = Math.max(2, h * 0.006);
   ctx.strokeRect(Math.max(w * 0.05, 20), Math.max(h * 0.05, 15), w - Math.max(w * 0.1, 40), h - Math.max(h * 0.1, 30));
 
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
   const cx = w / 2;
   let y = h * 0.16;
 
@@ -1311,15 +1228,17 @@ function drawCtaScene(ctx: CanvasRenderingContext2D, w: number, h: number, whats
   ctx.fillText(title, cx, y); y += h * 0.12;
 
   const cleanWa = whatsapp.trim().replace(/^0+/, '+243').replace(/\s+/g, '');
-  const waBtn = cleanWa || waLabel;
-  const waW = Math.min(w * 0.7, Math.max(waBtn.length * (h * 0.022), 260));
-  const waH = Math.max(h * 0.075, 34);
+  const waText = cleanWa ? `${waLabel} ${cleanWa}` : waLabel;
+  const waH = Math.max(h * 0.085, 36);
+  const btnFont = Math.max(h * 0.04, 16);
+  ctx.font = `bold ${btnFont}px sans-serif`;
+  const waW = Math.min(w * 0.82, Math.max(ctx.measureText(waText).width + waH, 260));
   ctx.fillStyle = '#25D366';
   ctx.beginPath();
   ctx.roundRect(cx - waW / 2, y, waW, waH, Math.max(waH / 2, 12));
   ctx.fill();
-  ctx.fillStyle = BLACK; ctx.font = `bold ${Math.max(h * 0.035, 13)}px sans-serif`;
-  ctx.fillText(cleanWa ? `${waLabel} ${cleanWa}` : waLabel, cx, y + waH / 2);
+  ctx.fillStyle = BLACK;
+  ctx.fillText(waText, cx, y + waH / 2);
   y += waH + h * 0.05;
 
   if (storeLink.trim()) {
