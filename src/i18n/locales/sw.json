@@ -545,6 +545,7 @@
   "adGenerator.allGenerating": "Inatengeneza maandishi, sauti na wimbo...",
   "adGenerator.allDone": "✓ Kila kitu kiko tayari — angalia onyesho kisha tengeneza video",
   "adGenerator.aiDone": "✓ Maandishi yametengenezwa — bofya ▶ kusikiliza",
+  "adGenerator.aiError": "Hitilafu ya AI: ...",
   "adGenerator.aiNeedDesc": "Eleza bidhaa kwanza",
   "adGenerator.ctaTitle": "Agiza sasa!",
   "adGenerator.ctaWhatsApp": "WhatsApp",

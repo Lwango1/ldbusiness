@@ -547,6 +547,7 @@
   "adGenerator.allGenerating": "Generating script, voice and melody...",
   "adGenerator.allDone": "✓ Everything is ready — check the preview then generate the video",
   "adGenerator.aiDone": "✓ Marketing script generated — press ▶ to listen",
+  "adGenerator.aiError": "AI error: ...",
   "adGenerator.aiNeedDesc": "Describe the product first",
   "adGenerator.ctaTitle": "Order now!",
   "adGenerator.ctaWhatsApp": "WhatsApp",

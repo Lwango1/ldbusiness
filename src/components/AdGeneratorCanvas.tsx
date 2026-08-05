@@ -411,27 +411,29 @@ const generateMelody = async () => {
     }
   }, [activeLang]);
 
-  const buildMarketingScript = () => {
+  const buildMarketingScript = async (): Promise<string | null> => {
     const desc = productDesc.trim();
     if (!desc) return null;
     const b = (brand.trim() || t('adGenerator.defaultBrand'));
     const tgl = (tagline.trim() || '').replace(/\.$/, '');
     const wa = whatsapp.trim().replace(/[^0-9+]/g, '');
-    const short = desc.replace(/[^a-zàâçéèêëîïôûùüÿñæœA-ZÀ-É\s0-9+%/.,!'?-]/gi, ' ').replace(/\s+/g, ' ').trim();
-    const tglPart = tgl ? `, ${tgl}` : '';
-    const waFr = wa ? `. Commandez dès maintenant sur WhatsApp au ${wa}` : '';
-    const waEn = wa ? `. Order now on WhatsApp at ${wa}` : '';
-    const waSw = wa ? `. Agiza sasa kwenye WhatsApp namba ${wa}` : '';
-    const scripts: Record<Language, string> = {
-      fr: `Découvrez ${b}${tglPart}. ${short}. Qualité exceptionnelle, livraison rapide${waFr}. Retrouvez ce produit sur LDBusiness et commandez en toute sécurité. Offre limitée, ne manquez pas !`,
-      en: `Discover ${b}${tglPart}. ${short}. Exceptional quality, fast delivery${waEn}. Find this product on LDBusiness and order securely. Limited offer, don't miss it!`,
-      sw: `Gundua ${b}${tglPart}. ${short}. Ubora wa kipekee, usafirishaji wa haraka${waSw}. Pata bidhaa hii kwenye LDBusiness na uagize kwa usalama. Ofa ndogo, usikose!`,
-    };
-    return scripts[activeLang];
+    try {
+      const r = await fetch('/api/ai-script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: desc, brand: b, tagline: tgl, whatsapp: wa, language: activeLang }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d?.error || 'IA indisponible');
+      return String(d.script || '').trim() || null;
+    } catch (e: any) {
+      setScriptStatus(t('adGenerator.aiError').replace('...', e?.message || 'réseau'));
+      return null;
+    }
   };
 
   const generateAll = async () => {
-    const script = buildMarketingScript();
+    const script = await buildMarketingScript();
     if (!script) { setScriptStatus(t('adGenerator.aiNeedDesc')); return; }
     if (isSpeaking) stopPreview();
     setGeneratingMelody(true);
@@ -484,8 +486,8 @@ const generateMelody = async () => {
     setGeneratingMelody(false);
   };
 
-  const generateMarketingScript = () => {
-    const script = buildMarketingScript();
+  const generateMarketingScript = async () => {
+    const script = await buildMarketingScript();
     if (!script) { setScriptStatus(t('adGenerator.aiNeedDesc')); return; }
     setVoiceText(script);
     setScriptStatus(t('adGenerator.aiDone'));
