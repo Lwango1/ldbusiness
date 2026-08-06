@@ -9,10 +9,13 @@ export default async function handler(req: any, res: any) {
 
   if (!GEMINI_API_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY non configurée' });
 
-  const { description = '', brand = '', tagline = '', whatsapp = '', language = 'fr' } = req.body || {};
+  const { description = '', brand = '', tagline = '', whatsapp = '', language = 'fr', duration = 0, sequences = 0, secPerImg = 0 } = req.body || {};
   const desc = String(description).trim();
   if (!desc) return res.status(400).json({ error: 'description is required' });
 
+  const targetSec = Math.max(Math.min(Math.round(Number(duration) || 0), 120), 0);
+  const seqCount = Math.max(Math.min(Math.round(Number(sequences) || 0), 20), 1);
+  const spi = Math.max(Math.round(Number(secPerImg) || 0), 1);
   const b = String(brand || 'LDBusiness').trim();
   const tgl = String(tagline || '').trim();
   const wa = String(whatsapp || '').trim().replace(/[^0-9+]/g, '');
@@ -24,18 +27,14 @@ export default async function handler(req: any, res: any) {
     sw: 'Andika kwa Kiswahili, kwa lugha ya utangazaji na kitaalamu.',
   };
 
-  const prompt = `Tu es un expert en rédaction publicitaire professionnelle. Analyse le produit décrit et rédige un script publicitaire vidéo COMPLET et structuré, en 5 à 8 phrases fluides adaptées à une voix off de 25 à 40 secondes.
-Structure obligatoire du script:
-1. Une accroche percutante qui capte l'attention dès la première phrase.
-2. Présentation du produit et de sa valeur (bénéfice principal pour le client).
-3. 2 à 3 arguments de vente concrets (qualité, prix, disponibilité, livraison, garantie...).
-4. Un élément d'urgence ou d'exclusivité (offre limitée, stock limité).
-5. Une incitation claire à commander.
-${langPrompt[language] || langPrompt.fr}
+  const prompt = `Rédige un message publicitaire moderne pour ce produit, en utilisant ses mots-clés principaux.
+Le message se dit en ${targetSec} secondes maximum. Il est découpé en ${seqCount} parties (une par image vidéo, environ ${spi} secondes chacune) enchaînées naturellement.
+Enchaîne: une accroche forte, le bénéfice principal, ${seqCount >= 3 ? '2 à 3 arguments concrets (qualité, prix, disponibilité, livraison),' : ''} une touche d'urgence, et une incitation à commander${waLine}.
+Langue: ${langPrompt[language] || langPrompt.fr}
 Marque: ${b}
-${tgl ? `Accroche/Slogan: ${tgl}` : ''}
-Description du produit: ${desc}${waLine}
-Contraintes: pas de guillemets ni de puces, phrases complètes et bien rédigées, ton vendeur et convaincant mais crédible, chaque phrase commence par une majuscule et se termine par un point. Ne mentionne pas le mot "script" ni "voix off". Réponds uniquement avec le texte du script.`;
+${tgl ? `Slogan: ${tgl}` : ''}
+Produit: ${desc}
+Réponds uniquement avec le texte du message.`;
 
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`;

@@ -417,11 +417,14 @@ const generateMelody = async () => {
     const b = (brand.trim() || t('adGenerator.defaultBrand'));
     const tgl = (tagline.trim() || '').replace(/\.$/, '');
     const wa = whatsapp.trim().replace(/[^0-9+]/g, '');
+    const sequences = Math.max(images.length, 1);
+    const spi = Math.max(secPerImg, 1);
+    const targetSec = sequences * spi + (ctaReady() ? 3 : 0);
     try {
       const r = await fetch('/api/ai-script', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: desc, brand: b, tagline: tgl, whatsapp: wa, language: activeLang }),
+        body: JSON.stringify({ description: desc, brand: b, tagline: tgl, whatsapp: wa, language: activeLang, duration: targetSec, sequences, secPerImg: spi }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d?.error || 'IA indisponible');
