@@ -621,6 +621,7 @@ const generateMelody = async () => {
 
       let silentCtx: AudioContext | null = null;
       let finalDur = images.length * spi;
+      let voiceBuf: AudioBuffer | null = null;
       try {
         const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
         silentCtx = new AudioCtx();
@@ -631,7 +632,6 @@ const generateMelody = async () => {
           setProgress(t('adGenerator.generatingVoice'));
           voiceUrl = await generateTtsBlob(voiceText);
         }
-        let voiceBuf: AudioBuffer | null = null;
         if (voiceUrl) {
           setProgress(t('adGenerator.voiceover'));
           const arr = await (await fetch(voiceUrl)).arrayBuffer();
@@ -708,7 +708,18 @@ const generateMelody = async () => {
 
       const totalDur = finalDur;
       const words = voiceText ? voiceText.split(/\s+/) : [];
-      const wordDur = words.length > 0 ? totalDur / words.length : Infinity;
+      let leadIn = 0;
+      if (voiceBuf && voiceBuf.length > 0) {
+        const d = voiceBuf.getChannelData(0);
+        const sr = voiceBuf.sampleRate;
+        const thresh = 0.01;
+        for (let i = 0; i < d.length; i++) {
+          if (Math.abs(d[i]) > thresh) { leadIn = i / sr; break; }
+        }
+      }
+      const voiceDur = voiceBuf ? voiceBuf.duration : 0;
+      const speakableDur = voiceDur > 0 ? Math.max(voiceDur - leadIn, 0.1) : totalDur;
+      const wordDur = words.length > 0 ? (voiceDur > 0 ? speakableDur / words.length : totalDur / words.length) : Infinity;
       const ctaDur = ctaReady() ? 3 : 0;
       const ctaStart = totalDur;
 
@@ -721,7 +732,8 @@ const generateMelody = async () => {
             drawCtaScene(ctx, w, h, whatsapp, storeLink, t('adGenerator.ctaTitle'), t('adGenerator.ctaWhatsApp'), t('adGenerator.ctaFooter'));
           } else {
             const idx = Math.min(Math.floor(elapsed / spi), preloaded.length - 1);
-            const hIdx = wordDur < Infinity ? Math.min(Math.floor(elapsed / wordDur), words.length - 1) : undefined;
+            const speaking = wordDur < Infinity && elapsed >= leadIn && elapsed < leadIn + speakableDur;
+            const hIdx = speaking ? Math.min(Math.floor((elapsed - leadIn) / wordDur), words.length - 1) : undefined;
             drawScene(ctx, w, h, preloaded[idx], voiceText || undefined, hIdx, { talking: hIdx !== undefined && hIdx >= 0, t: performance.now() });
             if (idx !== prevImgIdx) { prevImgIdx = idx; setProgress(`Image ${idx + 1}/${preloaded.length}`); }
           }

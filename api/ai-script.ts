@@ -38,7 +38,7 @@ Description du produit: ${desc}${waLine}
 Contraintes: pas de guillemets ni de puces, phrases complètes et bien rédigées, ton vendeur et convaincant mais crédible, chaque phrase commence par une majuscule et se termine par un point. Ne mentionne pas le mot "script" ni "voix off". Réponds uniquement avec le texte du script.`;
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`;
     const upstream = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
