@@ -555,6 +555,9 @@
   "adGenerator.whatsappLabel": "Nambari ya WhatsApp",
   "adGenerator.storeLinkLabel": "Kiungo cha bidhaa",
   "adGenerator.mascot": "Mtangazaji mwenye uhuishaji",
+  "adGenerator.showText": "Onyesha maandishi",
+  "adGenerator.hideText": "Ficha maandishi",
+  "adGenerator.script": "Maandishi ya sauti",
 
   "sub.pageTitle": "Usajili",
   "sub.becomeMember": "Kuwa Mwanachama",

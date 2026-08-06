@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { RefreshCw, Upload, Trash2, Play, Square, Mic, Music, Film, Download, Volume2, VolumeX, Sparkles, MessageCircle } from 'lucide-react';
 import meSpeak from 'mespeak';
 import mespeakConfig from 'mespeak/src/mespeak_config.json';
@@ -124,6 +124,7 @@ export default function AdGeneratorCanvas() {
   const [voiceMuted, setVoiceMuted] = useState(false);
   const [musicMuted, setMusicMuted] = useState(false);
   const [productDesc, setProductDesc] = useState('');
+  const [showCaptions, setShowCaptions] = useState(false);
   const [whatsapp, setWhatsapp] = useState('');
   const [storeLink, setStoreLink] = useState('');
   const [scriptStatus, setScriptStatus] = useState('');
@@ -401,6 +402,20 @@ const generateMelody = async () => {
     setCurrentWordIdx(-1);
   };
 
+  const captions = useMemo(() => {
+    const text = voiceText.trim();
+    const sentences = text ? (text.match(/[^.!?\n]+[.!?]*/g) || [text]).map(p => p.trim()).filter(Boolean) : [];
+    const wordToSentence: number[] = [];
+    let wi = 0;
+    for (let si = 0; si < sentences.length; si++) {
+      const count = sentences[si].split(/\s+/).filter(Boolean).length;
+      for (let k = 0; k < count; k++) wordToSentence[wi++] = si;
+    }
+    let current = -1;
+    if (currentWordIdx >= 0 && wordToSentence[currentWordIdx] !== undefined) current = wordToSentence[currentWordIdx];
+    return { sentences, current };
+  }, [voiceText, currentWordIdx]);
+
   const ttsReady = useRef(false);
   useEffect(() => {
     if (!ttsReady.current) {
@@ -571,7 +586,7 @@ const generateMelody = async () => {
     const canvas = canvasRef.current; const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const fmt = FORMATS[format]; canvas.width = fmt.width; canvas.height = fmt.height;
-    drawScene(ctx, fmt.width, fmt.height, previewImages[0], voiceText || undefined, currentWordIdx, { talking: currentWordIdx >= 0, t: performance.now() });
+    drawScene(ctx, fmt.width, fmt.height, previewImages[0], undefined, -1, { talking: currentWordIdx >= 0, t: performance.now() });
   }, [currentWordIdx, format, template, brand, tagline, previewImages, voiceText]);
 
   const preloadPreviewImages = () => {
@@ -615,7 +630,7 @@ const generateMelody = async () => {
         const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = img.dataUrl;
       })));
 
-      drawScene(ctx, w, h, preloaded[0], voiceText || undefined);
+      drawScene(ctx, w, h, preloaded[0]);
       const videoStream = canvas.captureStream(fps);
       const vt = videoStream.getVideoTracks()[0];
       if (!vt) { setVideoError('Pas de piste vidéo'); return; }
@@ -737,7 +752,7 @@ const generateMelody = async () => {
             const idx = Math.min(Math.floor(elapsed / spi), preloaded.length - 1);
             const speaking = wordDur < Infinity && elapsed >= leadIn && elapsed < leadIn + speakableDur;
             const hIdx = speaking ? Math.min(Math.floor((elapsed - leadIn) / wordDur), words.length - 1) : undefined;
-            drawScene(ctx, w, h, preloaded[idx], voiceText || undefined, hIdx, { talking: hIdx !== undefined && hIdx >= 0, t: performance.now() });
+            drawScene(ctx, w, h, preloaded[idx], undefined, undefined, { talking: hIdx !== undefined && hIdx >= 0, t: performance.now() });
             if (idx !== prevImgIdx) { prevImgIdx = idx; setProgress(`Image ${idx + 1}/${preloaded.length}`); }
           }
         } catch (e: any) { setVideoError(t('adGenerator.errorGeneric').replace('...', e?.message || 'inconnue')); stopped = true; stopRec(); setExporting(false); return; }
@@ -789,8 +804,32 @@ const generateMelody = async () => {
           <span className="text-gold text-sm font-bold">{t('adGenerator.generating').replace('{progress}', progress)}</span>
         </div>
       ) : (
-        <div className="space-y-4">
-          <canvas ref={canvasRef} className="w-full max-h-[65vh] rounded-lg border border-gold/10 bg-black object-contain" style={{ aspectRatio: `${fmt.width}/${fmt.height}` }} />
+        <div className="space-y-3">
+          <div className="flex flex-col lg:flex-row gap-3">
+            <div className="flex-1 min-w-0">
+              <canvas ref={canvasRef} className="w-full max-h-[65vh] rounded-lg border border-gold/10 bg-black object-contain" style={{ aspectRatio: `${fmt.width}/${fmt.height}` }} />
+            </div>
+            {voiceText.trim() && (
+              <div className="lg:w-80 shrink-0">
+                <button
+                  onClick={() => setShowCaptions(!showCaptions)}
+                  className="mb-2 px-3 py-1.5 rounded-sm text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 transition-all bg-gold/10 text-gold border border-gold/30 hover:bg-gold/20"
+                >
+                  <MessageCircle size={12} /> {showCaptions ? t('adGenerator.hideText') : t('adGenerator.showText')}
+                </button>
+                {showCaptions && captions.sentences.length > 0 && (
+                  <div className="bg-black border border-gold/10 rounded-lg p-3 space-y-2.5 max-h-[50vh] overflow-y-auto">
+                    <h4 className="text-[10px] text-gold/60 uppercase tracking-widest font-bold">{t('adGenerator.script')}</h4>
+                    {captions.sentences.map((s, i) => (
+                      <p key={i} className={`text-xs leading-relaxed transition-colors ${captions.current === i && isSpeaking ? 'text-gold font-bold' : 'text-gray-400'}`}>
+                        {s}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <button onClick={generate} disabled={images.length === 0}
             className="w-full py-4 bg-gold text-black font-bold text-sm uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all disabled:opacity-30 flex items-center justify-center gap-3">
             <Film size={20} /> {t('adGenerator.export').replace('X', String(images.length))}

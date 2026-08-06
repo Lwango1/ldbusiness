@@ -556,6 +556,9 @@
   "adGenerator.whatsappLabel": "Numéro WhatsApp",
   "adGenerator.storeLinkLabel": "Lien du produit",
   "adGenerator.mascot": "Personnage animé",
+  "adGenerator.showText": "Afficher le texte",
+  "adGenerator.hideText": "Masquer le texte",
+  "adGenerator.script": "Texte de la voix off",
 
   "sub.pageTitle": "Abonnement",
   "sub.becomeMember": "Devenir Membre",
