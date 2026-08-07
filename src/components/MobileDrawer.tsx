@@ -39,7 +39,6 @@ export default function MobileDrawer({ onClose, onOpenAuth }: MobileDrawerProps)
     { label: t('nav.products'), path: '/produits' },
     { label: t('nav.about'), path: '/a-propos' },
     { label: t('nav.live'), path: '/live' },
-    { label: t('nav.contact'), path: '/contact' },
     { label: t('nav.sell'), path: '/vendre' },
     { label: t('nav.subscription'), path: '/abonnement' },
     ...(isAuthenticated ? [{ label: t('nav.myOrders'), path: '/mes-commandes' }] : []),

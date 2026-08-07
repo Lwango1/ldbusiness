@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { RefreshCw, Upload, Trash2, Play, Square, Mic, Music, Film, Download, Volume2, VolumeX, Sparkles, MessageCircle } from 'lucide-react';
+import { RefreshCw, Upload, Trash2, Play, Square, Mic, Music, Film, Download, Volume2, VolumeX, Sparkles, MessageCircle, Package } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import meSpeak from 'mespeak';
 import mespeakConfig from 'mespeak/src/mespeak_config.json';
 import frVoice from 'mespeak/voices/fr.json';
 import enVoice from 'mespeak/voices/en/en.json';
 import { useTranslation } from '../i18n';
 import type { Language } from '../i18n/context';
+import { getProductById, getSeller } from '../services/database';
+import type { Product } from '../types';
 
 type AdFormat = 'hero' | 'popup' | 'square' | 'landscape';
 type AdTemplate = 'luxury' | 'modern' | 'sale' | 'social';
@@ -92,6 +95,9 @@ const LANG_CONFIG: Record<Language, { tts: string; speak: string; meSpeakVoice: 
 
 interface ImageFile { id: string; file: File; dataUrl: string; }
 
+let ttsInitialized = false;
+let ttsFailed = false;
+
 export default function AdGeneratorCanvas() {
   const { t, lang: activeLang } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -104,6 +110,34 @@ export default function AdGeneratorCanvas() {
   const [template, setTemplate] = useState<AdTemplate>('luxury');
   const [brand, setBrand] = useState(t('adGenerator.defaultBrand'));
   const [tagline, setTagline] = useState(t('adGenerator.defaultTagline'));
+  const [loadingProduct, setLoadingProduct] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const pid = searchParams.get('selected_product');
+    if (!pid) return;
+    let cancelled = false;
+    setLoadingProduct(true);
+    getProductById(Number(pid)).then(async p => {
+      if (cancelled || !p) return;
+      setSelectedProduct(p);
+      setBrand(p.name || brand);
+      setTagline(p.category || tagline);
+      setProductDesc(p.description || '');
+      await addAllProductMedia(p);
+      if (p.sellerId) {
+        const seller = await getSeller(p.sellerId);
+        if (!cancelled && seller?.phone) setWhatsapp(seller.phone);
+      }
+      if (!cancelled) {
+        setStoreLink(`${window.location.origin}/boutique/${p.sellerId || ''}`);
+        setScriptStatus('');
+      }
+    }).finally(() => { if (!cancelled) setLoadingProduct(false); });
+    return () => { cancelled = true; };
+  }, [searchParams]);
   const [secPerImg, setSecPerImg] = useState(3);
   const [voiceText, setVoiceText] = useState('');
   const [musicFile, setMusicFile] = useState<File | null>(null);
@@ -146,6 +180,46 @@ export default function AdGeneratorCanvas() {
   const pickMusic = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) { setMusicFile(f); if (musicUrl) URL.revokeObjectURL(musicUrl); setMusicUrl(URL.createObjectURL(f)); setMelodyActive(false); }
+  };
+
+  const addImageFromUrl = async (url: string, label?: string) => {
+    if (typeof url !== 'string' || !url) return;
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const clean = url.split('?')[0];
+      const extMatch = clean.match(/\.(\w+)$/);
+      const ext = extMatch ? extMatch[1] : 'png';
+      const isVideo = /^image\//.test(blob.type) === false && /video/i.test(blob.type);
+      const file = new File([blob], `${label || 'produit'}_${Date.now()}.${ext}`, { type: blob.type || (isVideo ? 'video/mp4' : 'image/' + ext) });
+      if (isVideo) {
+        setMusicFile(file);
+        if (musicUrl) URL.revokeObjectURL(musicUrl);
+        setMusicUrl(URL.createObjectURL(file));
+        setMelodyActive(false);
+      } else {
+        setImages(prev => [...prev, { id: Math.random().toString(36).slice(2), file, dataUrl: URL.createObjectURL(file) }]);
+      }
+    } catch {
+      setScriptStatus(t('adGenerator.productImageError'));
+    }
+  };
+
+  const addAllProductMedia = async (p: Product) => {
+    const seen = new Set<string>();
+    const urls: string[] = [];
+    const push = (u: unknown) => { if (typeof u === 'string' && u && !seen.has(u)) { seen.add(u); urls.push(u); } };
+    if (p.image) push(p.image);
+    (p.images || []).forEach(push);
+    setImages([]);
+    setMusicUrl(null);
+    setMusicFile(null);
+    for (const u of urls) await addImageFromUrl(u, p.name.replace(/\s+/g, '_'));
+    setLoadingProduct(false);
+  };
+
+  const applyProduct = () => {
+    navigate('/produits?pour_ad=1');
   };
 
 const generateMelody = async () => {
@@ -418,12 +492,17 @@ const generateMelody = async () => {
 
   const ttsReady = useRef(false);
   useEffect(() => {
-    if (!ttsReady.current) {
-      meSpeak.loadConfig(mespeakConfig);
-      const voice = LANG_CONFIG[activeLang].loadVoice;
-      if (voice) meSpeak.loadVoice(voice);
-      ttsReady.current = true;
+    if (!ttsInitialized && !ttsFailed) {
+      try {
+        meSpeak.loadConfig(mespeakConfig);
+        const voice = LANG_CONFIG[activeLang].loadVoice;
+        if (voice) meSpeak.loadVoice(voice);
+        ttsInitialized = true;
+      } catch {
+        ttsFailed = true;
+      }
     }
+    ttsReady.current = true;
   }, [activeLang]);
 
   const buildMarketingScript = async (): Promise<string | null> => {
@@ -838,6 +917,42 @@ const generateMelody = async () => {
       )}
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="md:col-span-2 lg:col-span-3 bg-black border border-gold/10 rounded-lg p-4">
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="w-10 h-10 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center shrink-0">
+                <Package size={18} className="text-gold" />
+              </div>
+              <div>
+                <h3 className="text-gold text-xs font-bold uppercase tracking-widest">{t('adGenerator.selectExistingProduct')}</h3>
+                <p className="text-[10px] text-gray-500 mt-0.5">{t('adGenerator.productFromAppHint')}</p>
+              </div>
+            </div>
+            <button onClick={applyProduct}
+              className="shrink-0 px-5 py-3 bg-gold/10 border border-gold/30 text-gold text-[11px] font-bold uppercase tracking-widest rounded-sm hover:bg-gold hover:text-black transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              disabled={loadingProduct}>
+              <Package size={14} /> {t('adGenerator.chooseProduct')}
+            </button>
+          </div>
+          {loadingProduct && (
+            <p className="text-[10px] text-gold/70 mt-3 flex items-center gap-2">
+              <RefreshCw size={12} className="animate-spin" /> {t('adGenerator.loadingProductImage')}
+            </p>
+          )}
+          {selectedProduct && !loadingProduct && (
+            <div className="mt-3 flex items-center gap-3 bg-luxury-dark border border-gold/10 rounded-sm p-2.5">
+              {selectedProduct.image && (
+                <img src={selectedProduct.image} alt="" className="w-12 h-12 rounded object-cover shrink-0 border border-gold/20" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-bold truncate">{selectedProduct.name}</p>
+                <p className="text-[10px] text-gray-500 truncate">{selectedProduct.storeName || selectedProduct.category} • {selectedProduct.price} {selectedProduct.currency}</p>
+              </div>
+              <span className="text-[10px] text-green-400 shrink-0">{t('adGenerator.productFilled')}</span>
+            </div>
+          )}
+        </div>
+
         <div className="bg-black border border-gold/10 rounded-lg p-4 space-y-3">
           <h3 className="text-gold text-xs font-bold uppercase tracking-widest">{t('adGenerator.audio')}</h3>
           <div>

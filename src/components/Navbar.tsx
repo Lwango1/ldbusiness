@@ -45,10 +45,10 @@ export default function Navbar({ cartCount, onCartClick, isMobileMenuOpen, onMob
 
   const navItems = [
     { label: t('nav.home'), path: '/' },
+    { label: t('nav.offer'), path: '/offre' },
     { label: t('nav.products'), path: '/produits' },
     { label: t('nav.about'), path: '/a-propos' },
     { label: t('nav.live'), path: '/live' },
-    { label: t('nav.contact'), path: '/contact' },
     { label: t('nav.sell'), path: '/vendre' },
     { label: t('nav.subscription'), path: '/abonnement', icon: Crown },
     ...(isAuthenticated ? [{ label: t('nav.myOrders'), path: '/mes-commandes' }] : []),

@@ -6,3 +6,5 @@ __pycache__/
 *.pyc
 scripts/ad_generator/output/
 scripts/ad_generator/__pycache__/
+
+dev.log

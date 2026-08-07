@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Search, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronDown, Package, ArrowLeft } from 'lucide-react';
 import { Product } from '../types';
 import { getProducts, getAllCategories } from '../services/database';
 import { useTranslation } from '../i18n';
 import ProductCard from './ProductCard';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface ProductsSectionProps {
   onView3D: (product: Product) => void;
@@ -16,6 +17,9 @@ export default function ProductsSection({ onView3D, onAddToCart }: ProductsSecti
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('default');
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const selectForAd = searchParams.get('pour_ad') === '1';
 
   const categories = getAllCategories();
 
@@ -99,6 +103,16 @@ export default function ProductsSection({ onView3D, onAddToCart }: ProductsSecti
         </div>
 
         {/* Grille de produits avec animation simple */}
+        {selectForAd && (
+          <div className="mb-8 flex flex-col md:flex-row md:items-center gap-4 bg-gold/10 border border-gold/30 rounded-lg p-4">
+            <button onClick={() => navigate('/publicite')} className="flex items-center gap-2 text-gold text-xs font-bold uppercase tracking-widest hover:text-gold-light transition-all shrink-0">
+              <ArrowLeft size={16} /> {t('adGenerator.backToAd')}
+            </button>
+            <p className="text-gray-400 text-xs flex items-center gap-2">
+              <Package size={14} className="text-gold" /> {t('adGenerator.pickProductForAd')}
+            </p>
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
           {filteredProducts.map((product) => (
             <div key={product.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -107,6 +121,14 @@ export default function ProductsSection({ onView3D, onAddToCart }: ProductsSecti
                 onView3D={onView3D}
                 onAddToCart={onAddToCart}
               />
+              {selectForAd && (
+                <button
+                  onClick={() => navigate(`/publicite?selected_product=${product.id}`)}
+                  className="mt-3 w-full py-3 bg-gold text-black font-bold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-light transition-all flex items-center justify-center gap-2"
+                >
+                  <Package size={14} /> {t('adGenerator.useProductForAd')}
+                </button>
+              )}
             </div>
           ))}
         </div>

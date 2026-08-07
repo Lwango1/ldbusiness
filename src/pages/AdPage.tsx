@@ -23,6 +23,7 @@ export default function AdPage() {
     const tk = params.get('tiktok');
     if (tk === 'success') { setTiktokMsg(t('ad.tiktokConnected')); setTab('generer'); }
     else if (tk === 'error') setTiktokMsg(t('ad.tiktokError') + (params.get('reason') || ''));
+    else if (params.get('selected_product')) setTab('generer');
 
     if (!user) { setHasAccess(false); return; }
     hasPremiumAccess(user.id, role).then(setHasAccess);

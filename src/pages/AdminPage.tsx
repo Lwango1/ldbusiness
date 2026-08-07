@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '../i18n';
-import { DollarSign, TrendingUp, ShoppingCart, CheckCircle, Clock, Lock, Users, XCircle, Image as ImageIcon, Hash, Megaphone, ThumbsUp, ThumbsDown, Trash2, ExternalLink, Crown, Search } from 'lucide-react';
+import { DollarSign, TrendingUp, ShoppingCart, CheckCircle, Clock, Lock, Users, XCircle, Image as ImageIcon, Hash, Megaphone, ThumbsUp, ThumbsDown, Trash2, ExternalLink, Crown, Search, Gift, PhoneCall } from 'lucide-react';
 import { Transaction, Ad, Subscription, SubscriptionPlan } from '../types';
 import { getTransactions, completeTransaction, cancelTransaction, getTotalCommissions, getPendingCommissions, getAllAdRequests, approveAd, rejectAd, deleteAd, getAllSubscriptionRequests, approveSubscription, rejectSubscription, deleteSubscription } from '../services/database';
+import { getAllAgents, getLeadsByAgentIds, payoutAgent } from '../services/leads';
+import type { Agent, Lead } from '../services/leads';
 import AdminGuard, { clearAdminAuth } from '../components/AdminGuard';
 
 function AdminDashboard() {
@@ -11,18 +13,36 @@ function AdminDashboard() {
   const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
   const [totalCommissions, setTotalCommissions] = useState(0);
   const [pendingCommissions, setPendingCommissions] = useState(0);
-  const [tab, setTab] = useState<'transactions' | 'ads' | 'subscriptions'>('transactions');
+  const [tab, setTab] = useState<'transactions' | 'ads' | 'subscriptions' | 'agents'>('transactions');
   const [ads, setAds] = useState<Ad[]>([]);
   const [subscriptions, setSubscriptions] = useState<(Subscription & { user?: { name: string; phone: string } })[]>([]);
   const [txIdInput, setTxIdInput] = useState<Record<string, string>>({});
   const [showLock, setShowLock] = useState(false);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [leadsByAgent, setLeadsByAgent] = useState<Record<string, Lead[]>>({});
+  const [payAmount, setPayAmount] = useState<Record<string, string>>({});
 
-  useEffect(() => {
+  const loadAgents = async () => {
+    const ag = await getAllAgents();
+    setAgents(ag);
+    if (ag.length > 0) {
+      const ls = await getLeadsByAgentIds(ag.map(a => a.id));
+      const grouped: Record<string, Lead[]> = {};
+      ls.forEach(l => { (grouped[l.agentId] = grouped[l.agentId] || []).push(l); });
+      setLeadsByAgent(grouped);
+    }
+  };
+
+  const refresh = () => {
     Promise.all([getTransactions(), getTotalCommissions(), getPendingCommissions()]).then(([txns, total, pending]) => {
       setTransactions(txns);
       setTotalCommissions(total);
       setPendingCommissions(pending);
     });
+  };
+
+  useEffect(() => {
+    refresh();
   }, []);
 
   const completedTxns = transactions.filter(t => t.status === 'completed').length;
@@ -86,6 +106,9 @@ function AdminDashboard() {
           </button>
           <button onClick={() => { setTab('subscriptions'); getAllSubscriptionRequests().then(setSubscriptions); }} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${tab === 'subscriptions' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
             <Crown size={14} className="inline mr-2" /> {t('admin.tabSubscriptions')}
+          </button>
+          <button onClick={() => { setTab('agents'); loadAgents(); }} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${tab === 'agents' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
+            <Gift size={14} className="inline mr-2" /> {t('admin.tabAgents')}
           </button>
         </div>
 
@@ -226,6 +249,97 @@ function AdminDashboard() {
                 ))}
               </div>
             )}
+          </div>
+        ) : tab === 'agents' ? (
+          <div className="space-y-6">
+            <div className="bg-luxury-dark border border-gold/10 rounded-xl overflow-hidden">
+              <div className="p-5 border-b border-gold/10 flex items-center justify-between">
+                <h2 className="text-white font-bold text-sm uppercase tracking-widest flex items-center gap-2"><Gift size={14} /> {t('admin.agentsTitle')}</h2>
+                <span className="text-gold text-[10px]">{agents.length} {t('admin.agentsCount')}</span>
+              </div>
+              {agents.length === 0 ? (
+                <div className="p-10 text-center">
+                  <Gift size={40} className="mx-auto text-gold/20 mb-3" />
+                  <p className="text-gray-500 font-playfair italic">{t('admin.agentsNone')}</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gold/5">
+                  {agents.map(a => {
+                    const pending = a.totalEarned - a.paidOut;
+                    const aLeads = leadsByAgent[a.id] || [];
+                    return (
+                      <div key={a.id} className="p-5">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center shrink-0">
+                            <Gift size={20} className="text-gold" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-white font-bold text-sm">{a.name}</h3>
+                              <span className="px-2 py-0.5 text-[9px] bg-gold/20 text-gold rounded-sm uppercase tracking-widest font-bold font-mono">{a.code}</span>
+                              <span className={`px-2 py-0.5 text-[9px] rounded-sm uppercase tracking-widest font-bold ${a.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{a.status}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2 text-[10px] text-gray-500">
+                              <span><PhoneCall size={10} className="inline mr-0.5" />{a.phone}</span>
+                              <span>•</span>
+                              <span>{a.commissionRate}%</span>
+                              <span>•</span>
+                              <span>{t('admin.addedOn')} {new Date(a.createdAt).toLocaleDateString('fr-FR')}</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 mt-3 text-xs">
+                              <div className="bg-black/40 rounded-sm p-2">
+                                <span className="text-gray-600 block text-[9px] uppercase tracking-widest">{t('agent.leads')}</span>
+                                <span className="text-white font-bold">{a.leadsCount}</span>
+                              </div>
+                              <div className="bg-black/40 rounded-sm p-2">
+                                <span className="text-gray-600 block text-[9px] uppercase tracking-widest">{t('agent.sales')}</span>
+                                <span className="text-white font-bold">{a.salesCount}</span>
+                              </div>
+                              <div className="bg-black/40 rounded-sm p-2">
+                                <span className="text-gray-600 block text-[9px] uppercase tracking-widest">{t('agent.earned')}</span>
+                                <span className="text-yellow-400 font-bold">{a.totalEarned.toLocaleString()}</span>
+                              </div>
+                            </div>
+                            {pending > 0 && (
+                              <div className="mt-3 p-3 bg-gold/5 border border-gold/20 rounded-sm">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                  <span className="text-[10px] text-gold uppercase tracking-widest font-bold">{t('admin.pendingPayout')}: <span className="text-yellow-400">{pending.toLocaleString()} CDF</span></span>
+                                  <div className="flex gap-2 flex-1">
+                                    <input type="number" value={payAmount[a.id] || ''} onChange={e => setPayAmount({...payAmount, [a.id]: e.target.value})} placeholder={t('admin.amount')} className="flex-1 px-3 py-2 bg-black border border-gold/10 rounded-sm text-white text-xs outline-none focus:border-gold" />
+                                    <button onClick={async () => {
+                                      const amt = Number(payAmount[a.id]);
+                                      if (!amt || amt > pending) { alert(t('admin.invalidAmount')); return; }
+                                      const ok = await payoutAgent(a.id, amt);
+                                      if (!ok) { alert(t('admin.payoutError')); return; }
+                                      loadAgents();
+                                    }} className="px-4 py-2 bg-green-600/20 border border-green-500/30 text-green-400 text-[10px] uppercase tracking-widest rounded-sm hover:bg-green-600/30 flex items-center gap-1">
+                                      <CheckCircle size={12} /> {t('admin.payAgent')}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {aLeads.length > 0 && (
+                              <div className="mt-3">
+                                <p className="text-gray-600 text-[10px] uppercase tracking-widest mb-1">{t('admin.agentLeads')}</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {aLeads.slice(0, 8).map(l => (
+                                    <span key={l.id} className="px-2 py-1 bg-black/40 border border-white/5 rounded-sm text-[10px] text-gray-300">
+                                      {l.name} <span className="text-gray-600">({l.phone})</span>
+                                    </span>
+                                  ))}
+                                  {aLeads.length > 8 && <span className="px-2 py-1 text-[10px] text-gray-500">+{aLeads.length - 8}</span>}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
         /* Transactions List */

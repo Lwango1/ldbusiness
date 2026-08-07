@@ -18,7 +18,6 @@ import Home from './pages/Home';
 import ProductsPage from './pages/ProductsPage';
 import AboutPage from './pages/AboutPage';
 import LivePage from './pages/LivePage';
-import ContactPage from './pages/ContactPage';
 import ProductDetail from './pages/ProductDetail';
 import SellerPage from './pages/SellerPage';
 import AdminPage from './pages/AdminPage';
@@ -27,6 +26,8 @@ import AdPage from './pages/AdPage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import StorePage from './pages/StorePage';
 import LiveRoom from './components/LiveRoom';
+import OfferPage from './pages/OfferPage';
+import AgentPage from './pages/AgentPage';
 
 const DRAWER_WIDTH = 280;
 
@@ -125,7 +126,7 @@ export default function App() {
               <Route path="/a-propos" element={<AboutPage />} />
               <Route path="/live" element={<LivePage />} />
               <Route path="/live/:id" element={<LiveRoom />} />
-              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/contact" element={<AboutPage />} />
               <Route
                 path="/produit/:id"
                 element={<ProductDetail onAddToCart={handleAddToCart} />}
@@ -136,6 +137,8 @@ export default function App() {
               <Route path="/publicite" element={<AdPage />} />
               <Route path="/abonnement" element={<SubscriptionPage />} />
               <Route path="/boutique/:sellerId" element={<StorePage />} />
+              <Route path="/offre" element={<OfferPage />} />
+              <Route path="/agent" element={<AgentPage />} />
             </Routes>
           </main>
 

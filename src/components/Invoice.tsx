@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Printer, Download, CheckCircle, Smartphone, Bitcoin, CreditCard, ArrowLeft, Shield } from 'lucide-react';
 import { CartItem } from '../types';
 import { createTransaction, updateProductStock } from '../services/database';
+import { createSaleWithAgentReferral } from '../services/leads';
 import { useAuth } from '../contexts/AuthContext';
 import PaymentConfirmation from './PaymentConfirmation';
 import { useTranslation } from '../i18n';
@@ -323,7 +324,7 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                 <button
                   onClick={async () => {
                     if (user) {
-                      const txn = await createTransaction({
+                      const txnOpts = {
                         buyerId: user.id,
                         customerName: customerInfo.name,
                         customerPhone: customerInfo.phone,
@@ -334,8 +335,13 @@ export default function Invoice({ items, isOpen, onClose }: InvoiceProps) {
                         subtotal,
                         tax,
                         total,
-                      });
-                      if (txn) setTxnId(txn.id);
+                      };
+                      const ref = await createSaleWithAgentReferral(txnOpts);
+                      if (ref.ok) { setTxnId(ref.txnId || null); }
+                      else {
+                        const txn = await createTransaction(txnOpts);
+                        if (txn) setTxnId(txn.id);
+                      }
                       for (const item of items) {
                         if (item.stock !== undefined && item.stock > 0) {
                           await updateProductStock(item.id, item.stock - item.quantity);
