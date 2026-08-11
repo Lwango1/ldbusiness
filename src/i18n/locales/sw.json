@@ -717,6 +717,7 @@
   "agent.noLeads": "Besides haiharakiwa. Shiria kiungo faranga chako!",
 
   "admin.tabAgents": "Malaka",
+  "admin.tabKeepGo": "Muunganisho",
   "admin.agentsTitle": "Wahala wa kunian",
   "admin.agentsNumber": "wakala",
   "admin.agentsNone": "Hakuna wakala wakisajiliwa.",
@@ -789,5 +790,26 @@
   "keepgo.ctaDesc": "Wasiliana nasi kwa WhatsApp: tunapata mpango bora wa eSIM kwa safari zako, popote ulipo.",
   "keepgo.whatsappCta": "Ongea kwa WhatsApp",
   "keepgo.keepgoSite": "Tovuti ya KeepGo",
-  "keepgo.finalNote": "Malipo salama kwa MaxiCash · Uanzishaji moja kwa moja kwenye simu yako"
+  "keepgo.finalNote": "Malipo salama kwa MaxiCash · Uanzishaji moja kwa moja kwenye simu yako",
+
+  "keepgoAdmin.title": "Katalogi ya vifurushi vya eSIM",
+  "keepgoAdmin.subtitle": "Unda na badilisha bei zako kwa mikono. Mabadiliko yanaonekana mara moja kwenye ukurasa wa /connexions.",
+  "keepgoAdmin.none": "Hakuna kifurushi. Bonyeza \"Kifurushi kipya\" kuunda katalogi yako.",
+  "keepgoAdmin.add": "Kifurushi kipya",
+  "keepgoAdmin.name": "Jina la kifurushi",
+  "keepgoAdmin.zone": "Eneo / Ufanidishaji",
+  "keepgoAdmin.url": "Kiungo cha KeepGo (ushirikiano)",
+  "keepgoAdmin.dataGb": "Data (Go)",
+  "keepgoAdmin.validity": "Muda (siku)",
+  "keepgoAdmin.priceUsd": "Bei (USD)",
+  "keepgoAdmin.priceCdf": "Bei CDF (hiari)",
+  "keepgoAdmin.sort": "Mpangilio",
+  "keepgoAdmin.features": "Sifa (zitenganishwe na koma)",
+  "keepgoAdmin.popular": "Maarufu",
+  "keepgoAdmin.active": "Inaonekana kwenye tovuti",
+  "keepgoAdmin.save": "Hifadhi",
+  "keepgoAdmin.delete": "Futa",
+  "keepgoAdmin.saved": "Kifurushi kimehifadhiwa!",
+  "keepgoAdmin.saveError": "Hitilafu wakati wa kuhifadhi. Hakikisha umeingia kama admin.",
+  "keepgoAdmin.deleteConfirm": "Futa kifurushi hiki?"
 }

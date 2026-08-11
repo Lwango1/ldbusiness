@@ -719,6 +719,7 @@
   "agent.noLeads": "No leads yet. Share your link!",
 
   "admin.tabAgents": "Agents",
+  "admin.tabKeepGo": "Connections",
   "admin.agentsTitle": "Referral agents",
   "admin.agentsCount": "agents",
   "admin.agentsNone": "No registered agents.",
@@ -790,5 +791,26 @@
   "keepgo.ctaDesc": "Contact us on WhatsApp: we find the best eSIM plan for your travels, wherever you go.",
   "keepgo.whatsappCta": "Talk on WhatsApp",
   "keepgo.keepgoSite": "KeepGo website",
-  "keepgo.finalNote": "Secure payment via MaxiCash · Activation directly on your phone"
+  "keepgo.finalNote": "Secure payment via MaxiCash · Activation directly on your phone",
+
+  "keepgoAdmin.title": "eSIM plan catalog",
+  "keepgoAdmin.subtitle": "Create and edit your prices manually. Changes appear immediately on the /connexions page.",
+  "keepgoAdmin.none": "No plan yet. Click \"New plan\" to create your catalog.",
+  "keepgoAdmin.add": "New plan",
+  "keepgoAdmin.name": "Plan name",
+  "keepgoAdmin.zone": "Zone / Coverage",
+  "keepgoAdmin.url": "KeepGo link (affiliate)",
+  "keepgoAdmin.dataGb": "Data (GB)",
+  "keepgoAdmin.validity": "Validity (days)",
+  "keepgoAdmin.priceUsd": "Price (USD)",
+  "keepgoAdmin.priceCdf": "CDF price (optional)",
+  "keepgoAdmin.sort": "Order",
+  "keepgoAdmin.features": "Features (comma separated)",
+  "keepgoAdmin.popular": "Popular",
+  "keepgoAdmin.active": "Active on site",
+  "keepgoAdmin.save": "Save",
+  "keepgoAdmin.delete": "Delete",
+  "keepgoAdmin.saved": "Plan saved!",
+  "keepgoAdmin.saveError": "Error while saving. Make sure you are logged in as admin.",
+  "keepgoAdmin.deleteConfirm": "Delete this plan?"
 }

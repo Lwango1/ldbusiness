@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Wifi, Globe, Smartphone, QrCode, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { keepGoPlans, KeepGoPlan, keepgoLink, planPriceCdf, WHATSAPP_NUMBER } from '../data/keepgo';
+import { getKeepGoPlans } from '../services/keepgo';
 import KeepGoOrderModal from '../components/KeepGoOrderModal';
 
 interface KeepGoPageProps {
@@ -11,6 +12,13 @@ interface KeepGoPageProps {
 export default function KeepGoPage({ onOpenAuth }: KeepGoPageProps) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<KeepGoPlan | null>(null);
+  const [plans, setPlans] = useState<KeepGoPlan[]>(keepGoPlans);
+
+  useEffect(() => {
+    getKeepGoPlans()
+      .then(setPlans)
+      .catch(() => {});
+  }, []);
 
   const steps = [
     { icon: Globe, title: t('keepgo.step1Title'), desc: t('keepgo.step1Desc') },
@@ -76,7 +84,7 @@ export default function KeepGoPage({ onOpenAuth }: KeepGoPageProps) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {keepGoPlans.map(plan => (
+          {plans.map(plan => (
             <div
               key={plan.id}
               className={`relative bg-luxury-dark rounded-xl overflow-hidden flex flex-col transition-all hover:border-gold/40 ${

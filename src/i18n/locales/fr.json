@@ -718,6 +718,7 @@
   "agent.noLeads": "Aucun lead pour le moment. Partagez votre lien !",
 
   "admin.tabAgents": "Agents",
+  "admin.tabKeepGo": "Connexions",
   "admin.agentsTitle": "Agents de parrainage",
   "admin.agentsCount": "agents",
   "admin.agentsNone": "Aucun agent enregistré.",
@@ -789,5 +790,26 @@
   "keepgo.ctaDesc": "Contactez-nous sur WhatsApp : nous trouvons le meilleur plan eSIM pour vos voyages, quelle que soit votre destination.",
   "keepgo.whatsappCta": "Discuter sur WhatsApp",
   "keepgo.keepgoSite": "Site KeepGo",
-  "keepgo.finalNote": "Paiement sécurisé via MaxiCash · Activation directe sur votre téléphone"
+  "keepgo.finalNote": "Paiement sécurisé via MaxiCash · Activation directe sur votre téléphone",
+
+  "keepgoAdmin.title": "Catalogue des forfaits eSIM",
+  "keepgoAdmin.subtitle": "Créez et modifiez vos tarifs manuellement. Les changements sont visibles immédiatement sur la page /connexions.",
+  "keepgoAdmin.none": "Aucun forfait. Cliquez sur « Nouveau forfait » pour créer votre catalogue.",
+  "keepgoAdmin.add": "Nouveau forfait",
+  "keepgoAdmin.name": "Nom du forfait",
+  "keepgoAdmin.zone": "Zone / Couverture",
+  "keepgoAdmin.url": "Lien KeepGo (affilié)",
+  "keepgoAdmin.dataGb": "Data (Go)",
+  "keepgoAdmin.validity": "Validité (jours)",
+  "keepgoAdmin.priceUsd": "Prix (USD)",
+  "keepgoAdmin.priceCdf": "Prix CDF (optionnel)",
+  "keepgoAdmin.sort": "Ordre",
+  "keepgoAdmin.features": "Caractéristiques (séparées par des virgules)",
+  "keepgoAdmin.popular": "Populaire",
+  "keepgoAdmin.active": "Actif sur le site",
+  "keepgoAdmin.save": "Enregistrer",
+  "keepgoAdmin.delete": "Supprimer",
+  "keepgoAdmin.saved": "Forfait enregistré !",
+  "keepgoAdmin.saveError": "Erreur lors de l'enregistrement. Vérifiez que vous êtes bien connecté en tant qu'admin.",
+  "keepgoAdmin.deleteConfirm": "Supprimer ce forfait ?"
 }

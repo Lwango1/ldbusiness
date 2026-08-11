@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '../i18n';
-import { DollarSign, TrendingUp, ShoppingCart, CheckCircle, Clock, Lock, Users, XCircle, Image as ImageIcon, Hash, Megaphone, ThumbsUp, ThumbsDown, Trash2, ExternalLink, Crown, Search, Gift, PhoneCall } from 'lucide-react';
+import { DollarSign, TrendingUp, ShoppingCart, CheckCircle, Clock, Lock, Users, XCircle, Image as ImageIcon, Hash, Megaphone, ThumbsUp, ThumbsDown, Trash2, ExternalLink, Crown, Search, Gift, PhoneCall, Wifi } from 'lucide-react';
 import { Transaction, Ad, Subscription, SubscriptionPlan } from '../types';
 import { getTransactions, completeTransaction, cancelTransaction, getTotalCommissions, getPendingCommissions, getAllAdRequests, approveAd, rejectAd, deleteAd, getAllSubscriptionRequests, approveSubscription, rejectSubscription, deleteSubscription } from '../services/database';
 import { getAllAgents, getLeadsByAgentIds, payoutAgent } from '../services/leads';
 import type { Agent, Lead } from '../services/leads';
 import AdminGuard, { clearAdminAuth } from '../components/AdminGuard';
+import AdminKeepGoPlans from '../components/AdminKeepGoPlans';
 
 function AdminDashboard() {
   const { t } = useTranslation();
@@ -13,7 +14,7 @@ function AdminDashboard() {
   const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
   const [totalCommissions, setTotalCommissions] = useState(0);
   const [pendingCommissions, setPendingCommissions] = useState(0);
-  const [tab, setTab] = useState<'transactions' | 'ads' | 'subscriptions' | 'agents'>('transactions');
+  const [tab, setTab] = useState<'transactions' | 'ads' | 'subscriptions' | 'agents' | 'keepgo'>('transactions');
   const [ads, setAds] = useState<Ad[]>([]);
   const [subscriptions, setSubscriptions] = useState<(Subscription & { user?: { name: string; phone: string } })[]>([]);
   const [txIdInput, setTxIdInput] = useState<Record<string, string>>({});
@@ -109,6 +110,9 @@ function AdminDashboard() {
           </button>
           <button onClick={() => { setTab('agents'); loadAgents(); }} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${tab === 'agents' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
             <Gift size={14} className="inline mr-2" /> {t('admin.tabAgents')}
+          </button>
+          <button onClick={() => { setTab('keepgo'); }} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${tab === 'keepgo' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
+            <Wifi size={14} className="inline mr-2" /> {t('admin.tabKeepGo')}
           </button>
         </div>
 
@@ -341,6 +345,8 @@ function AdminDashboard() {
               )}
             </div>
           </div>
+        ) : tab === 'keepgo' ? (
+          <AdminKeepGoPlans />
         ) : (
         /* Transactions List */
         <div className="bg-luxury-dark border border-gold/10 rounded-xl overflow-hidden">
