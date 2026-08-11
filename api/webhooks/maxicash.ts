@@ -30,7 +30,7 @@ export default async function handler(req: any, res: any) {
         await fetch(`${SUPABASE_URL}/rest/v1/transactions?id=eq.${rows[0].id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
-          body: JSON.stringify({ status: 'completed', payment_method: 'maxicash' }),
+          body: JSON.stringify({ status: 'pending_verification', payment_method: 'maxicash' }),
         });
       }
     } catch (err) {

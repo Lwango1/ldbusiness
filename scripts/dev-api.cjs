@@ -285,7 +285,7 @@ async function maxicashWebhook(req, res) {
         await fetch(`${su}/rest/v1/transactions?id=eq.${rows[0].id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${key}` },
-          body: JSON.stringify({ status: 'completed', payment_method: 'maxicash' }),
+          body: JSON.stringify({ status: 'pending_verification', payment_method: 'maxicash' }),
         });
       }
     } catch (e) {
