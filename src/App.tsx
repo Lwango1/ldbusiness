@@ -28,6 +28,7 @@ import StorePage from './pages/StorePage';
 import LiveRoom from './components/LiveRoom';
 import OfferPage from './pages/OfferPage';
 import AgentPage from './pages/AgentPage';
+import KeepGoPage from './pages/KeepGoPage';
 
 const DRAWER_WIDTH = 280;
 
@@ -139,6 +140,7 @@ export default function App() {
               <Route path="/boutique/:sellerId" element={<StorePage />} />
               <Route path="/offre" element={<OfferPage />} />
               <Route path="/agent" element={<AgentPage />} />
+              <Route path="/connexions" element={<KeepGoPage onOpenAuth={() => setShowAuth(true)} />} />
             </Routes>
           </main>
 

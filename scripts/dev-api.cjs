@@ -262,6 +262,40 @@ Réponds uniquement avec le texte du message.`;
   }
 }
 
+async function maxicashWebhook(req, res) {
+  const body = await readBody(req);
+  const status = body.status;
+  const transactionId = String(body.transaction_id || '');
+
+  if (status !== 'SUCCESS') {
+    return json(res, 400, { status: 'failed' });
+  }
+
+  if (!transactionId) return json(res, 400, { status: 'failed', error: 'transaction_id requis' });
+
+  const su = process.env.VITE_SUPABASE_URL || '';
+  const key = process.env.SUPABASE_SERVICE_KEY || '';
+  if (su && key) {
+    try {
+      const r = await fetch(`${su}/rest/v1/transactions?transaction_id=eq.${encodeURIComponent(transactionId)}&select=id,status,payment_method`, {
+        headers: { apikey: key, Authorization: `Bearer ${key}` },
+      });
+      const rows = await r.json();
+      if (rows && rows.length > 0) {
+        await fetch(`${su}/rest/v1/transactions?id=eq.${rows[0].id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${key}` },
+          body: JSON.stringify({ status: 'completed', payment_method: 'maxicash' }),
+        });
+      }
+    } catch (e) {
+      console.error('[maxicash-webhook] update error:', e.message);
+    }
+  }
+
+  return json(res, 200, { status: 'success' });
+}
+
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -280,6 +314,7 @@ const server = http.createServer((req, res) => {
     '/api/tiktok/publish': () => tiktokPublish(req, res),
     '/tiktok/init-upload': () => tiktokInitUpload(req, res),
     '/tiktok/publish': () => tiktokPublish(req, res),
+    '/api/webhooks/maxicash': () => maxicashWebhook(req, res),
   };
   const handler = routes[p];
   if (!handler) { res.writeHead(404); return res.end('Not found'); }
