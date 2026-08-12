@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Wifi, Globe, Smartphone, QrCode, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '../i18n';
-import { keepGoPlans, KeepGoPlan, keepgoLink, planPriceCdf, WHATSAPP_NUMBER } from '../data/keepgo';
+import { keepGoPlans, KeepGoPlan, planPriceCdf, WHATSAPP_NUMBER } from '../data/keepgo';
 import { getKeepGoPlans } from '../services/keepgo';
 import KeepGoOrderModal from '../components/KeepGoOrderModal';
 
@@ -123,14 +123,6 @@ export default function KeepGoPage({ onOpenAuth }: KeepGoPageProps) {
                 >
                   {t('keepgo.order')} <ArrowRight size={14} className="inline ml-1" />
                 </button>
-                <a
-                  href={keepgoLink(plan.keepgoUrl)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-center mt-3 text-[9px] text-gray-500 hover:text-gold uppercase tracking-widest transition-all"
-                >
-                  {t('keepgo.keepgoLink')}
-                </a>
               </div>
             </div>
           ))}
@@ -151,14 +143,6 @@ export default function KeepGoPage({ onOpenAuth }: KeepGoPageProps) {
               className="px-8 py-4 bg-green-600 text-white font-bold uppercase tracking-widest text-[11px] rounded-sm hover:bg-green-500 transition-all"
             >
               {t('keepgo.whatsappCta')}
-            </a>
-            <a
-              href={keepgoLink('https://www.keepgo.com/')}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-4 border border-gold/40 text-gold font-bold uppercase tracking-widest text-[11px] rounded-sm hover:bg-gold/10 transition-all"
-            >
-              {t('keepgo.keepgoSite')}
             </a>
           </div>
           <div className="mt-6 text-gray-600 text-[10px] flex items-center justify-center gap-2">
