@@ -620,6 +620,8 @@
   "sellerPage.loginTitle": "Login required",
   "sellerPage.accessDenied": "Access denied",
   "sellerPage.buyerAccount": "You are registered as a buyer. Create a seller account to access this space.",
+  "sellerPage.tabPlans": "eSIM Plans",
+  "sellerPage.tabStore": "My store",
 
   "subscriptionAlert.expired": "Your subscription expired on X. Renew to continue using live and advertising.",
   "subscriptionAlert.expiring": "Your subscription expires on X (in Y day(s)). Renew now.",

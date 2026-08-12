@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Store, Shield } from 'lucide-react';
+import { Store, Shield, Wifi, ShoppingBag } from 'lucide-react';
 import { getSeller } from '../services/database';
 import { supabase } from '../lib/supabase';
 import SellerRegistration from '../components/SellerRegistration';
 import SellerDashboard from '../components/SellerDashboard';
+import AdminKeepGoPlans from '../components/AdminKeepGoPlans';
 import AuthModal from '../components/AuthModal';
 import { useTranslation } from '../i18n';
 
@@ -14,6 +15,7 @@ export default function SellerPage() {
   const [seller, setSeller] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
+  const [view, setView] = useState<'forfaits' | 'boutique'>('forfaits');
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
@@ -63,6 +65,31 @@ export default function SellerPage() {
           <Shield size={48} className="mx-auto text-red-500/40 mb-4" />
           <h1 className="font-playfair text-2xl font-bold text-white mb-2">{t('sellerPage.accessDenied')}</h1>
           <p className="text-gray-500 text-sm">{t('sellerPage.buyerAccount')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (role === 'admin') {
+    return (
+      <div className="min-h-screen pt-28 pb-20 px-6 bg-luxury-black">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex gap-2 mb-8 bg-luxury-dark/50 border border-gold/10 rounded-lg p-1 w-fit flex-wrap">
+            <button onClick={() => setView('forfaits')} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${view === 'forfaits' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white flex items-center gap-2'}`}>
+              <Wifi size={14} className={view === 'forfaits' ? 'text-black' : 'text-gold'} /> {t('sellerPage.tabPlans')}
+            </button>
+            <button onClick={() => setView('boutique')} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${view === 'boutique' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white flex items-center gap-2'}`}>
+              <ShoppingBag size={14} className={view === 'boutique' ? 'text-black' : 'text-gold'} /> {t('sellerPage.tabStore')}
+            </button>
+          </div>
+
+          {view === 'forfaits' ? (
+            <AdminKeepGoPlans />
+          ) : seller && seller.storeName !== 'Boutique LDBusiness' ? (
+            <SellerDashboard seller={seller} />
+          ) : (
+            <SellerRegistration onRegistered={async () => { if (user) { const s = await getSeller(user.id); setSeller(s); } }} />
+          )}
         </div>
       </div>
     );

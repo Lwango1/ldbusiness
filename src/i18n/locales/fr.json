@@ -619,6 +619,8 @@
   "sellerPage.loginTitle": "Connexion requise",
   "sellerPage.accessDenied": "Accès refusé",
   "sellerPage.buyerAccount": "Vous êtes inscrit en tant qu'acheteur. Créez un compte vendeur pour accéder à cet espace.",
+  "sellerPage.tabPlans": "Forfaits eSIM",
+  "sellerPage.tabStore": "Ma boutique",
 
   "subscriptionAlert.expired": "Votre abonnement a expiré le X. Renouvelez pour continuer à utiliser le live et la publicité.",
   "subscriptionAlert.expiring": "Votre abonnement expire le X (dans Y jour(s)). Renouvelez dès maintenant.",

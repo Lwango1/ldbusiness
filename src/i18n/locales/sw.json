@@ -618,6 +618,8 @@
   "sellerPage.loginTitle": "Kuingia kunahitajika",
   "sellerPage.accessDenied": "Ufikiaji umekataliwa",
   "sellerPage.buyerAccount": "Umesajiliwa kama mnunuzi. Unda akaunti ya mwuza ili kufikia nafasi hii.",
+  "sellerPage.tabPlans": "Vifurushi vya eSIM",
+  "sellerPage.tabStore": "Duka langu",
 
   "subscriptionAlert.expired": "Usajili wako uliisha tarehe X. Sasisha ili kuendelea kutumia moja kwa moja na matangazo.",
   "subscriptionAlert.expiring": "Usajili wako unaisha tarehe X (katika siku Y). Sasisha sasa.",
