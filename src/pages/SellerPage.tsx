@@ -70,7 +70,7 @@ export default function SellerPage() {
     );
   }
 
-  if (role === 'admin') {
+  if (role !== 'buyer') {
     return (
       <div className="min-h-screen pt-28 pb-20 px-6 bg-luxury-black">
         <div className="max-w-6xl mx-auto">
