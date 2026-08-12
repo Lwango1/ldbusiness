@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import SellerRegistration from '../components/SellerRegistration';
 import SellerDashboard from '../components/SellerDashboard';
 import AdminKeepGoPlans from '../components/AdminKeepGoPlans';
+import AdminGuard from '../components/AdminGuard';
 import AuthModal from '../components/AuthModal';
 import { useTranslation } from '../i18n';
 
@@ -84,7 +85,9 @@ export default function SellerPage() {
           </div>
 
           {view === 'forfaits' ? (
-            <AdminKeepGoPlans />
+            <AdminGuard>
+              <AdminKeepGoPlans />
+            </AdminGuard>
           ) : seller && seller.storeName !== 'Boutique LDBusiness' ? (
             <SellerDashboard seller={seller} />
           ) : (
