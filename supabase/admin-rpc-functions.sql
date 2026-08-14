@@ -1,11 +1,42 @@
 -- Fonctions admin SECURITY DEFINER pour contourner la RLS
 
 -- Abonnements
-CREATE OR REPLACE FUNCTION public.admin_approve_subscription(sub_id UUID, tx_id TEXT)
+-- Lister toutes les demandes d'abonnement (admin)
+CREATE OR REPLACE FUNCTION public.admin_get_all_subscriptions()
+RETURNS TABLE(
+  id UUID,
+  user_id UUID,
+  plan TEXT,
+  amount_usd INT,
+  payment_method TEXT,
+  transaction_id TEXT,
+  status TEXT,
+  start_date TIMESTAMPTZ,
+  end_date TIMESTAMPTZ,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,
+  user_name TEXT,
+  user_phone TEXT
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT s.id, s.user_id, s.plan, s.amount_usd, s.payment_method,
+         s.transaction_id, s.status, s.start_date, s.end_date,
+         s.created_at, s.updated_at,
+         p.full_name, p.phone
+  FROM public.subscriptions s
+  LEFT JOIN public.profiles p ON p.id = s.user_id
+  ORDER BY s.created_at DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.admin_approve_subscription(sub_id UUID, tx_id TEXT DEFAULT NULL)
 RETURNS BOOLEAN AS $$
 BEGIN
   UPDATE public.subscriptions
-  SET status = 'active', transaction_id = tx_id, start_date = now()
+  SET status = 'active',
+      transaction_id = COALESCE(NULLIF(tx_id, ''), transaction_id),
+      start_date = now()
   WHERE id = sub_id;
   RETURN FOUND;
 END;
@@ -103,6 +134,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+GRANT EXECUTE ON FUNCTION public.admin_get_all_subscriptions TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_approve_subscription TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_reject_subscription TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_delete_subscription TO authenticated;

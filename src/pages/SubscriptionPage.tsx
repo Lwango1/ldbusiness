@@ -47,7 +47,7 @@ export default function SubscriptionPage() {
     setError('');
 
     const planKey: SubscriptionPlan = selectedPlan.type === 'ad' ? 'monthly' : selectedPlan.key as SubscriptionPlan;
-    const sub = await createSubscription(user.id, planKey, selectedPlan.price);
+    const sub = await createSubscription(user.id, planKey, selectedPlan.price, txId);
     if (!sub) { setError(t('sub.createError')); setSubscribing(false); return; }
 
     setSuccess(true);

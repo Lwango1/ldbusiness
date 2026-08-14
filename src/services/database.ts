@@ -573,7 +573,7 @@ function mapAd(a: any): Ad {
 
 // =========== ABONNEMENTS ===========
 
-export async function createSubscription(userId: string, plan: SubscriptionPlan, amountUsd: number): Promise<Subscription | null> {
+export async function createSubscription(userId: string, plan: SubscriptionPlan, amountUsd: number, transactionId?: string): Promise<Subscription | null> {
   const endDate = new Date();
   const monthsMap: Record<SubscriptionPlan, number> = { monthly: 1, quarterly: 3, biannual: 6 };
   endDate.setMonth(endDate.getMonth() + monthsMap[plan]);
@@ -582,6 +582,7 @@ export async function createSubscription(userId: string, plan: SubscriptionPlan,
     user_id: userId,
     plan,
     amount_usd: amountUsd,
+    transaction_id: transactionId || null,
     status: 'pending',
     end_date: endDate.toISOString(),
   }).select().single();
@@ -625,10 +626,10 @@ export async function hasPremiumAccess(userId: string, role?: string | null): Pr
 }
 
 export async function getAllSubscriptionRequests(): Promise<Subscription[]> {
-  const { data } = await supabase.from('subscriptions').select('*, profiles(full_name, phone)').order('created_at', { ascending: false });
+  const { data } = await supabase.rpc('admin_get_all_subscriptions');
   return (data || []).map((s: any) => ({
     ...mapSubscription(s),
-    user: s.profiles ? { name: s.profiles.full_name, phone: s.profiles.phone } : undefined,
+    user: s.user_name ? { name: s.user_name, phone: s.user_phone } : undefined,
   })) as any;
 }
 

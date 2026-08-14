@@ -203,6 +203,12 @@ function AdminDashboard() {
                           <span>{(sub as any).user?.phone || t('admin.phoneNotSet')}</span>
                           <span>•</span>
                           <span>{t('admin.requestedOn')} {new Date(sub.createdAt).toLocaleDateString('fr-FR')}</span>
+                          {sub.transactionId && (
+                            <>
+                              <span>•</span>
+                              <span className="text-gold font-mono font-bold">{sub.transactionId}</span>
+                            </>
+                          )}
                         </div>
                         {sub.status === 'pending' && (
                           <div className="flex gap-2 mt-3 items-center flex-wrap">
@@ -215,7 +221,7 @@ function AdminDashboard() {
                             />
                             <button onClick={async () => {
                               try {
-                                const txId = txIdInput[sub.id];
+                                const txId = txIdInput[sub.id] || sub.transactionId;
                                 if (!txId) { alert(t('admin.enterTxId')); return; }
                                 const ok = await approveSubscription(sub.id, txId);
                                 if (!ok) { alert(t('admin.validateError')); return; }
