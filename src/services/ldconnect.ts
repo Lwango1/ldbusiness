@@ -16,8 +16,7 @@ function mapRow(r: any): LdConnectPlanRow {
     tier: r.tier || 'bronze',
     speedMbps: Number(r.speed_mbps || 0),
     durationHours: Number(r.duration_hours || 0),
-    priceUsd: Number(r.price_usd || 0),
-    priceCdf: r.price_cdf != null ? Number(r.price_cdf) : null,
+    priceCdf: Number(r.price_cdf || 0),
     features: r.features || [],
     mikrotikProfile: r.mikrotik_profile || r.tier || 'bronze',
     popular: !!r.popular,
@@ -27,20 +26,10 @@ function mapRow(r: any): LdConnectPlanRow {
 }
 
 export async function getLdConnectPlans(): Promise<LdConnectPlanRow[]> {
-  let { data } = await supabase.from('ldconnect_plans')
+  const { data } = await supabase.from('ldconnect_plans')
     .select('*')
     .eq('active', true)
     .order('sort', { ascending: true });
-
-  if (!data || data.length === 0) {
-    await supabase.rpc('ensure_ldconnect_defaults');
-    const { data: d2 } = await supabase.from('ldconnect_plans')
-      .select('*')
-      .eq('active', true)
-      .order('sort', { ascending: true });
-    data = d2;
-  }
-
   return (data || []).map(mapRow);
 }
 
@@ -58,8 +47,7 @@ export async function adminSaveLdConnectPlan(plan: LdConnectPlanRow): Promise<bo
     p_tier: plan.tier,
     p_speed_mbps: plan.speedMbps,
     p_duration_hours: plan.durationHours,
-    p_price_usd: plan.priceUsd,
-    p_price_cdf: plan.priceCdf ?? null,
+    p_price_cdf: plan.priceCdf,
     p_features: plan.features,
     p_mikrotik_profile: plan.mikrotikProfile,
     p_popular: plan.popular,

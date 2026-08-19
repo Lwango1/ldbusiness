@@ -109,7 +109,6 @@ export default function LdConnectOrderModal({ plan, onClose, onOpenAuth }: LdCon
                 </div>
                 <div className="text-right">
                   <p className="text-white font-black text-lg">{price.toLocaleString()} CDF</p>
-                  <p className="text-gray-500 text-[10px]">{plan.priceUsd} USD</p>
                 </div>
               </div>
 

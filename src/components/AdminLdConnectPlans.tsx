@@ -19,8 +19,7 @@ function blankPlan(): LdConnectPlanRow {
     tier: 'bronze',
     speedMbps: 3,
     durationHours: 24,
-    priceUsd: 1,
-    priceCdf: null,
+    priceCdf: 0,
     features: [],
     mikrotikProfile: 'bronze-3mbps',
     popular: false,
@@ -138,7 +137,7 @@ export default function AdminLdConnectPlans() {
                 </div>
               </div>
 
-              <div className="p-5 grid grid-cols-2 md:grid-cols-5 gap-4 border-b border-gold/10">
+              <div className="p-5 grid grid-cols-2 md:grid-cols-4 gap-4 border-b border-gold/10">
                 <div>
                   <label className={labelCls}>{t('ldconnectAdmin.speed')}</label>
                   <input type="number" min={0} step="0.5" value={draft.speedMbps} onChange={e => set(p.id, { speedMbps: Number(e.target.value) || 0 })} className={inputCls} />
@@ -148,16 +147,11 @@ export default function AdminLdConnectPlans() {
                   <input type="number" min={0} value={draft.durationHours} onChange={e => set(p.id, { durationHours: Number(e.target.value) || 0 })} className={inputCls} placeholder="24" />
                 </div>
                 <div>
-                  <label className={labelCls}>{t('ldconnectAdmin.priceUsd')}</label>
-                  <input type="number" min={0} step="0.01" value={draft.priceUsd} onChange={e => set(p.id, { priceUsd: Number(e.target.value) || 0 })} className={inputCls} />
-                </div>
-                <div>
                   <label className={labelCls}>{t('ldconnectAdmin.priceCdf')}</label>
                   <input
                     type="number" min={0}
-                    value={draft.priceCdf ?? ''}
-                    placeholder={`≈ ${Math.round(draft.priceUsd * 2850).toLocaleString()} CDF`}
-                    onChange={e => set(p.id, { priceCdf: e.target.value === '' ? null : Number(e.target.value) || 0 })}
+                    value={draft.priceCdf || ''}
+                    onChange={e => set(p.id, { priceCdf: e.target.value === '' ? 0 : Number(e.target.value) || 0 })}
                     className={inputCls}
                   />
                 </div>

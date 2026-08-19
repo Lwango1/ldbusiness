@@ -124,7 +124,6 @@ export default function LdConnectPage({ onOpenAuth }: LdConnectPageProps) {
                 <div className="mt-auto p-6 pt-0">
                   <div className="mb-4">
                     <div className="text-gold font-black text-2xl">{planPriceCdf(plan).toLocaleString()} CDF</div>
-                    <div className="text-gray-500 text-xs">≈ {plan.priceUsd} USD</div>
                   </div>
                   <button
                     onClick={() => setSelected(plan)}
