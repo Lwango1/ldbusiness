@@ -40,7 +40,7 @@ export async function getAdminLdConnectPlans(): Promise<LdConnectPlanRow[]> {
   return (data || []).map(mapRow);
 }
 
-export async function adminSaveLdConnectPlan(plan: LdConnectPlanRow): Promise<boolean> {
+export async function adminSaveLdConnectPlan(plan: LdConnectPlanRow): Promise<{ ok: boolean; error?: string }> {
   const { error } = await supabase.rpc('admin_upsert_ldconnect_plan', {
     p_id: plan.id,
     p_name: plan.name,
@@ -55,7 +55,7 @@ export async function adminSaveLdConnectPlan(plan: LdConnectPlanRow): Promise<bo
     p_active: plan.active,
   });
   if (error) console.error('adminSaveLdConnectPlan error:', error.message);
-  return !error;
+  return error ? { ok: false, error: error.message } : { ok: true };
 }
 
 export async function adminDeleteLdConnectPlan(id: string): Promise<boolean> {

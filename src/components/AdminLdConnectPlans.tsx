@@ -70,14 +70,15 @@ export default function AdminLdConnectPlans() {
   const save = async (p: LdConnectPlanRow) => {
     setSavingId(p.id);
     setMsg(null);
-    const ok = await adminSaveLdConnectPlan(p);
+    const res = await adminSaveLdConnectPlan(p);
     setSavingId('');
-    if (ok) {
+    if (res.ok) {
       setMsg({ ok: true, text: t('ldconnectAdmin.saved') });
       load();
       window.setTimeout(() => setMsg(null), 3000);
     } else {
-      setMsg({ ok: false, text: t('ldconnectAdmin.saveError') });
+      console.error('save error:', res.error);
+      setMsg({ ok: false, text: `${t('ldconnectAdmin.saveError')} — ${res.error}` });
     }
   };
 
