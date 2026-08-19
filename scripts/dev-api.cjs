@@ -262,6 +262,43 @@ Réponds uniquement avec le texte du message.`;
   }
 }
 
+async function wifiCreateUser(req, res) {
+  const body = await readBody(req);
+  const { code, password, profile, durationHours } = body;
+  if (!code || !password || !durationHours) return json(res, 400, { error: 'code, password et durationHours requis' });
+
+  const baseUrl = String(process.env.MIKROTIK_REST_URL || '').replace(/\/+$/, '');
+  const token = process.env.MIKROTIK_API_TOKEN || '';
+  const user = process.env.MIKROTIK_USER || '';
+  const pass = process.env.MIKROTIK_PASSWORD || '';
+
+  if (!baseUrl || (!token && (!user || !pass))) {
+    return json(res, 200, { pushed: false, reason: 'not_configured' });
+  }
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  else headers.Authorization = 'Basic ' + Buffer.from(`${user}:${pass}`).toString('base64');
+
+  const h = Number(durationHours);
+  const uptime = h >= 720 ? `${Math.round(h / 720)}M` : h >= 168 ? `${Math.round(h / 168)}w` : h >= 24 ? `${Math.round(h / 24)}d` : `${h}h`;
+
+  try {
+    const r = await fetch(`${baseUrl}/rest/ip/hotspot/user`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ name: code, password, profile: profile || 'default', 'limit-uptime': uptime }),
+    });
+    if (!r.ok) {
+      const text = await r.text();
+      return json(res, r.status, { pushed: false, error: text.slice(0, 300) });
+    }
+    return json(res, 200, { pushed: true });
+  } catch (e) {
+    return json(res, 502, { pushed: false, error: e.message || 'mikrotik unreachable' });
+  }
+}
+
 async function maxicashWebhook(req, res) {
   const body = await readBody(req);
   const status = body.status;
@@ -277,7 +314,7 @@ async function maxicashWebhook(req, res) {
   const key = process.env.SUPABASE_SERVICE_KEY || '';
   if (su && key) {
     try {
-      const r = await fetch(`${su}/rest/v1/transactions?transaction_id=eq.${encodeURIComponent(transactionId)}&select=id,status,payment_method`, {
+      const r = await fetch(`${su}/rest/v1/transactions?transaction_id=eq.${encodeURIComponent(transactionId)}&select=id,status,payment_method,invoice_number`, {
         headers: { apikey: key, Authorization: `Bearer ${key}` },
       });
       const rows = await r.json();
@@ -287,6 +324,27 @@ async function maxicashWebhook(req, res) {
           headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${key}` },
           body: JSON.stringify({ status: 'completed', payment_method: 'maxicash' }),
         });
+
+        // LDConnect : génère automatiquement le voucher WiFi (facture LDC-...)
+        const invoiceNumber = rows[0].invoice_number || '';
+        if (invoiceNumber.startsWith('LDC-')) {
+          const vRes = await fetch(`${su}/rest/v1/wifi_vouchers?transaction_id=eq.${encodeURIComponent(invoiceNumber)}&select=id,status,duration_hours`, {
+            headers: { apikey: key, Authorization: `Bearer ${key}` },
+          });
+          const vRows = await vRes.json();
+          const v = vRows && vRows.length > 0 ? vRows[0] : null;
+          if (v && v.status === 'pending') {
+            const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            const rand = (n) => Array.from({ length: n }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+            const code = `LDCT-${rand(4)}-${rand(4)}`;
+            const password = rand(6);
+            await fetch(`${su}/rest/v1/rpc/admin_generate_voucher`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', apikey: key, Authorization: `Bearer ${key}` },
+              body: JSON.stringify({ p_voucher_id: v.id, p_code: code, p_password: password, p_duration_hours: v.duration_hours || 1 }),
+            });
+          }
+        }
       }
     } catch (e) {
       console.error('[maxicash-webhook] update error:', e.message);
@@ -315,6 +373,7 @@ const server = http.createServer((req, res) => {
     '/tiktok/init-upload': () => tiktokInitUpload(req, res),
     '/tiktok/publish': () => tiktokPublish(req, res),
     '/api/webhooks/maxicash': () => maxicashWebhook(req, res),
+    '/api/wifi/create-user': () => wifiCreateUser(req, res),
   };
   const handler = routes[p];
   if (!handler) { res.writeHead(404); return res.end('Not found'); }

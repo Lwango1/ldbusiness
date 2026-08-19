@@ -6,7 +6,8 @@ import { getTransactions, completeTransaction, cancelTransaction, getTotalCommis
 import { getAllAgents, getLeadsByAgentIds, payoutAgent } from '../services/leads';
 import type { Agent, Lead } from '../services/leads';
 import AdminGuard, { clearAdminAuth } from '../components/AdminGuard';
-import AdminKeepGoPlans from '../components/AdminKeepGoPlans';
+import AdminLdConnectPlans from '../components/AdminLdConnectPlans';
+import { approveVoucher } from '../services/ldconnect';
 
 function AdminDashboard() {
   const { t } = useTranslation();
@@ -14,7 +15,7 @@ function AdminDashboard() {
   const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
   const [totalCommissions, setTotalCommissions] = useState(0);
   const [pendingCommissions, setPendingCommissions] = useState(0);
-  const [tab, setTab] = useState<'transactions' | 'ads' | 'subscriptions' | 'agents' | 'keepgo'>('transactions');
+  const [tab, setTab] = useState<'transactions' | 'ads' | 'subscriptions' | 'agents' | 'ldconnect'>('transactions');
   const [ads, setAds] = useState<Ad[]>([]);
   const [subscriptions, setSubscriptions] = useState<(Subscription & { user?: { name: string; phone: string } })[]>([]);
   const [txIdInput, setTxIdInput] = useState<Record<string, string>>({});
@@ -40,6 +41,14 @@ function AdminDashboard() {
       setTotalCommissions(total);
       setPendingCommissions(pending);
     });
+  };
+
+  const handleComplete = async (txn: Transaction) => {
+    await completeTransaction(txn.id);
+    if (txn.invoiceNumber.startsWith('LDC-')) {
+      await approveVoucher(txn.invoiceNumber);
+    }
+    refresh();
   };
 
   useEffect(() => {
@@ -111,8 +120,8 @@ function AdminDashboard() {
           <button onClick={() => { setTab('agents'); loadAgents(); }} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${tab === 'agents' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
             <Gift size={14} className="inline mr-2" /> {t('admin.tabAgents')}
           </button>
-          <button onClick={() => { setTab('keepgo'); }} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${tab === 'keepgo' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
-            <Wifi size={14} className="inline mr-2" /> {t('admin.tabKeepGo')}
+          <button onClick={() => { setTab('ldconnect'); }} className={`px-6 py-3 text-xs uppercase tracking-widest font-bold rounded-md transition-all ${tab === 'ldconnect' ? 'bg-gold text-black' : 'text-gray-500 hover:text-white'}`}>
+            <Wifi size={14} className="inline mr-2" /> {t('admin.tabLdConnect')}
           </button>
         </div>
 
@@ -351,8 +360,8 @@ function AdminDashboard() {
               )}
             </div>
           </div>
-        ) : tab === 'keepgo' ? (
-          <AdminKeepGoPlans />
+        ) : tab === 'ldconnect' ? (
+          <AdminLdConnectPlans />
         ) : (
         /* Transactions List */
         <div className="bg-luxury-dark border border-gold/10 rounded-xl overflow-hidden">
@@ -414,7 +423,7 @@ function AdminDashboard() {
                     {txn.status === 'pending_verification' && (
                       <>
                         <button
-                          onClick={async () => { await completeTransaction(txn.id); refresh(); }}
+                          onClick={() => handleComplete(txn)}
                           className="px-4 py-2 bg-green-600/20 border border-green-500/30 text-green-400 text-[10px] uppercase tracking-widest rounded-sm hover:bg-green-600/30 transition-all"
                         >
                           <CheckCircle size={12} className="inline mr-1" /> {t('admin.paymentReceived')}
@@ -429,7 +438,7 @@ function AdminDashboard() {
                     )}
                     {txn.status === 'pending' && (
                       <button
-                        onClick={async () => { await completeTransaction(txn.id); refresh(); }}
+                        onClick={() => handleComplete(txn)}
                         className="px-4 py-2 bg-green-600/20 border border-green-500/30 text-green-400 text-[10px] uppercase tracking-widest rounded-sm hover:bg-green-600/30 transition-all"
                       >
                         <CheckCircle size={12} className="inline mr-1" /> {t('admin.markCompleted')}

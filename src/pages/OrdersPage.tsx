@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../i18n';
-import { ShoppingBag, Clock, CheckCircle, XCircle, AlertTriangle, Eye, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { ShoppingBag, Clock, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Search, KeyRound, Copy, Check } from 'lucide-react';
 import { Transaction } from '../types';
 import { getTransactions } from '../services/database';
+import { getMyVouchers, WifiVoucher } from '../services/ldconnect';
 import { useAuth } from '../contexts/AuthContext';
 import PaymentConfirmation from '../components/PaymentConfirmation';
 
@@ -22,12 +23,25 @@ export default function OrdersPage() {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [payingTxn, setPayingTxn] = useState<Transaction | null>(null);
+  const [vouchers, setVouchers] = useState<Record<string, WifiVoucher>>({});
+  const [copied, setCopied] = useState('');
 
   useEffect(() => {
     if (user) {
-      getTransactions(user.id).then(setTransactions);
+      refresh();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const refresh = () => {
+    if (!user) return;
+    getTransactions(user.id).then(setTransactions);
+    getMyVouchers(user.id).then(vs => {
+      const map: Record<string, WifiVoucher> = {};
+      vs.forEach(v => { map[v.transactionId] = v; });
+      setVouchers(map);
+    }).catch(() => {});
+  };
 
   if (loading) return null;
   if (!user) {
@@ -140,6 +154,44 @@ export default function OrdersPage() {
 
                   {isExpanded && (
                     <div className="px-5 pb-5 border-t border-gold/10 pt-4">
+                      {vouchers[txn.invoiceNumber] && (
+                        <div className="mb-4 p-4 bg-black/40 border border-gold/20 rounded-lg">
+                          <h4 className="text-white text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <KeyRound size={13} className="text-gold" /> {t('orders.voucherTitle')}
+                          </h4>
+                          {vouchers[txn.invoiceNumber].code ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-500 text-xs">{t('orders.voucherCode')}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gold font-mono font-bold text-sm tracking-widest">{vouchers[txn.invoiceNumber].code}</span>
+                                  <button onClick={() => { navigator.clipboard?.writeText(vouchers[txn.invoiceNumber].code || ''); setCopied('code'); setTimeout(() => setCopied(''), 2000); }} className="text-gold/60 hover:text-gold">
+                                    {copied === 'code' ? <Check size={13} /> : <Copy size={13} />}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-500 text-xs">{t('orders.voucherPassword')}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-white font-mono font-bold text-sm tracking-widest">{vouchers[txn.invoiceNumber].password}</span>
+                                  <button onClick={() => { navigator.clipboard?.writeText(vouchers[txn.invoiceNumber].password || ''); setCopied('pwd'); setTimeout(() => setCopied(''), 2000); }} className="text-gold/60 hover:text-gold">
+                                    {copied === 'pwd' ? <Check size={13} /> : <Copy size={13} />}
+                                  </button>
+                                </div>
+                              </div>
+                              {vouchers[txn.invoiceNumber].expiresAt && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-gray-500 text-xs">{t('orders.voucherExpires')}</span>
+                                  <span className="text-gray-300 text-xs">{new Date(vouchers[txn.invoiceNumber].expiresAt!).toLocaleDateString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })}</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-gray-500 text-xs">{t('orders.voucherPending')}</p>
+                          )}
+                        </div>
+                      )}
+
                       <h4 className="text-white text-xs font-bold uppercase tracking-widest mb-3">{t('orders.articles')}</h4>
                       {txn.items.length > 0 ? (
                         <div className="space-y-2">

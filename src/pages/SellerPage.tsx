@@ -5,7 +5,7 @@ import { getSeller } from '../services/database';
 import { supabase } from '../lib/supabase';
 import SellerRegistration from '../components/SellerRegistration';
 import SellerDashboard from '../components/SellerDashboard';
-import AdminKeepGoPlans from '../components/AdminKeepGoPlans';
+import AdminLdConnectPlans from '../components/AdminLdConnectPlans';
 import AdminGuard from '../components/AdminGuard';
 import AuthModal from '../components/AuthModal';
 import { useTranslation } from '../i18n';
@@ -86,7 +86,7 @@ export default function SellerPage() {
 
           {view === 'forfaits' ? (
             <AdminGuard>
-              <AdminKeepGoPlans />
+              <AdminLdConnectPlans />
             </AdminGuard>
           ) : seller && seller.storeName !== 'Boutique LDBusiness' ? (
             <SellerDashboard seller={seller} />

@@ -22,7 +22,7 @@ export default async function handler(req: any, res: any) {
 
   if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
     try {
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/transactions?transaction_id=eq.${encodeURIComponent(transactionId)}&select=id,status,payment_method`, {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/transactions?transaction_id=eq.${encodeURIComponent(transactionId)}&select=id,status,payment_method,invoice_number`, {
         headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
       });
       const rows = await r.json();
@@ -32,6 +32,27 @@ export default async function handler(req: any, res: any) {
           headers: { 'Content-Type': 'application/json', apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
           body: JSON.stringify({ status: 'completed', payment_method: 'maxicash' }),
         });
+
+        // LDConnect : génère automatiquement le voucher WiFi (facture LDC-...)
+        const invoiceNumber = rows[0].invoice_number || '';
+        if (invoiceNumber.startsWith('LDC-')) {
+          const vRes = await fetch(`${SUPABASE_URL}/rest/v1/wifi_vouchers?transaction_id=eq.${encodeURIComponent(invoiceNumber)}&select=id,status,duration_hours`, {
+            headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
+          });
+          const vRows = await vRes.json();
+          const v = vRows && vRows.length > 0 ? vRows[0] : null;
+          if (v && v.status === 'pending') {
+            const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            const rand = (n: number) => Array.from({ length: n }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+            const code = `LDCT-${rand(4)}-${rand(4)}`;
+            const password = rand(6);
+            await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_generate_voucher`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
+              body: JSON.stringify({ p_voucher_id: v.id, p_code: code, p_password: password, p_duration_hours: v.duration_hours || 1 }),
+            });
+          }
+        }
       }
     } catch (err) {
       console.error('[maxicash-webhook] update error:', err);
