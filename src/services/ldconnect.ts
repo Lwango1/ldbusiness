@@ -41,25 +41,25 @@ export async function getAdminLdConnectPlans(): Promise<LdConnectPlanRow[]> {
 }
 
 export async function adminSaveLdConnectPlan(plan: LdConnectPlanRow): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await supabase.rpc('admin_upsert_ldconnect_plan', {
-    p_id: plan.id,
-    p_name: plan.name,
-    p_tier: plan.tier,
-    p_speed_mbps: plan.speedMbps,
-    p_duration_hours: plan.durationHours,
-    p_price_cdf: plan.priceCdf,
-    p_features: plan.features,
-    p_mikrotik_profile: plan.mikrotikProfile,
-    p_popular: plan.popular,
-    p_sort: plan.sort,
-    p_active: plan.active,
-  });
+  const { error } = await supabase.from('ldconnect_plans').upsert({
+    id: plan.id,
+    name: plan.name,
+    tier: plan.tier,
+    speed_mbps: plan.speedMbps,
+    duration_hours: plan.durationHours,
+    price_cdf: plan.priceCdf,
+    features: plan.features,
+    mikrotik_profile: plan.mikrotikProfile,
+    popular: plan.popular,
+    sort: plan.sort,
+    active: plan.active,
+  }, { onConflict: 'id' });
   if (error) console.error('adminSaveLdConnectPlan error:', error.message);
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
 export async function adminDeleteLdConnectPlan(id: string): Promise<boolean> {
-  const { error } = await supabase.rpc('admin_delete_ldconnect_plan', { p_id: id });
+  const { error } = await supabase.from('ldconnect_plans').delete().eq('id', id);
   if (error) console.error('adminDeleteLdConnectPlan error:', error.message);
   return !error;
 }
