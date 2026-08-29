@@ -29,6 +29,7 @@ import LiveRoom from './components/LiveRoom';
 import OfferPage from './pages/OfferPage';
 import AgentPage from './pages/AgentPage';
 import LdConnectPage from './pages/LdConnectPage';
+import DemandesPage from './pages/DemandesPage';
 
 const DRAWER_WIDTH = 280;
 
@@ -142,6 +143,7 @@ export default function App() {
               <Route path="/agent" element={<AgentPage />} />
               <Route path="/connexions" element={<LdConnectPage onOpenAuth={() => setShowAuth(true)} />} />
               <Route path="/wifi" element={<LdConnectPage onOpenAuth={() => setShowAuth(true)} />} />
+              <Route path="/demandes" element={<DemandesPage />} />
             </Routes>
           </main>
 

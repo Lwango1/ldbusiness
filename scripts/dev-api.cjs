@@ -299,6 +299,177 @@ async function wifiCreateUser(req, res) {
   }
 }
 
+const DEMANDE_REGIONS = {
+  world: { label: 'Monde entier', gl: 'us', ceid: 'US:en' },
+  us: { label: 'États-Unis', gl: 'us', ceid: 'US:en' },
+  fr: { label: 'France & Europe FR', gl: 'fr', ceid: 'FR:fr' },
+  afrique: { label: 'Afrique FR', gl: 'cd', ceid: 'CD:fr' },
+  uk: { label: 'Royaume-Uni', gl: 'gb', ceid: 'GB:en' },
+  ca: { label: 'Canada', gl: 'ca', ceid: 'CA:en' },
+  au: { label: 'Australie', gl: 'au', ceid: 'AU:en' },
+  es: { label: 'Espagne', gl: 'es', ceid: 'ES:es' },
+  br: { label: 'Brésil', gl: 'br', ceid: 'BR:pt' },
+  na: { label: 'Nigéria', gl: 'ng', ceid: 'NG:en' },
+  za: { label: 'Afrique du Sud', gl: 'za', ceid: 'ZA:en' },
+};
+
+const DEMANDE_CATEGORIES = {
+  mode: {
+    label: 'Mode & Habillement',
+    queries: [
+      'buy african dress online',
+      'men suit price shop',
+      'wedding dress shop',
+      'african fashion trend',
+      'robe africaine prix acheter',
+      'costume homme boutique',
+      'Tenue africaine moderne',
+      'African clothing outlet',
+    ],
+  },
+  deco: {
+    label: 'Décoration & Événements',
+    queries: [
+      'wedding decoration price',
+      'event decor shop',
+      'party decoration ideas',
+      'décoration mariage prix',
+      'birthday decoration service',
+      'balloon decoration cost',
+      'event planner decoration',
+      'salle fête location prix',
+    ],
+  },
+  internet: {
+    label: 'Internet / WiFi',
+    queries: [
+      'cheap internet package',
+      'wifi hotspot price',
+      'affordable internet plans',
+      'wifi router buy',
+      'internet pas cher',
+      'connexion internet forfait',
+      'best wifi deal',
+      'high speed internet offers',
+    ],
+  },
+  general: {
+    label: 'Business & Achats',
+    queries: [
+      'buy products online',
+      'online store shopping',
+      'ecommerce best deals',
+      'shop now discount',
+      'achat en ligne promo',
+      'boutique en ligne',
+      'order online fast delivery',
+      'best online shopping sites',
+    ],
+  },
+  voyage: {
+    label: 'Voyage & Hôtels',
+    queries: [
+      'book hotel online',
+      'cheap hotel deals',
+      'travel booking sites',
+      'hotel near me book',
+      'réservation hôtel pas cher',
+      'voyage hôtel prix',
+      'best hotel discounts',
+      'flight and hotel package',
+      'hôtel chambre disponible',
+      'vacation rental book',
+    ],
+  },
+  vehicules: {
+    label: 'Véhicules & Moto',
+    queries: [
+      'buy used car online',
+      'new car price deal',
+      'motorcycle for sale',
+      'buy scooter online',
+      'voiture occasion prix acheter',
+      'moto pas chère vendre',
+      'car dealership offers',
+      'cheap cars for sale',
+      'moto neuve prix',
+      'second hand motorcycle buy',
+    ],
+  },
+};
+
+function stripHtml(html) {
+  return String(html || '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function parseRss(xml) {
+  const items = [];
+  const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+  let m;
+  while ((m = itemRegex.exec(xml)) !== null) {
+    const block = m[1];
+    const title = stripHtml((block.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '');
+    const link = (block.match(/<link>([\s\S]*?)<\/link>/) || [])[1] || '';
+    const pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] || '';
+    const desc = (block.match(/<description>([\s\S]*?)<\/description>/) || [])[1] || '';
+    const source = (block.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [])[1] || '';
+    if (title) {
+      items.push({
+        title,
+        link: link.replace(/&amp;/g, '&'),
+        pubDate,
+        description: stripHtml(desc),
+        source: stripHtml(source),
+      });
+    }
+  }
+  return items;
+}
+
+async function demandes(req, res) {
+  const url = new URL(req.url, 'http://localhost');
+  const catId = String(url.searchParams.get('cat') || 'general');
+  const regionId = String(url.searchParams.get('region') || 'world');
+  const cat = DEMANDE_CATEGORIES[catId] || DEMANDE_CATEGORIES.general;
+  const region = DEMANDE_REGIONS[regionId] || DEMANDE_REGIONS.world;
+
+  const results = [];
+  const seen = new Set();
+  for (const q of cat.queries) {
+    const rss = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=fr&gl=${region.gl}&ceid=${region.ceid}`;
+    try {
+      const upstream = await fetch(rss, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LDBusinessLeadCollector/1.0)' },
+      });
+      if (!upstream.ok) continue;
+      const xml = await upstream.text();
+      for (const it of parseRss(xml)) {
+        const key = it.title.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        results.push({ ...it, category: catId, keyword: q });
+      }
+    } catch (e) { /* ignore */ }
+  }
+  results.sort((a, b) => (a.pubDate < b.pubDate ? 1 : -1));
+
+  return json(res, 200, {
+    category: cat.label,
+    region: region.label,
+    count: results.length,
+    generatedAt: new Date().toISOString(),
+    demandes: results.slice(0, 30),
+  });
+}
+
 async function maxicashWebhook(req, res) {
   const body = await readBody(req);
   const status = body.status;
@@ -364,6 +535,7 @@ const server = http.createServer((req, res) => {
   const p = url.pathname;
   const routes = {
     '/api/ai-script': () => aiScript(req, res),
+    '/api/demandes': () => demandes(req, res),
     '/api/tts': () => tts(req, res, url),
     '/api/tiktok/auth': () => tiktokAuth(req, res, url),
     '/api/tiktok/status': () => tiktokStatus(req, res, url),

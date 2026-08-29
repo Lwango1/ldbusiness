@@ -48,6 +48,7 @@ export default function Navbar({ cartCount, onCartClick, isMobileMenuOpen, onMob
     { label: t('nav.offer'), path: '/offre' },
     { label: t('nav.products'), path: '/produits' },
     { label: t('nav.connections'), path: '/connexions' },
+    { label: 'Demandes', path: '/demandes' },
     { label: t('nav.about'), path: '/a-propos' },
     { label: t('nav.live'), path: '/live' },
     { label: t('nav.sell'), path: '/vendre' },
