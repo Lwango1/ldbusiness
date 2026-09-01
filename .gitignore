@@ -9,3 +9,4 @@ scripts/ad_generator/__pycache__/
 
 dev.log
 dev-output.log
+.vercel

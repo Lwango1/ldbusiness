@@ -9,7 +9,6 @@
   ],
   "rewrites": [
     { "source": "/produit/(.*)", "destination": "/api/produit/$1" },
-    { "source": "/tiktok/(.*)", "destination": "/api/tiktok/$1" },
     { "source": "/conditions", "destination": "/conditions.html" },
     { "source": "/confidentialite", "destination": "/confidentialite.html" },
     { "source": "/((?!api/).*)", "destination": "/" }
